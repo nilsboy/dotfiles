@@ -204,6 +204,7 @@ alias crontab="crontab -i"
 alias j="jobs"
 alias l="ls -lh"
 alias lr="ls -rtlh"
+alias lc="ls -rtlhc"
 alias xargs="xargs -I {}"
 
 if [[ $(type -p tree) ]] ; then
