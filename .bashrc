@@ -158,6 +158,10 @@ function DIE() {
 
 [ -z "$PS1" ] && return
 
+function updatebashrc() {
+    wget -qO ~/.bashrc http://github.com/evenless/bashrc/raw/master/.bashrc
+}
+
 export PATH=~/bin:$PATH
 
 export LANG="de_DE.UTF-8"
