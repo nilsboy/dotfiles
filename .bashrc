@@ -1,8 +1,5 @@
 ### stuff also needed non-interactively ########################################
 
-# for automatic update check
-export BASHRC_VERSION=2010062601
-
 ### init perl lib path #########################################################
 
 unset PERL5LIB
@@ -157,10 +154,6 @@ function DIE() {
 ### for interactive shells only ################################################
 
 [ -z "$PS1" ] && return
-
-function updatebashrc() {
-    wget -qO ~/.bashrc http://github.com/evenless/bashrc/raw/master/.bashrc
-}
 
 export PATH=~/bin:$PATH
 
@@ -318,7 +311,25 @@ function _check_env() {
     cat /etc/issue.net
 }
 
-alias reloadbashrc=". ~/.bashrc"
+function updatebashrc() {
+    wget -qO ~/.bashrc http://github.com/evenless/bashrc/raw/master/.bashrc
+    reloadbashrc
+}
+
+function reloadbashrc() {
+
+    # remove aliases
+    unalias -a
+
+    # remove functions
+    while read funct ; do
+        unset $funct
+    done<<EOF
+        $(perl -ne 'foreach (/^function (.+?)\(/) {print "$_\n" }' ~/.bashrc)
+EOF
+
+    . ~/.bashrc
+}
 
 # alias quote="fmt -s | perl -pe 's/^/> /g'"
 
@@ -693,7 +704,7 @@ svimdiff() {
     vimdiff $file scp://$USER@$host/$file
 }
 
-_sshputget() {
+function _sshputget() {
     local host=$1
     local file=$2
     local direction=$3
@@ -723,11 +734,11 @@ _sshputget() {
     scp $src $dst
 }
 
-sshget() {
+function sshget() {
     _sshputget $1 $2 get
 }
 
-sshput() {
+function sshput() {
     _sshputget $1 $2 put
 }
 
