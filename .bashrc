@@ -921,11 +921,12 @@ EOF
 }
 
 function _color_user() {
-    local _user=$USER
+
     if [[ $USER == "root" ]] ; then
-        _user=${RED}$USER${NO_COLOR}
+        echo ${RED}$USER${NO_COLOR}
+    else
+        echo $USER
     fi
-    echo $_user
 }
 
 function _print_on_error() {
@@ -973,7 +974,12 @@ function _simple_prompt_command() {
     _fix_pwd
     _set_bg_jobs_count
 
-    PS1=$NO_COLOR"$GRAY$time$NO_COLOR $_pwd${_bg_jobs_count}""$NO_COLOR> "
+    local if_root=""
+    if [[ $USER == "root" ]] ; then
+        if_root="${RED}root$NO_COLOR "
+    fi
+
+    PS1=$NO_COLOR"$GRAY$time$NO_COLOR $if_root$_pwd${_bg_jobs_count}"">$NO_COLOR "
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
@@ -1017,6 +1023,7 @@ case $(ps -p $PPID -o comm=) in
         _simple_prompt
     ;;
 esac
+
 
 ### STARTUP ####################################################################
 
