@@ -312,11 +312,15 @@ function _check_env() {
 }
 
 function updatebashrc() {
+
+    bashrc_clean_environment
+
     wget -qO ~/.bashrc http://github.com/evenless/bashrc/raw/master/.bashrc
-    reloadbashrc
+
+    . ~/.bashrc
 }
 
-function reloadbashrc() {
+function bashrc_clean_environment() {
 
     # remove aliases
     unalias -a
@@ -327,6 +331,12 @@ function reloadbashrc() {
     done<<EOF
         $(perl -ne 'foreach (/^function (.+?)\(/) {print "$_\n" }' ~/.bashrc)
 EOF
+
+}
+
+function reloadbashrc() {
+
+    bashrc_clean_environment
 
     . ~/.bashrc
 }
