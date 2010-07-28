@@ -521,19 +521,8 @@ function get_natted_ip() {
         | grep -Eo '\<[[:digit:]]{1,3}(\.[[:digit:]]{1,3}){3}\>'
 }
 
-function _set_remote_host() {
-
-    if [[ $_checked_for_remote_host != "" ]] ; then
-        return
-    fi
-
-    local ip_line
-
-    ip_line=$(who am i)
-
-    REMOTE_HOST=$(echo $ip_line | perl -ne '$_ =~ /\(([^\:]+)\)/ && print $1')
-
-    _checked_for_remote_host=1
+function set_remote_host() {
+    REMOTE_HOST=$(who -m | perl -ne 'print $1 if /\((.*?)[\:\)]+/')
 }
 
 ### .bashrc_identify_user_stuff
@@ -1024,22 +1013,13 @@ function _spare_prompt() {
 
 unset PS1
 
-case $(ps -p $PPID -o comm=) in
-    sshd)
-        _prompt
-    ;;
-    *)
-        _original_user=$USER
-        _simple_prompt
-    ;;
-esac
-
-
 ### STARTUP ####################################################################
 
 function _init_bash() {
     _set_colors
     unset _set_colors
+
+    set_remote_host
 
     set_remote_user_from_ssh_key
     load_remote_host_bash_rc
@@ -1053,6 +1033,14 @@ function _init_bash() {
         if [[ -r $REMOTE_HOME/.screenrc ]] ; then
             alias screen="screen -c $REMOTE_HOME/.screenrc"
         fi
+    fi
+
+    # case $(ps -p $PPID -o comm=) in
+    if [[ $REMOTE_HOST ]] ; then
+        _prompt
+    else
+        _original_user=$USER
+        _simple_prompt
     fi
 }
 
