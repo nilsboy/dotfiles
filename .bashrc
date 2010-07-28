@@ -1207,7 +1207,7 @@ function parent() {
 #      9.04       Jaunty Jackalope  2009-04-23
 #      9.10       Karmic Koala      2009-10-29
 #     10.04 LTS   Lucid Lynx        2010-04-29
-#     10.10       Maverick Meerkat  2010-10-28
+#     10.10       Maverick Meerkat  2010-10-10
 
 # NOTES ON vim
 # * :help quickref
@@ -1238,4 +1238,4 @@ function note() {
         $BASH_SOURCE
 }
 
-### THEN END ###################################################################
+### THE END ####################################################################
