@@ -1035,13 +1035,19 @@ function _init_bash() {
         fi
     fi
 
-    # case $(ps -p $PPID -o comm=) in
-    if [[ $REMOTE_HOST ]] ; then
-        _prompt
-    else
-        _original_user=$USER
-        _simple_prompt
-    fi
+    case $(ps -p $PPID -o comm=) in
+        screen)
+            _simple_prompt
+        ;;
+        *)
+            if [[ $REMOTE_HOST ]] ; then
+                _prompt
+            else
+                _original_user=$USER
+                _simple_prompt
+            fi
+        ;;
+    esac
 }
 
 _init_bash
