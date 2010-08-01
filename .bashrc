@@ -747,8 +747,20 @@ function sshput() {
 alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen"
 
 function srd() {
+
     grabssh
-    screen -rd $1 && clear
+ 
+    local ok
+ 
+    screen -rd $1 && ok=1
+ 
+    if [[ ! $ok ]] ; then
+        screen -rd main && ok=1
+    fi
+ 
+    if [[ $ok ]] ; then
+        clear
+    fi
 }
 
 ### PROMPT #####################################################################
