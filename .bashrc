@@ -522,8 +522,7 @@ function get_natted_ip() {
 }
 
 function set_remote_host() {
-    # REMOTE_HOST=$(who -m | perl -ne 'print $1 if /\((.*?)[\:\)]+/')
-    REMOTE_HOST=$(who -m --ips | perl -ne 'print $1 if /\ ([\d\.]+)$/')
+    REMOTE_HOST=$(who -m --ips | perl -ne 'print "$1$2" if /(?:\ ([\d\.]+$)|\((.*?)[\:\)]+)/')
 }
 
 ### .bashrc_identify_user_stuff
