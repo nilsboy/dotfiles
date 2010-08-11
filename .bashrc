@@ -204,6 +204,10 @@ alias lr="ls -rtlh"
 alias lc="ls -rtlhc"
 alias xargs="xargs -I {}"
 
+alias apts="apt-cache search"
+alias apti="sudo apt-get install"
+alias aptp="sudo dpkg -P"
+
 if [[ $(type -p tree) ]] ; then
     alias t="tree --noreport --dirsfirst"
 else
