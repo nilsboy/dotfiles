@@ -1197,6 +1197,7 @@ function parent() {
 # * default-storage-engine = innodb
 # * mysql full join: left join union right join
 # * split: SUBSTRING_INDEX(realaccount,'@',-1)
+# * convert string to date: STR_TO_DATE(created, "%d.%m.%y")
 
 # NOTES ON sftp
 # * use specifc key file
