@@ -398,6 +398,8 @@ unset mysql
 # mysql prompt
 export MYSQL_PS1="\\u@\\h:\\d db> "
 
+alias mysql="mysql --show-warnings"
+
 ### perl #######################################################################
 
 # NOTES ON perl
