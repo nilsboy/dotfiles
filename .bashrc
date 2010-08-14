@@ -207,6 +207,7 @@ alias xargs="xargs -I {}"
 alias apts="apt-cache search"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
+alias aptc="sudo apt-get autoremove"
 
 if [[ $(type -p tree) ]] ; then
     alias t="tree --noreport --dirsfirst"
