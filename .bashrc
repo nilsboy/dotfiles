@@ -320,7 +320,7 @@ function updatebashrc() {
 
     bashrc_clean_environment
 
-    wget -qO ~/.bashrc http://github.com/evenless/bashrc/raw/master/.bashrc
+    wget -qO ~/.bashrc http://github.com/evenless/etc/raw/master/.bashrc
 
     . ~/.bashrc
 }
