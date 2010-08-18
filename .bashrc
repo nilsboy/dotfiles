@@ -195,7 +195,7 @@ fi
 
 alias cp="cp -i"
 alias mv="mv -i"
-alias less="less -i"
+alias less="less -i -r"
 alias crontab="crontab -i"
 
 alias j="jobs"
