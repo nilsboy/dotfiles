@@ -1232,6 +1232,7 @@ function parent() {
 #      9.10       Karmic Koala      2009-10-29
 #     10.04 LTS   Lucid Lynx        2010-04-29
 #     10.10       Maverick Meerkat  2010-10-10
+#     11.04       Natty Narwhal     2011-04-28
 
 # NOTES ON vim
 # * :help quickref
