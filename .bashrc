@@ -211,8 +211,10 @@ alias aptc="sudo apt-get autoremove"
 
 if [[ $(type -p tree) ]] ; then
     alias t="tree --noreport --dirsfirst"
+    alias td="tree --noreport -d"
 else
     alias t="find | sort"
+    alias td="find -type d | sort"
 fi
 
 alias remove_comments="perl -ne 'print if ! /^#/ && ! /^$/'"
