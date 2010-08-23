@@ -443,14 +443,84 @@ function pmpath() {
 EOF
 }
 
+# fuzzy find a lib via PERL5LIB
+function pmpathfuzzy() {
+
+     perl - $@ <<'EOF'
+        use warnings;
+        no warnings 'uninitialized';
+        use File::Find;
+
+        my $module = $ARGV[0] || die "specify module.";
+        $module =~ s{::}{/}g;
+
+        my @dirs = ( split( ":", $ENV{PERL5LIB} ), @INC );
+
+        my %matches       = ();
+        my %fuzzy_matches = ();
+
+        foreach my $dir (@dirs) {
+
+            $dir .= "/";
+
+            next if !-d $dir;
+
+            find(
+                sub {
+                    my $abs = $File::Find::name;
+                    my $file = $abs;
+
+                    return if $file !~ /\.pm$/;
+                    return if -d $file;
+
+                    $file =~ s/^$dir(\/i486-linux-gnu-thread-multi\/)*//g;
+
+                    return if $file !~ /$module/i;
+
+                    if($file =~ /(\/)*$module\.pm$/i) {
+                        $matches{$file} = $abs;
+                        return;
+                    }
+
+                    $fuzzy_matches{$file} = $abs;
+                },
+                $dir
+            );
+        }
+
+        if ( keys %matches == 1 ) {
+            print values %matches;
+            exit 0;
+        }
+
+        if(exists $matches{"$module\.pm"}) {
+            print $matches{"$module\.pm"};
+            exit 0;
+        }
+
+        print STDERR "too many matches:\n";
+
+        foreach (%matches) {
+            print STDERR join("\n", keys %matches) . "\n";
+            exit 1;
+        }
+
+        if (%fuzzy_matches) {
+            print STDERR join("\n", keys %fuzzy_matches) . "\n";
+        }
+
+        exit 1;
+EOF
+}
+
 # edit a lib via PERL5LIB
 function vii() {
-    if ! [ `pmpath $1` ] ; then
-        echo "not found: $1"
+
+    local file=$(pmpathfuzzy $1)
+
+    if ! [[ $file ]] ; then
         return 1
     fi
-
-    local file=$(pmpath $1)
 
     vi $file
 }
