@@ -464,6 +464,7 @@ function pmpathfuzzy() {
             $dir .= "/";
 
             next if !-d $dir;
+            next if $dir =~ /^\./;
 
             find(
                 sub {
@@ -501,7 +502,7 @@ function pmpathfuzzy() {
         print STDERR "too many matches:\n";
 
         foreach (%matches) {
-            print STDERR join("\n", keys %matches) . "\n";
+            print STDERR join("\n", keys %matches);
             exit 1;
         }
 
@@ -518,7 +519,8 @@ function vii() {
 
     local file=$(pmpathfuzzy $1)
 
-    if ! [[ $file ]] ; then
+echo $file
+    if ! [[ $file ]] || ! [[ -e $file ]] ; then
         return 1
     fi
 
