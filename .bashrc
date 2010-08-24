@@ -519,7 +519,6 @@ function vii() {
 
     local file=$(pmpathfuzzy $1)
 
-echo $file
     if ! [[ $file ]] || ! [[ -e $file ]] ; then
         return 1
     fi
