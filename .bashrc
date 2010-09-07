@@ -466,7 +466,6 @@ function pmpathfuzzy() {
 
         my %matches       = ();
         my %fuzzy_matches = ();
-
         foreach my $dir (@dirs) {
 
             $dir .= "/";
@@ -507,6 +506,11 @@ function pmpathfuzzy() {
             exit 0;
         }
 
+        if( ! %matches && keys %fuzzy_matches == 1) {
+            print values %fuzzy_matches;
+            exit 0;
+        }
+
         print STDERR "too many matches:\n";
 
         foreach (%matches) {
@@ -527,7 +531,8 @@ function vii() {
 
     local file=$(pmpathfuzzy $1)
 
-    if ! [[ $file ]] || ! [[ -e $file ]] ; then
+    if ! [[ -e $file ]] ; then
+        ERROR "no such file: $file"
         return 1
     fi
 
