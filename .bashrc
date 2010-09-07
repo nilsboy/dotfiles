@@ -209,6 +209,10 @@ alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 
+function f() {
+    find -iname "*$@*"
+}
+
 if [[ $(type -p tree) ]] ; then
     alias t="tree --noreport --dirsfirst"
     alias td="tree --noreport -d"
