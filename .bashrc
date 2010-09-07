@@ -232,6 +232,10 @@ function rgrepi() {
     grep -rsin --include="$@"
 }
 
+function rgrepe() {
+    grep -rsin --include=*."$@"
+}
+
 # nice calculator
 function calc(){
     echo "$@"|bc -l;
