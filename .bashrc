@@ -476,7 +476,7 @@ function pmpathfuzzy() {
             find(
                 sub {
                     my $abs = $File::Find::name;
-                    my $file = $abs;
+                    my $file = $dir . $abs;
 
                     return if $file !~ /\.pm$/;
                     return if -d $file;
@@ -511,16 +511,17 @@ function pmpathfuzzy() {
             exit 0;
         }
 
-        print STDERR "too many matches:\n";
-
-        foreach (%matches) {
-            print STDERR join("\n", keys %matches) . "\n";
-            exit 1;
+        if (%matches) {
+            print STDERR "\n--- exact matches " , "-" x 62, "\n";
+            print STDERR join("\n", sort keys %matches) . "\n";
         }
 
-        if (%fuzzy_matches) {
-            print STDERR join("\n", keys %fuzzy_matches) . "\n";
+        if (!%matches && %fuzzy_matches) {
+            print STDERR "\n--- fuzzy matches ", "-" x 62, "\n";
+            print STDERR join("\n", sort keys %fuzzy_matches) . "\n";
         }
+
+        print STDERR "-" x 80, "\n\n";
 
         exit 1;
 EOF
