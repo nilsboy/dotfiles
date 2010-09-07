@@ -514,7 +514,7 @@ function pmpathfuzzy() {
         print STDERR "too many matches:\n";
 
         foreach (%matches) {
-            print STDERR join("\n", keys %matches);
+            print STDERR join("\n", keys %matches) . "\n";
             exit 1;
         }
 
@@ -530,6 +530,10 @@ EOF
 function vii() {
 
     local file=$(pmpathfuzzy $1)
+
+    if  ! [[ $file ]] ; then
+        return 1;
+    fi
 
     if ! [[ -e $file ]] ; then
         ERROR "no such file: $file"
