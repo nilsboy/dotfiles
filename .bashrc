@@ -205,6 +205,7 @@ alias lc="ls -rtlhc"
 alias xargs="xargs -I {}"
 
 alias apts="apt-cache search"
+alias aptw="apt-cache show"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
