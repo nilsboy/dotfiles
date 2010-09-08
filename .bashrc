@@ -526,7 +526,11 @@ function pmpathfuzzy() {
             print STDERR join("\n", sort keys %fuzzy_matches) . "\n";
         }
 
-        print STDERR "-" x 80, "\n\n";
+        if(! %matches && ! %fuzzy_matches) {
+            print STDERR "nothing found.\n";
+        } else {
+            print STDERR "-" x 80, "\n\n";
+        }
 
         exit 1;
 EOF
