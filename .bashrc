@@ -464,7 +464,9 @@ function pmpathfuzzy() {
         no warnings 'uninitialized';
         use File::Find;
 
-        my $module = $ARGV[0] || die "specify module.";
+        @ARGV || die "specify module.";
+
+        my $module = join("/", @ARGV);
         $module =~ s{::}{/}g;
 
         my @dirs = ( split( ":", $ENV{PERL5LIB} ), @INC );
@@ -539,7 +541,7 @@ EOF
 # edit a lib via PERL5LIB
 function vii() {
 
-    local file=$(pmpathfuzzy $1)
+    local file=$(pmpathfuzzy "$@")
 
     if  ! [[ $file ]] ; then
         return 1;
