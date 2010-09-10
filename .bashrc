@@ -552,7 +552,7 @@ function vii() {
         return 1
     fi
 
-    vi $file
+    command vi $file
 }
 
 # edit executable within path
@@ -569,7 +569,7 @@ function vib() {
         return 1
     fi
 
-    vi $file
+    command vi $file
 }
 
 ### history ####################################################################
