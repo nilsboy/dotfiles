@@ -555,6 +555,23 @@ function vii() {
     vi $file
 }
 
+# edit executable within path
+function vib() {
+
+    local file=$(type -p "$@")
+
+    if  ! [[ $file ]] ; then
+        return 1;
+    fi
+
+    if ! [[ -e $file ]] ; then
+        ERROR "no such file: $file"
+        return 1
+    fi
+
+    vi $file
+}
+
 ### history ####################################################################
 
 # ignore commands  for history that start  with a space
