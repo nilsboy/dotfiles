@@ -286,10 +286,17 @@ function v() {
 
 if [[ $(type -p pstree) ]] ; then
     alias pstree="pstree -A"
-    alias p="pstree -ap | grep -v "{" | less -S"
 else
     alias pstree="ps axjf"
 fi
+
+function p() {
+    if [[ $@ ]] ; then
+        pstree -ap | grep -v "{" | less -S | grep -i "$@"
+    else
+        pstree -ap | grep -v "{" | less -S
+    fi
+}
 
 # translate a word
 function tl() {
