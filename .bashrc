@@ -582,13 +582,7 @@ function vii() {
     local file=$(pmpathfuzzy "$@")
 
     if  ! [[ $file ]] ; then
-        ERROR "no such file: $@"
         return 1;
-    fi
-
-    if ! [[ -e $file ]] ; then
-        ERROR "file des not exist: $@"
-        return 1
     fi
 
     command vi $file
@@ -600,13 +594,7 @@ function vib() {
     local file=$(binpathfuzzy "$@")
 
     if  ! [[ $file ]] ; then
-        ERROR "no such file: $@"
         return 1;
-    fi
-
-    if ! [[ -e $file ]] ; then
-        ERROR "file des not exist: $@"
-        return 1
     fi
 
     command vi $file
