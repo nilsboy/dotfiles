@@ -375,6 +375,14 @@ function timestamp2date() {
     perl -MPOSIX -e 'print strftime("%F %T", localtime('$timestamp')) . "\n"'
 }
 
+function dos2unix() {
+    perl -i -pe 's/\r//g' "$@"
+}
+
+function unix2dos() {
+    perl -i -pe 's/\n/\r\n/' "$@"
+}
+
 ### xorg #######################################################################
 
 function xtitle () {
