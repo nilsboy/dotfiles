@@ -463,20 +463,31 @@ function pmpath() {
 EOF
 }
 
-# fuzzy find a lib via PERL5LIB
-function pmpathfuzzy() {
+# fuzzy find
+function _pathfuzzyfind() {
 
      perl - $@ <<'EOF'
         use warnings;
         no warnings 'uninitialized';
         use File::Find;
 
+        my $to_find = shift @ARGV;
+
+        my $dirs = $ENV{$to_find};
+
         @ARGV || die "specify module.";
 
         my $module = join("/", @ARGV);
         $module =~ s{::}{/}g;
 
-        my @dirs = ( split( ":", $ENV{PERL5LIB} ), @INC );
+        my @dirs = ( split( ":", $dirs ) );
+        push(@dirs, @INC) if $to_find eq "PERL5LIB";
+
+        my $exact_match = $module;
+
+        if($to_find eq "PERL5LIB") {
+            $exact_match = "$module\.pm";
+        }
 
         my %matches       = ();
         my %fuzzy_matches = ();
@@ -492,14 +503,24 @@ function pmpathfuzzy() {
                     my $abs = $File::Find::name;
                     my $file = $dir . $abs;
 
-                    return if $file !~ /\.pm$/;
+                    if($to_find eq "PERL5LIB") {
+                        return if $file !~ /\.pm$/;
+                    } else {
+                        $file = $abs;
+
+                        my $top_dir_depth = $dir =~ tr!/!!;
+                        my $depth = $file =~ tr!/!!;
+
+                        return if $depth != $top_dir_depth;
+                    }
+
                     return if -d $file;
 
                     $file =~ s/^$dir(\/i486-linux-gnu-thread-multi\/)*//g;
 
                     return if $file !~ /$module/i;
 
-                    if($file =~ /(\/)*$module\.pm$/i) {
+                    if($file =~ /(\/)*$exact_match$/i) {
                         $matches{$file} = $abs;
                         return;
                     }
@@ -515,23 +536,23 @@ function pmpathfuzzy() {
             exit 0;
         }
 
-        if(exists $matches{"$module\.pm"}) {
-            print $matches{"$module\.pm"};
+        if(exists $matches{$exact_match}) {
+            print $matches{$exact_match};
             exit 0;
         }
 
         if( ! %matches && keys %fuzzy_matches == 1) {
-            print values %fuzzy_matches;
+            print STDERR values %fuzzy_matches;
             exit 0;
         }
 
         if (%matches) {
-            print STDERR "\n--- exact matches " , "-" x 62, "\n";
+            print STDERR "\n---- exact matches " , "-" x 61, "\n";
             print STDERR join("\n", sort keys %matches) . "\n";
         }
 
         if (!%matches && %fuzzy_matches) {
-            print STDERR "\n--- fuzzy matches ", "-" x 62, "\n";
+            print STDERR "\n---- fuzzy matches ", "-" x 61, "\n";
             print STDERR join("\n", sort keys %fuzzy_matches) . "\n";
         }
 
@@ -543,6 +564,16 @@ function pmpathfuzzy() {
 
         exit 1;
 EOF
+}
+
+# fuzzy find a lib via $PERL5LIB
+function pmpathfuzzy() {
+    _pathfuzzyfind PERL5LIB "$@"
+}
+
+# fuzzy find a bin via $PATH
+function binpathfuzzy() {
+    _pathfuzzyfind PATH "$@"
 }
 
 # edit a lib via PERL5LIB
@@ -562,10 +593,10 @@ function vii() {
     command vi $file
 }
 
-# edit executable within path
+# edit a lib via PERL5LIB
 function vib() {
 
-    local file=$(type -p "$@")
+    local file=$(binpathfuzzy "$@")
 
     if  ! [[ $file ]] ; then
         return 1;
