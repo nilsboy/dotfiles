@@ -520,7 +520,7 @@ function _pathfuzzyfind() {
 
                     return if $file !~ /$module/i;
 
-                    if($file =~ /(\/)*$exact_match$/i) {
+                    if($file =~ /^((\/)*\/|)$exact_match$/i) {
                         $matches{$file} = $abs;
                         return;
                     }
@@ -542,7 +542,7 @@ function _pathfuzzyfind() {
         }
 
         if( ! %matches && keys %fuzzy_matches == 1) {
-            print STDERR values %fuzzy_matches;
+            print values %fuzzy_matches;
             exit 0;
         }
 
@@ -582,11 +582,12 @@ function vii() {
     local file=$(pmpathfuzzy "$@")
 
     if  ! [[ $file ]] ; then
+        ERROR "no such file: $file"
         return 1;
     fi
 
     if ! [[ -e $file ]] ; then
-        ERROR "no such file: $file"
+        ERROR "file des not exist: $file"
         return 1
     fi
 
@@ -599,11 +600,12 @@ function vib() {
     local file=$(binpathfuzzy "$@")
 
     if  ! [[ $file ]] ; then
+        ERROR "no such file: $file"
         return 1;
     fi
 
     if ! [[ -e $file ]] ; then
-        ERROR "no such file: $file"
+        ERROR "file des not exist: $file"
         return 1
     fi
 
