@@ -368,6 +368,19 @@ function reloadbashrc() {
     . ~/.bashrc
 }
 
+function updatevimconfig() {
+
+    for dir in ~/.vim/colors  ~/.vim/plugin ; do
+        if [ ! -d $dir ] ; then
+            mkdir -p $dir
+        fi
+    done
+
+    wget -qO ~/.vimrc http://github.com/evenless/etc/raw/master/.vimrc
+    wget -qO ~/.vim/colors/autumnleaf256.vim http://github.com/evenless/etc/raw/master/.vim/colors/autumnleaf256.vim
+    wget -qO ~/.vim/plugin/taglist.vim http://github.com/evenless/etc/raw/master/.vim/plugin/taglist.vim
+}
+
 # alias quote="fmt -s | perl -pe 's/^/> /g'"
 
 function timestamp2date() {
