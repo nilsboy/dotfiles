@@ -463,6 +463,7 @@ alias mysql="mysql --show-warnings"
 # * Devel::Cover for test coverage
 # * One liners
 #     http://blog.ksplice.com/2010/05/top-10-perl-one-liner-tricks/
+# * DBI->trace(2 => "/tmp/dbi.trace");
 
 # for cpan
 export FTP_PASSIVE=1
@@ -1347,6 +1348,7 @@ function parent() {
 #       grep -i "dot \-Tsvg" |\ 
 #       perl -ane '($h,$m,$s) = split /:/,$F[13];
 #          if ($m > 30) { print "killing: " . $_; kill(9, $F[3]) };'
+# * disown - remove jobs from current shell
 
 # NOTES ON networking
 # * netstat -tapn
@@ -1374,6 +1376,7 @@ function parent() {
 # * mysql full join: left join union right join
 # * split: SUBSTRING_INDEX(realaccount,'@',-1)
 # * convert string to date: STR_TO_DATE(created, "%d.%m.%y")
+# * NULL does no match regex use: (f IS NULL OR f NOT REGEXP '^regex$')
 
 # NOTES ON sftp
 # * use specifc key file
@@ -1428,7 +1431,7 @@ function note() {
             $BASH_SOURCE | sort
         return
     fi
-    
+
     perl -0777 -ne \
       'foreach(/^(# NOTES ON '$search'.*?\n\n)/imsg){ s/# //g; print "\n$_" }' \
         $BASH_SOURCE
