@@ -291,11 +291,14 @@ else
 fi
 
 function p() {
+
+    local args
+
     if [[ $@ ]] ; then
-        pstree -ap | grep -v "{" | less -S | grep -i "$@"
-    else
-        pstree -ap | grep -v "{" | less -S
+        args=" +/$@"
     fi
+
+    pstree -aphl | grep -v "{" | less -R $args
 }
 
 # translate a word
