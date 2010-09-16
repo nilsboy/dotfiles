@@ -233,14 +233,6 @@ if [ -f /etc/bash_completion ]; then
     . /etc/bash_completion
 fi
 
-function rgrepi() {
-    grep -rsin --include="$@"
-}
-
-function rgrepe() {
-    grep -rsin --include=*."$@"
-}
-
 # nice calculator
 function calc(){
     echo "$@"|bc -l;
@@ -323,6 +315,21 @@ function running() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
 
 export GREP_OPTIONS="--color=auto"
 alias listgrep="grep -xFf"
+
+# a simple grep without need for quoting or excluding dot files
+alias g="set -f && _g"
+function _g() {
+    grep -rsinP --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@"
+    set +f
+}
+
+function rgrepi() {
+    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include="$@"
+}
+
+function rgrepe() {
+    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include=*."$@"
+}
 
 if [ -r ~/.bashrc_local ] ; then
     source ~/.bashrc_local
