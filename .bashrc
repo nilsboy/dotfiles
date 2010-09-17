@@ -395,7 +395,8 @@ function updatevimconfig() {
 
 function timestamp2date() {
     local timestamp=$1
-    perl -MPOSIX -e 'print strftime("%F %T", localtime('$timestamp')) . "\n"'
+    perl -MPOSIX -e \
+    'print strftime("%F %T", localtime(substr("'$timestamp'", 0, 10))) . "\n"'
 }
 
 function dos2unix() {
