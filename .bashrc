@@ -210,10 +210,6 @@ alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 
-function f() {
-    find -iname "*$@*"
-}
-
 if [[ $(type -p tree) ]] ; then
     alias t="tree --noreport --dirsfirst"
     alias td="tree --noreport -d"
@@ -329,6 +325,10 @@ function rgrepi() {
 
 function rgrepe() {
     grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include=*."$@"
+}
+
+function f() {
+    find . \! -regex ".*\/\..*" -iname "*$@*"
 }
 
 if [ -r ~/.bashrc_local ] ; then
