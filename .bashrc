@@ -328,7 +328,7 @@ function _g() {
 function gi() {
 
     if [[ $# < 2 ]] ; then
-        echo "usage: gi [filename wildcard] [search term]" >&2
+        echo "usage: gi [filename pattern] [search term]" >&2
         return 1
     fi
 
@@ -339,7 +339,7 @@ function gi() {
 function f() {
 
     if [[ ! $@ ]] ; then
-        echo "usage: f [filename wildcard]" >&2
+        echo "usage: f [filename pattern]" >&2
         return 1
     fi
 
