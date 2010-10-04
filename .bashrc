@@ -198,7 +198,7 @@ alias mv="mv -i"
 alias less="less -i"
 alias crontab="crontab -i"
 
-alias j="jobs"
+alias j="jobs -l"
 alias l="ls -lh"
 alias lr="ls -rtlh"
 alias lc="ls -rtlhc"
