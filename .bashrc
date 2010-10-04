@@ -315,20 +315,29 @@ alias listgrep="grep -xFf"
 # a simple grep without need for quoting or excluding dot files
 alias g="set -f && _g"
 function _g() {
-    grep -rsinP --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@"
+
+    if [[ ! $@ ]] ; then
+        echo "specify search term" >&2
+        return 1
+    fi
+
+    grep -rsinP --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@" .
     set +f
 }
 
-function rgrepi() {
-    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include="$@"
-}
+function gi() {
 
-function rgrepe() {
-    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include=*."$@"
+    if [[ $# < 2 ]] ; then
+        echo "specify search term" >&2
+        return 1
+    fi
+
+    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include="$@" .
+    set +f
 }
 
 function f() {
-    find . \! -regex ".*\/\..*" -iname "*$@*"
+    find . \! -regex ".*\/\..*" -iname "*$@*" | grep -i "$@"
 }
 
 if [ -r ~/.bashrc_local ] ; then
