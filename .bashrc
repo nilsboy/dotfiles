@@ -317,7 +317,7 @@ alias g="set -f && _g"
 function _g() {
 
     if [[ ! $@ ]] ; then
-        echo "specify search term" >&2
+        echo "usage: g [search term]" >&2
         return 1
     fi
 
@@ -328,7 +328,7 @@ function _g() {
 function gi() {
 
     if [[ $# < 2 ]] ; then
-        echo "specify search term" >&2
+        echo "usage: gi [filename wildcard] [search term]" >&2
         return 1
     fi
 
@@ -337,6 +337,12 @@ function gi() {
 }
 
 function f() {
+
+    if [[ ! $@ ]] ; then
+        echo "usage: f [filename wildcard]" >&2
+        return 1
+    fi
+
     find . \! -regex ".*\/\..*" -iname "*$@*" | grep -i "$@"
 }
 
