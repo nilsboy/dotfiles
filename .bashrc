@@ -858,22 +858,22 @@ alias fixssh="source ~/.ssh_agent_env"
 alias nosshagent="grabssh && unset SSH_AUTH_SOCK SSH_CLIENT SSH_CONNECTION SSH_TTY"
 
 function _ssh_alias() {
-    
+
     local IFS=$'\n'
-    
+
     local cmd=$(perl - $@ <<'EOF'
-        
+
         use strict;
         use warnings;
-        
+
         my($host, $port, @files) = @ARGV;
-        
+
         my $cmd = "ssh -p $port $host";
-        
+
         if(@files == 1) {
             push(@files, "tmp/");
         }
-        
+
         if(@files) {
             my $dst = pop(@files);
             my $src = join(" ", @files);
@@ -941,6 +941,10 @@ function sshget() {
 
 function sshput() {
     _sshputget $1 $2 put
+}
+
+function sshtunnel() {
+    xtitle "sshtunnel $@" && ssh -v -N -L "$@"
 }
 
 ### SCREEN #####################################################################
