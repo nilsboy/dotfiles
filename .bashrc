@@ -944,7 +944,34 @@ function sshput() {
 }
 
 function sshtunnel() {
-    xtitle "sshtunnel $@" && ssh -v -N -L "$@"
+
+    local  in=$1
+    local out=$2
+    local  gw=$3
+
+    if [[ $@ < 3 ]] ; then
+        echo "usage: sshtunnel [in_host:]in_port out_host:out_port user@gateway"
+        return 1
+    fi
+
+    local cmd="ssh -v -N -L $in:$out $gw"
+    echo -e $GREEN2"running: $cmd"$NO_COLOR2
+    xtitle "sshtunnel $cmd" && $cmd
+}
+
+function sslstrip() {
+
+    local  in=$1
+    local out=$2
+
+    if [[ $@ < 2 ]] ; then
+        echo "usage: sslstrip [in_host:]in_port out_host:out_port"
+        return 1
+    fi
+
+    local cmd="sudo stunnel -c -d $in -r $out -f"
+    echo -e $GREEN2"running: $cmd"$NO_COLOR2
+    xtitle "sslstrip $cmd" && $cmd
 }
 
 ### SCREEN #####################################################################
