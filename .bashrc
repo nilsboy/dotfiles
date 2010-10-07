@@ -946,11 +946,11 @@ function sshput() {
 function sshtunnel() {
 
     local  in=$1
-    local out=$2
-    local  gw=$3
+    local  gw=$2
+    local out=$3
 
     if [[ $@ < 3 ]] ; then
-        echo "usage: sshtunnel [in_host:]in_port out_host:out_port user@gateway"
+        echo "usage: sshtunnel [in_host:]in_port user@gateway out_host:out_port"
         return 1
     fi
 
