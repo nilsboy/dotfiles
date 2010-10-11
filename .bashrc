@@ -186,6 +186,21 @@ shopt -s nocaseglob
 bind 'set bell-style none'
 # xset b off
 
+# add slash to symlinks to directoryies on tab completion
+bind 'set mark-symlinked-directories on'
+
+# skip directories starting with a dot from tab completion
+bind 'set match-hidden-files off'
+
+# keep original version of edited history entries
+bind 'set revert-all-at-newline on'
+
+# tab completion with single tab (don't ring the bell)
+bind 'set show-all-if-ambiguous on'
+
+# don't duplicate completed part off already complete term when within a term
+bind 'set skip-completed-text on'
+
 # remove domain from hostname if necessary
 HOSTNAME=${HOSTNAME%%.*}
 
