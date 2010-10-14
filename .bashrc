@@ -457,15 +457,8 @@ function xtitle () {
 if [[ $DISPLAY ]] ; then
 
     if [[ $(type -p xmodmap) ]] ; then
-
-        # disable caps lock
-        xmodmap -e "remove lock = Caps_Lock"
-
-        # let caps lock behave like shift
-        # xmodmap -e "add shift = Caps_Lock"
-
         # let caps lock behave like Escape
-        xmodmap -e "keysym Caps_Lock = Escape"
+        xmodmap -e 'clear Lock' -e 'keycode 0x42 = Escape'
     fi
 
     if [[ $(type -p wmctrl) ]] ; then
