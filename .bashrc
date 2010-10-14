@@ -462,7 +462,10 @@ if [[ $DISPLAY ]] ; then
         xmodmap -e "remove lock = Caps_Lock"
 
         # let caps lock behave like shift
-        xmodmap -e "add shift = Caps_Lock"
+        # xmodmap -e "add shift = Caps_Lock"
+
+        # let caps lock behave like Escape
+        xmodmap -e "keysym Caps_Lock = Escape"
     fi
 
     if [[ $(type -p wmctrl) ]] ; then
