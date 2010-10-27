@@ -24,81 +24,139 @@ export PERL5LIB
 
 ################################################################################
 
-function normalize_file_names() {
+function xmv () {
 
     local IFS=$'\n'
 
     perl - $@ <<'EOF'
-        use strict;
-        use warnings;
-        no warnings 'uninitialized';
-        use File::Copy;
-        use File::Basename;
+use strict;
+use warnings;
+use File::Basename;
 
-        my $for_real = 0;
+use Getopt::Long;
+Getopt::Long::Configure('bundling');
 
-        FOR_REAL:
+my ($op, $include_directories, $dry, $normalize);
+$dry = 1;
 
-        my %dsts = ();
-        foreach my $src_abs (@ARGV) {
+if (-t STDIN && !@ARGV) {
+    die "Usage: $0 [-i] [-d] [-n] [-e perlexpr] [filenames]\n";
+}
 
-            my $dir = dirname($src_abs) . "/";
-            my $dst = basename($src_abs);
+GetOptions(
+    'x|execute' => sub { $dry = 0 },
+    'd|include-directories' => \$include_directories,
+    'n|normalize'           => \$normalize,
+    'e|execute-perl=s'      => \$op,
+);
 
-            $dst =~ s/\n//g;
+if (!@ARGV) {
+    @ARGV = <STDIN>;
+    chop(@ARGV);
+}
 
-            my $type;
-            if ( !-d $src_abs ) {
-                if ( $dst =~ /^(.+)\.(.+?)$/ ) {
-                    $dst  = $1;
-                    if($2) {
-                        $type = "." . lc($2);
-                    }
-                }
-            }
+my %will  = ();
+my %was   = ();
+my $abort = 0;
+my $COUNT = 0;
 
-            $dst =~ s/www\.[^\.]+\.[^\.]+//g;
+for (@ARGV) {
 
-            $dst =~ s/[^\w\.]+/_/g;
-            $dst =~ s/^_+//g;
+    next if /^\.{1,2}$/;
 
-            $dst =~ s/[\._]+$//g;
+    my $was = $_;
+    $_ = normalize($_) if $normalize;
 
-            $dst =~ s/[\._]{2,}/_/g;
-            $dst =~ s/[\.]+/\./g;
-            $dst =~ s/^\.+//g;
+    my $DN = dirname($_);
+    my $FN = basename($_);
+    $COUNT++;
+    $COUNT = sprintf("%08d", $COUNT);
 
-            die "file empty for '$src_abs'" if !$dst;
+    if ($op) {
+        eval $op;
+        die $@ if $@;
+    }
 
-            if ( $type && !-d $src_abs ) {
-                $dst = $dst . $type;
-            }
+    my $will = $_;
 
-            my $dst_abs = $dir . $dst;
+    if (!-e $was) {
+        warn "no such file: '$was'";
+        $abort = 1;
+        next;
+    }
 
-            next if $dst eq basename($src_abs);
+    if (-d $was && !$include_directories) {
+        warn "is a directory: '$was'.";
+        $abort = 1;
+        next;
+    }
 
-            die "file already exists: $dst_abs" if -e $dst_abs;
+    my $other = $will{$will} if exists $will{$will};
+    if ($other) {
+        warn "name '$will' for '$was' already taken by '$other'.";
+        $abort = 1;
+        next;
+    }
 
-            die "2 files normalized to: $dst_abs:\n   "
-                . $dsts{$dst_abs} . "\n   " . $src_abs . "\n"
-                if exists $dsts{$dst_abs};
+    next if $will eq $was;
 
-            $dsts{$dst_abs} = $src_abs;
+    if (-e $will) {
+        warn "file '$will' already exists.";
+        $abort = 1;
+        next;
+    }
 
-            if ($for_real) {
-                print("mv $src_abs -> $dst_abs\n");
-                move( $src_abs, $dst_abs ) || die($!);
-            }
-        }
+    $will{$will} = $was;
+    $was{$was}   = $will;
+}
 
-        if ( !$for_real ) {
-            $for_real = 1;
-            goto FOR_REAL;
-        }
+exit 1 if $abort;
+
+foreach my $was (sort keys %was) {
+
+    my $will = $was{$was};
+
+    print "moving '$was' -> '$will'\n";
+
+    next if $dry;
+
+    system("mv", $was, $will) && die $!;
+}
+
+sub normalize {
+    my ($abs) = @_;
+
+    my $dir  = dirname($abs);
+    my $file = basename($abs);
+    my $ext  = "";
+
+    if (!-d $abs && $file =~ /^(.+)(\..+?)$/) {
+        ($file, $ext) = ($1, $2);
+    }
+
+    $_ = $file;
+
+    s/www\.[^\.]+\.[^\.]+//g;
+
+    s/[^\w\.]+/_/g;
+
+    s/[\.]+/\./g;
+    s/[_]+/_/g;
+    s/[\._]{2,}/\./g;
+
+    s/^[\._]+//g;
+    s/[\._]+$//g;
+
+    if (!$_) {
+        warn "empty replacement for: '$file$ext'";
+        $abort = 1;
+    }
+
+    return $_ . lc($ext);
+}
 EOF
 }
-export -f normalize_file_names
+export -f xmv
 
 function replace() {
 
