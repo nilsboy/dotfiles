@@ -39,10 +39,6 @@ Getopt::Long::Configure('bundling');
 my ($op, $include_directories, $dry, $normalize);
 $dry = 1;
 
-if (-t STDIN && !@ARGV) {
-    die "Usage: $0 [-i] [-d] [-n] [-e perlexpr] [filenames]\n";
-}
-
 GetOptions(
     'x|execute' => sub { $dry = 0 },
     'd|include-directories' => \$include_directories,
@@ -53,6 +49,10 @@ GetOptions(
 if (!@ARGV) {
     @ARGV = <STDIN>;
     chop(@ARGV);
+}
+
+if (!@ARGV) {
+    die "Usage: xmv [-x] [-d] [-n] [-e perlexpr] [filenames]\n";
 }
 
 my %will  = ();
