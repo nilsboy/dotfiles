@@ -599,6 +599,7 @@ function _pathfuzzyfind() {
 
         my @dirs = ( split( ":", $dirs ) );
         push(@dirs, @INC) if $to_find eq "PERL5LIB";
+        push(@dirs, "lib") if $to_find eq "PERL5LIB";
 
         my $exact_match = $module;
 
