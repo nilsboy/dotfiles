@@ -1504,6 +1504,8 @@ function parent() {
 # NOTES ON sftp
 # * use specifc key file
 #     sftp -o IdentityFile=~/.ssh/$keyfile $user@$host
+# * use password
+#     ltp -u login,pass sftp://host
 
 # NOTES ON user management
 # * newgrp - log in to a new group
