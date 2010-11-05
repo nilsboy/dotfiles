@@ -788,7 +788,12 @@ function h() {
         return
     fi
 
-    grep -i "$*" $_bashrc_eternal_history_file | tail -100
+    if [[ $1 == d ]] ; then
+       tail -100 $_bashrc_eternal_history_file | \
+            cut -d \  -f 5 | sort -u | perl -pe 's/"//g' 
+    else
+        grep -i "$*" $_bashrc_eternal_history_file | tail -100
+    fi
 }
 
 ### network ####################################################################
