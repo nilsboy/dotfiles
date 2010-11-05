@@ -158,6 +158,11 @@ EOF
 }
 export -f xmv
 
+function normalize_file_names() {
+    xmv -nx "$@"
+}
+export -f normalize_file_names
+
 function replace() {
 
     local search=$1
