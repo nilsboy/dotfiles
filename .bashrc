@@ -443,9 +443,13 @@ function _check_env() {
 
 function updatebashrc() {
 
+    wget -q --no-check-certificate \
+        -O /tmp/$$.bashrc http://github.com/evenless/etc/raw/master/.bashrc \
+        || return 1
+
     bashrc_clean_environment
 
-    wget -qO ~/.bashrc http://github.com/evenless/etc/raw/master/.bashrc
+    mv -f /tmp/$$.bashrc ~/.bashrc
 
     . ~/.bashrc
 }
