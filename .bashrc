@@ -1534,20 +1534,22 @@ function parent() {
 
 # NOTES ON ubuntu
 # * Releases:
-#      4.10       Warty Warthog     2004-10-20
-#      5.04       Hoary Hedgehog    2005-04-08
-#      5.10       Breezy Badger     2005-10-13
-#      6.06 LTS   Dapper Drake      2006-06-01
-#      6.10       Edgy Eft          2006-10-26
-#      7.04       Feisty Fawn       2007-04-19
-#      7.10       Gutsy Gibbon      2007-10-18
-#      8.04 LTS   Hardy Heron       2008-04-24
-#      8.10       Intrepid Ibex     2008-10-30
-#      9.04       Jaunty Jackalope  2009-04-23
-#      9.10       Karmic Koala      2009-10-29
-#     10.04 LTS   Lucid Lynx        2010-04-29
-#     10.10       Maverick Meerkat  2010-10-10
-#     11.04       Natty Narwhal     2011-04-28
+#                                                  Supported until
+#                                                Desktop      Server
+#      4.10       Warty Warthog     2004-10-20   2006-04-30
+#      5.04       Hoary Hedgehog    2005-04-08   2006-10-31
+#      5.10       Breezy Badger     2005-10-13   2007-04-13
+#      6.06 LTS   Dapper Drake      2006-06-01   2009-07-14   2011-06
+#      6.10       Edgy Eft          2006-10-26   2008-04-25
+#      7.04       Feisty Fawn       2007-04-19   2008-10-19
+#      7.10       Gutsy Gibbon      2007-10-18   2009-04-18
+#      8.04 LTS   Hardy Heron       2008-04-24   2011-04      2013-04
+#      8.10       Intrepid Ibex     2008-10-30   2010-04-30
+#      9.04       Jaunty Jackalope  2009-04-23   2010-10-23
+#      9.10       Karmic Koala      2009-10-29   2011-04
+#     10.04 LTS   Lucid Lynx        2010-04-29   2013-04      2015-04
+#     10.10       Maverick Meerkat  2010-10-10   2012-04
+#     11.04       Natty Narwhal     2011-04-28   2012-10
 
 # NOTES ON vim
 # * :help quickref
