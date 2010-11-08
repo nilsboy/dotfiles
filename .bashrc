@@ -1366,7 +1366,7 @@ function _init_bash() {
     fi
 
     case $(ps -p $PPID -o comm=) in
-        screen)
+        screen|screen.real)
             _simple_prompt
         ;;
         *)
