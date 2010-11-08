@@ -796,7 +796,8 @@ function h() {
        tail -100 $_bashrc_eternal_history_file | \
             cut -d \  -f 5 | sort -u | perl -pe 's/"//g' 
     else
-        grep -i "$*" $_bashrc_eternal_history_file | tail -100
+        grep -i "$*" $_bashrc_eternal_history_file | tail -100 \
+            | grep -i "$*"
     fi
 }
 
