@@ -1363,6 +1363,10 @@ function _init_bash() {
         if [[ -r $REMOTE_HOME/.screenrc ]] ; then
             alias screen="screen -c $REMOTE_HOME/.screenrc"
         fi
+
+        if [[ -d "$REMOTE_HOME" ]] ; then
+            cd "$REMOTE_HOME"
+        fi
     fi
 
     case $(ps -p $PPID -o comm=) in
