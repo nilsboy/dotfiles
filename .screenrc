@@ -1,0 +1,133 @@
+### MISC #######################################################################
+
+# no startup message
+startup_message off
+
+# add entry to utmp database
+deflogin on
+
+# Automatically detach on hangup
+autodetach on
+
+# visual bell
+vbell off
+
+# define a bigger scrollback, default is 100 lines
+defscrollback 1000
+
+# restore terminal content when exiting fullscreen app
+altscreen on
+
+# case-insensitive searches in copy mode
+ignorecase on
+
+# set the title of created shells
+shelltitle ""
+
+# monitor all new windows for activity
+# defmonitor on
+
+# The vt100 description does not mention "dl". *sigh*
+termcapinfo vt100 dl=5\E[M
+
+# set these terminals up to be 'optimal' instead of vt100
+termcapinfo xterm*|linux*|rxvt*|Eterm*|gnome-term* OP
+
+# Change the xterm initialization string from is2=\E[!p\E[?3;4l\E[4l\E>
+# (This fixes the "Aborted because of window size change" konsole symptoms found
+#  in bug #134198)
+termcapinfo xterm 'is=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;4;6l'
+
+# xterm scrollbar fix
+termcapinfo xterm ti@:te@
+
+# status line
+caption always "%{w3}%H%{.3w}  %-w%{.0w}%n %{-}%+w %-18=%{..y}"
+
+# show window status
+# caption always "%{w3}%H%{.3w}  %-Lw%{.0w}%f%n %{-}%+Lw %-18=%{..y}"
+
+# terminfo and termcap for nice 256 color terminal
+# allow bold colors - necessary for some reason
+attrcolor b ".I"
+
+# tell screen how to set colors. AB = background, AF=foreground
+termcapinfo xterm 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+
+# erase background with current bg color
+defbce "on"
+
+# display notification of background window activity
+activity "%C -> %n%f %t activity!"
+
+# pass on the "beep" (CTRL-G) by adding a '~':
+bell "%C -> %n%f %t bell!~"
+
+# message displayed timeout in seconds
+# msgwait -1
+
+# If a window goes unresponsive, don't block the whole session waiting for it.
+nonblock on
+
+### KEYBINDINGS ################################################################
+
+# Use C-p as the escape sequence, instead of C-a.
+escape ^pp
+
+bind 'K' kill
+bind 'I' login on
+bind 'O' login off
+bind '}' history
+
+bind 'P' colon "^p"
+
+# kill all open windows
+bind q quit
+
+# Window numbering starts at 1, not 0
+bind c screen 1
+bind 0 select 10
+
+# on Debian backspace should send char `\177':
+bindkey -k kb stuff "\177"
+
+# bindkey -m -k kN stuff ^D
+# bindkey -m -k kP stuff ^U
+bindkey -k kh copy
+
+# bind .  dumptermcap # default
+  bind .
+# bind ^\ quit        # default
+  bind ^\
+# bind \\ quit        # default
+  bind \\
+
+bindkey -k k1 select 1
+bindkey -k k2 select 2
+bindkey -k k3 select 3
+bindkey -k k4 select 4
+bindkey -k k5 select 5
+bindkey -k k6 select 6
+bindkey -k k7 select 7
+bindkey -k k8 select 8
+bindkey -k k9 select 9
+bindkey -k k; select 10
+bindkey -k F1 select 11
+bindkey -k F2 select 12
+
+### STARTUP SCREENS ############################################################
+
+screen 12
+screen 11
+screen 10
+screen  9
+screen  8
+screen  7
+screen  6
+screen  5
+screen  4
+screen  3
+screen  2
+screen  1
+
+### END ########################################################################
