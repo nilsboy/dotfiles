@@ -824,7 +824,7 @@ function set_remote_user_from_ssh_key() {
         return
     fi
 
-    local agent_key auth_key user_name auth_files
+    local agent_key auth_key auth_files
 
     if [[ -r ~/.ssh/authorized_keys ]] ; then
         auth_files="$HOME/.ssh/authorized_keys"
@@ -859,20 +859,19 @@ function set_remote_user_from_ssh_key() {
         $(ssh-add -L 2>/dev/null)
 EOF
 
-    if [[ $auth_key = "" ]] ; then
+    if [[ "$auth_key" =~ \[remote_user=(.+)\](.*)$ ]] ; then
+        export REMOTE_USER=${BASH_REMATCH[1]}
+        REMOTE_FULL_NAME=${BASH_REMATCH[2]}
+    else
         return
     fi
 
-    user_name=${auth_key#*= }
-    user_name=${user_name%% *}
-
-    if [[ $user_name = "" ]] ; then
-        return
+    if [[ $REMOTE_FULL_NAME ]] ; then
+        export REMOTE_FULL_NAME
     fi
 
-    if [ "$user_name" != $USER ] ; then
-        export REMOTE_USER=$user_name
-        export REMOTE_HOME=$HOME/$user_name
+    if [ "$REMOTE_USER" != $USER ] ; then
+        export REMOTE_HOME=$HOME/$REMOTE_USER
     fi
 }
 
