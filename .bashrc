@@ -746,7 +746,12 @@ unset HISTFILESIZE
 _bashrc_eternal_history_file=~/.bash_eternal_history
 
 if [ "$REMOTE_USER" != "" ] ; then
-    _bashrc_eternal_history_file=~/.bash_eternal_history_$REMOTE_USER
+
+    if [ -d "$REMOTE_HOME" ] ; then
+        _bashrc_eternal_history_file=$REMOTE_HOME/.bash_eternal_history
+    else
+        _bashrc_eternal_history_file=~/.bash_eternal_history_$REMOTE_USER
+    fi
 fi
 
 if [ ! -e $_bashrc_eternal_history_file ] ; then
@@ -871,7 +876,19 @@ EOF
     fi
 
     if [ "$REMOTE_USER" != $USER ] ; then
+
         export REMOTE_HOME=$HOME/$REMOTE_USER
+
+        if [[ ! -d "$REMOTE_HOME" ]] ; then
+            echo >&2
+            echo >&2
+            echo >&2
+            echo >&2
+            echo "remote home not found: $REMOTE_HOME" >&2
+            echo >&2
+            return 1
+        fi
+
     fi
 }
 
@@ -881,18 +898,16 @@ function load_remote_host_bash_rc() {
         return
     fi
 
-    local remote_bash_rc
-
     set_remote_user_from_ssh_key
 
     if [[ $REMOTE_USER = "" ]] ; then
         return
     fi
 
-    remote_bash_rc="$HOME/.bashrc_$REMOTE_USER"
+    local remote_bashrc="$REMOTE_HOME/.bashrc"
 
-    if [[ -e $remote_bash_rc ]] ; then
-        source $remote_bash_rc
+    if [[ -e $remote_bashrc ]] ; then
+        source $remote_bashrc
     fi
 }
 
@@ -904,7 +919,7 @@ function _export_identify_user_stuff() {
     > $HOME/.bashrc_identify_user_stuff
 
     cat >> $HOME/.bashrc_identify_user_stuff <<EOF
-load_remote_host_bash_rc 
+load_remote_host_bash_rc
 unset set_remote_user_from_ssh_key
 unset load_remote_host_bash_rc
 EOF
