@@ -218,6 +218,7 @@ function DIE() {
 
 [ -z "$PS1" ] && return
 
+export REMOTE_HOME=$HOME
 export PATH=~/bin:$PATH
 
 export LANG="de_DE.UTF-8"
@@ -443,13 +444,13 @@ function _check_env() {
 
 function updatebashrc() {
 
+    cd $REMOTE_HOME || return 1
+
     wget -q --no-check-certificate \
-        -O /tmp/$$.bashrc http://github.com/evenless/etc/raw/master/.bashrc \
+        http://github.com/evenless/etc/raw/master/.bashrc \
         || return 1
 
     bashrc_clean_environment
-
-    mv -f /tmp/$$.bashrc ~/.bashrc
 
     . ~/.bashrc
 }
@@ -747,11 +748,8 @@ _bashrc_eternal_history_file=~/.bash_eternal_history
 
 if [ "$REMOTE_USER" != "" ] ; then
 
-    if [ -d "$REMOTE_HOME" ] ; then
-        _bashrc_eternal_history_file=$REMOTE_HOME/.bash_eternal_history
-    else
-        _bashrc_eternal_history_file=~/.bash_eternal_history_$REMOTE_USER
-    fi
+
+    _bashrc_eternal_history_file=$REMOTE_HOME/.bash_eternal_history
 fi
 
 if [ ! -e $_bashrc_eternal_history_file ] ; then
@@ -877,16 +875,11 @@ EOF
 
     if [ "$REMOTE_USER" != $USER ] ; then
 
-        export REMOTE_HOME=$HOME/$REMOTE_USER
+        export REMOTE_HOME="$HOME/$REMOTE_USER"
 
-        if [[ ! -d "$REMOTE_HOME" ]] ; then
-            echo >&2
-            echo >&2
-            echo >&2
-            echo >&2
-            echo "remote home not found: $REMOTE_HOME" >&2
-            echo >&2
-            return 1
+        if [ ! -d "$REMOTE_HOME" ] ; then
+            echo "creating remote home: $REMOTE_HOME..." >&2
+            mkdir "$REMOTE_HOME" || exit 1
         fi
 
     fi
