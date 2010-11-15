@@ -1,29 +1,5 @@
 ### stuff also needed non-interactively ########################################
 
-### init perl lib path #########################################################
-
-unset PERL5LIB
-for dir in ~/{perllib,perl}/* ; do
-
-    if [ ! -d $dir ] ; then
-        continue;
-    fi
-
-    if [ -d $dir/lib ] ; then
-        dir=$dir/lib
-    fi
-
-    if [[ $PERL5LIB = "" ]] ; then
-        PERL5LIB=$dir
-    else
-        PERL5LIB=$PERL5LIB:$dir
-    fi
-done
-
-export PERL5LIB
-
-################################################################################
-
 function xmv () {
 
     local IFS=$'\n'
@@ -213,6 +189,12 @@ function DIE() {
 
     exit 1;
 }
+
+export MODULEBUILDRC=~/perl5/.modulebuildrc
+export PERL_MM_OPT=INSTALL_BASE=~/perl5
+export PATH=~/perl5/bin:$PATH
+
+export PERL5LIB=~/perl5/lib/perl5:~/perldev/lib
 
 ### for interactive shells only ################################################
 
