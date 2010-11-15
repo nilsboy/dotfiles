@@ -233,9 +233,6 @@ function switch_to_iso() { export LANG=de_DE@euro ; }
 export EDITOR=vi
 alias vi="DISPLAY= vi"
 
-# only load users vimrc
-export MYVIMRC=~/.vimrc
-
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
@@ -297,7 +294,7 @@ else
     alias td="find -type d | sort"
 fi
 
-alias remove_comments="perl -ne 'print if ! /^#/ && ! /^$/'"
+alias filter_remove_comments="perl -ne 'print if ! /^#/ && ! /^$/'"
 
 # make less more friendly for non-text input files, see lesspipe(1)
 if [ -x /usr/bin/lesspipe ] ; then
@@ -307,11 +304,6 @@ fi
 if [ -f /etc/bash_completion ]; then
     . /etc/bash_completion
 fi
-
-# nice calculator
-function calc(){
-    echo "$@"|bc -l;
-}
 
 # absolute path
 function abs() {
@@ -351,6 +343,10 @@ function v() {
     echo
 }
 
+function parent() {
+    echo $(ps -p $PPID -o comm=) "($PPID)"
+}
+
 if [[ $(type -p pstree) ]] ; then
     alias pstree="pstree -A"
 else
@@ -368,6 +364,8 @@ function p() {
     pstree -aphl | grep -v "{" | less -R $args
 }
 
+function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
+
 # translate a word
 function tl() {
     links -dump "http://dict.leo.org/ende?lang=de&search=$@" \
@@ -381,12 +379,6 @@ function find_older_than_days() {
 
 alias find_last_changes='find -type f -printf "%CF %CH:%CM %h/%f\n" | sort'
 alias find_largest_files='find -type f -mount -printf "%k %p\n" | sort -rg | cut -d \  -f 2- | xargs -I {} du -sh {} | less'
-
-# toplike output for a search in ps
-function running() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; } 
-
-# disable XON/XOFF flow control (^s/^q)
-# stty -ixon
 
 export GREP_OPTIONS="--color=auto"
 alias listgrep="grep -xFf"
@@ -523,11 +515,6 @@ function xtitle () {
 }
 
 if [[ $DISPLAY ]] ; then
-
-    if [[ $(type -p xmodmap) ]] ; then
-        # let caps lock behave like Escape
-        xmodmap -e 'clear Lock' -e 'keycode 0x42 = Escape'
-    fi
 
     if [[ $(type -p wmctrl) ]] ; then
         _PROMPT_WMCTRL="wmctrl -i -r $WINDOWID -b add,DEMANDS_ATTENTION"
@@ -747,8 +734,6 @@ unset HISTFILESIZE
 _bashrc_eternal_history_file=~/.bash_eternal_history
 
 if [ "$REMOTE_USER" != "" ] ; then
-
-
     _bashrc_eternal_history_file=$REMOTE_HOME/.bash_eternal_history
 fi
 
@@ -788,6 +773,7 @@ function _add_to_history() {
     history -a
 }
 
+# search in eternal history
 function h() {
 
     if [ "$*" = "" ] ; then
@@ -979,62 +965,6 @@ EOF
     eval "$cmd"
 }
 
-# diff local file with remote file via ssh
-svimdiff() {
-    local file=$(abs $1)
-    local host=$2
-
-    if [ ! $file ] ; then
-        echo specify file >&2
-        return
-    fi
-
-    if [ ! $host ] ; then
-        echo specify host >&2
-        return
-    fi
-
-    vimdiff $file scp://$USER@$host/$file
-}
-
-function _sshputget() {
-    local host=$1
-    local file=$2
-    local direction=$3
-
-    if [ ! $host ] ; then
-        echo specify host >&2
-        return 1
-    fi
-
-    if [ ! $file ] ; then
-        echo specify file >&2
-        return 1
-    fi
-
-    file=$(abs $file)
-    host=$USER@$host:$(abs $file)
-
-    local src=$host
-    local dst=$file
-
-    if [ "$direction" = "put" ] ; then
-        src=$file
-        dst=$host
-    fi
-
-    # echo scp $src $dst
-    scp $src $dst
-}
-
-function sshget() {
-    _sshputget $1 $2 get
-}
-
-function sshput() {
-    _sshputget $1 $2 put
-}
-
 function sshtunnel() {
 
     local  in=$1
@@ -1073,15 +1003,15 @@ alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen"
 function srd() {
 
     grabssh
- 
+
     local ok
- 
+
     screen -rd $1 && ok=1
- 
+
     if [[ ! $ok ]] ; then
         screen -rd main && ok=1
     fi
- 
+
     if [[ $ok ]] ; then
         clear
     fi
@@ -1123,7 +1053,7 @@ function _set_colors() {
     WHITE="\[\033[0;37m\]"
 
     BROWN="\[\033[0;33m\]"
-    
+
     # background colors
     BG_BLACK="\[\033[40m\]"
     BG_RED="\[\033[41m\]"
@@ -1178,10 +1108,6 @@ function _fix_pwd () {
     else
         _xtitle_pwd=$_pwd
     fi
-}
-
-function _color_hostname () {
-    echo $GREEN$HOSTNAME$NO_COLOR
 }
 
 function _track_time() {
@@ -1284,13 +1210,12 @@ function _prompt_command() {
     _print_on_error
     local secs=$(_track_time)
     local time=$(_humanize_secs $secs)
-    local hostname=$(_color_hostname)
+    local hostname=$(_color_user)@$GREEN$HOSTNAME$NO_COLOR
     _fix_pwd
     _set_bg_jobs_count
-    local user=$(_color_user)
 
     # $NO_COLOR first to reset color setting from other programs
-   PS1=$GRAY"$time$NO_COLOR $user@$hostname:$_pwd${_bg_jobs_count}""$NO_COLOR> "
+    PS1=$GRAY"$time$NO_COLOR $hostname:$_pwd${_bg_jobs_count}""$NO_COLOR> "
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
@@ -1399,16 +1324,6 @@ _first_invoke=1
 
 ### MISC #######################################################################
 
-function _send_configs() {
-    # $MYHOME/.bashrc
-    # $MYHOME/.vimrc
-    # $MYHOME/.vim/...
-    # $MYHOME/.screenrc
-    # $MYHOME/.id_rsa.pub
-    # $MYHOME/.cpan_template_MyConfig.pm
-echo
-}
-
 # run a previous command independent of the history
 function r() {
 
@@ -1429,10 +1344,6 @@ function r() {
     v
 
     bash -i $CMD_FILE
-}
-
-function parent() {
-    echo $(ps -p $PPID -o comm=) "($PPID)"
 }
 
 ### NOTES ######################################################################
