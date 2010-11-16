@@ -420,8 +420,6 @@ function _check_env() {
 
 function updatebashrc() {
 
-    cd $REMOTE_HOME || return 1
-
     wget -q --no-check-certificate \
         -O /tmp/bashrc.$$ http://github.com/evenless/etc/raw/master/.bashrc \
         || return 1
