@@ -40,11 +40,17 @@ for (@ARGV) {
 
     next if /^\.{1,2}$/;
 
-    my $was = $_;
-    $_ = normalize($_) if $normalize;
+    my $abs = $_;
+    my $dir = dirname($_);
+    my $file = basename($_);
 
-    my $DN = dirname($_);
-    my $FN = basename($_);
+    $abs = "$dir/$file";
+    my $was = $file;
+    $_ = $file;
+
+    $_ = normalize($abs) if $normalize;
+
+    # vars to use in perlexpr
     $COUNT++;
     $COUNT = sprintf("%08d", $COUNT);
 
@@ -53,28 +59,26 @@ for (@ARGV) {
         die $@ if $@;
     }
 
-    my $will = $_;
+    my $will = "$dir/$_";
 
-    if (!-e $was) {
+    if (!-e $abs) {
         warn "no such file: '$was'";
         $abort = 1;
         next;
     }
 
-    if (-d $was && !$include_directories) {
-        warn "is a directory: '$was'.";
-        $abort = 1;
+    if (-d $abs && !$include_directories) {
         next;
     }
 
     my $other = $will{$will} if exists $will{$will};
     if ($other) {
-        warn "name '$will' for '$was' already taken by '$other'.";
+        warn "name '$will' for '$abs' already taken by '$other'.";
         $abort = 1;
         next;
     }
 
-    next if $will eq $was;
+    next if $will eq $abs;
 
     if (-e $will) {
         warn "file '$will' already exists.";
@@ -82,8 +86,8 @@ for (@ARGV) {
         next;
     }
 
-    $will{$will} = $was;
-    $was{$was}   = $will;
+    $will{$will} = $abs;
+    $was{$abs}   = $will;
 }
 
 exit 1 if $abort;
@@ -102,7 +106,6 @@ foreach my $was (sort keys %was) {
 sub normalize {
     my ($abs) = @_;
 
-    my $dir  = dirname($abs);
     my $file = basename($abs);
     my $ext  = "";
 
@@ -120,13 +123,12 @@ sub normalize {
     s/[_]+/_/g;
     s/[\._]{2,}/\./g;
 
+warn "normalizing: " . $_;
+
     s/^[\._]+//g;
     s/[\._]+$//g;
 
-    if (!$_) {
-        warn "empty replacement for: '$file$ext'";
-        $abort = 1;
-    }
+    $_ ||= "_empty_file_name";
 
     return $_ . lc($ext);
 }
