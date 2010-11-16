@@ -421,8 +421,10 @@ function updatebashrc() {
     cd $REMOTE_HOME || return 1
 
     wget -q --no-check-certificate \
-        http://github.com/evenless/etc/raw/master/.bashrc \
+        -O /tmp/bashrc.$$ http://github.com/evenless/etc/raw/master/.bashrc \
         || return 1
+
+    mv -f /tmp/bashrc.$$ ~/.bashrc
 
     bashrc_clean_environment
 
