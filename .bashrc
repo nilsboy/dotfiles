@@ -1,6 +1,6 @@
 ### stuff also needed non-interactively ########################################
 
-function xmv () {
+function xmv() {
 
     local IFS=$'\n'
 
@@ -156,41 +156,24 @@ function replace() {
 }
 export -f replace
 
-function DEBUG() {
-    if [ -t 1 ] ; then
-        local _COLOR=$GRAY2
-        local _NO_COLOR=$NO_COLOR2
+function _LOG() {
+
+    local level=$1 ; shift
+    local color=$1 ; shift
+    local output_to=$1 ; shift
+
+    if [ -t $output_to ] ; then
+        echo -e "${color}${level}> $@${NO_COLOR2}" >&$output_to ;
+    else
+        echo -e "$(date +'%F %T') ${level}> $@" >&$output_to ;
     fi
-    echo -e "${_COLOR}$(date +'%F %T') DEBUG> $@${_NO_COLOR}" ;
 }
 
-function INFO()  { echo -e "$(date +'%F %T') INFO > $@" ; }
-
-function WARN() {
-    if [ -t 2 ] ; then
-        local _COLOR=$ORANGE2
-        local _NO_COLOR=$NO_COLOR2
-    fi
-    echo -e "${_COLOR}$(date +'%F %T') WARN > $@${_NO_COLOR}" >&2 ;
-}
-
-function ERROR() {
-    if [ -t 2 ] ; then
-        local _COLOR=$RED2
-        local _NO_COLOR=$NO_COLOR2
-    fi
-    echo -e "${_COLOR}$(date +'%F %T') ERROR> $@${_NO_COLOR}" >&2 ;
-}
-
-function DIE() {
-    if [ -t 2 ] ; then
-        local _COLOR=$RED2
-        local _NO_COLOR=$NO_COLOR2
-    fi
-    echo -e "${_COLOR}$(date +'%F %T') FATAL> $@${_NO_COLOR}" >&2 ;
-
-    exit 1;
-}
+function DEBUG() { _LOG "DEBUG" $GRAY2   1 "$@" ; }
+function INFO()  { _LOG "INFO " $BLUE2   1 "$@" ; }
+function WARN()  { _LOG "WARN " $ORANGE2 2 "$@" ; }
+function ERROR() { _LOG "ERROR" $RED2    2 "$@" ; }
+function DIE()   { _LOG "FATAL" $RED2    2 "$@" ; exit 1 ; }
 
 export MODULEBUILDRC=~/perl5/.modulebuildrc
 export PERL_MM_OPT=INSTALL_BASE=~/perl5
@@ -698,6 +681,45 @@ function vib() {
 
     command vi $file
 }
+
+# setup local::lib and cpanm
+function setupcpanm() { (
+
+    set -e
+
+    if [ -e ~/.cpan ] ; then
+        DIE "remove ~/.cpan first" >&2
+    fi
+
+    WD=$(mktemp -d)
+    cd $WD
+
+    INFO "setting up local::lib..."
+    wget -q \
+    http://search.cpan.org/CPAN/authors/id/G/GE/GETTY/local-lib-1.006007.tar.gz
+
+    tar xfz local-lib*tar.gz
+
+    cd local-lib*/
+
+    perl Makefile.PL --bootstrap 1>/dev/null
+    make install 1>/dev/null
+
+    rm $WD -r
+
+    INFO "setting up cpanm..."
+    cd ~/bin
+
+    if [ -e cpanm ] ; then
+        rm cpanm
+    fi
+
+    wget -q http://cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.1001/bin/cpanm
+    perl -p -i -e 's/^#\!perl$/#\!\/usr\/bin\/perl/g' cpanm
+    chmod +x cpanm
+
+    INFO "You may now install modules with: cpanm -nq [module name]"
+) }
 
 ### history ####################################################################
 
