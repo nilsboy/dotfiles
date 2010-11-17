@@ -141,19 +141,18 @@ function normalize_file_names() {
 }
 export -f normalize_file_names
 
-function replace() {
+function replace() { (
 
     local search=$1
     local replace=$2
     local files=$3
 
     if [[ $search = "" || $replace = "" || $files = "" ]] ; then
-        echo 'usage: replace "search" "replace" "file pattern"'
-        return 1
+        DIE 'usage: replace "search" "replace" "file pattern"'
     fi
 
     find -iname "$files" -exec perl -p -i -e 's/'$search'/'$replace'/g' {} \;
-}
+) }
 export -f replace
 
 function _LOG() {
@@ -170,8 +169,8 @@ function _LOG() {
 }
 
 function DEBUG() { _LOG "DEBUG" $GRAY2   1 "$@" ; }
-function INFO()  { _LOG "INFO " $BLUE2   1 "$@" ; }
-function WARN()  { _LOG "WARN " $ORANGE2 2 "$@" ; }
+function INFO()  { _LOG "INFO " $GREEN2  1 "$@" ; }
+function WARN()  { _LOG "WARN " $ORANGE2 1 "$@" ; }
 function ERROR() { _LOG "ERROR" $RED2    2 "$@" ; }
 function DIE()   { _LOG "FATAL" $RED2    2 "$@" ; exit 1 ; }
 
@@ -298,7 +297,7 @@ function v() {
     while [ $i -le 80 ] ; do
         i=$(($i + 1))
         echo
-    done 
+    done
 
     clear
 
@@ -306,7 +305,7 @@ function v() {
     while [ $i -le 8 ] ; do
         i=$(($i + 1))
         echo -n "----------"
-    done 
+    done
     echo
 }
 
@@ -352,37 +351,34 @@ alias listgrep="grep -xFf"
 
 # a simple grep without need for quoting or excluding dot files
 alias g="set -f && _g"
-function _g() {
+function _g() { (
 
     if [[ ! $@ ]] ; then
-        echo "usage: g [search term]" >&2
-        return 1
+        DIE "usage: g [search term]"
     fi
 
     grep -rsinP --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@" .
     set +f
-}
+) }
 
-function gi() {
+function gi() { (
 
     if [[ $# < 2 ]] ; then
-        echo "usage: gi [filename pattern] [search term]" >&2
-        return 1
+        DIE "usage: gi [filename pattern] [search term]"
     fi
 
     grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include="$@" .
     set +f
-}
+) }
 
-function f() {
+function f() { (
 
     if [[ ! $@ ]] ; then
-        echo "usage: f [filename pattern]" >&2
-        return 1
+        DIE "usage: f [filename pattern]"
     fi
 
     find . \! -regex ".*\/\..*" -iname "*$@*" | grep -i "$@"
-}
+) }
 
 if [ -r ~/.bashrc_local ] ; then
     source ~/.bashrc_local
@@ -843,11 +839,9 @@ function set_remote_user_from_ssh_key() {
         agent_key=${agent_key%%=*}
 
         if [[ $agent_key = "" ]] ; then
-            # echo "no agent key found"
             continue
         fi
 
-        # echo ="grep -i \"${agent_key}\" $auth_files | tail -1"
         auth_key=$(grep -i "${agent_key}" $auth_files | tail -1)
 
         if [[ $auth_key != "" ]] ; then
@@ -975,36 +969,34 @@ EOF
     eval "$cmd"
 }
 
-function sshtunnel() {
+function sshtunnel() { (
 
     local  in=$1
     local  gw=$2
     local out=$3
 
     if [[ $@ < 3 ]] ; then
-        echo "usage: sshtunnel [in_host:]in_port user@gateway out_host:out_port"
-        return 1
+        DIE "usage: sshtunnel [in_host:]in_port user@gateway out_host:out_port"
     fi
 
     local cmd="ssh -v -N -L $in:$out $gw"
-    echo -e $GREEN2"running: $cmd"$NO_COLOR2
+    INFO "running: $cmd"
     xtitle "sshtunnel $cmd" && $cmd
-}
+) }
 
-function sslstrip() {
+function sslstrip() { (
 
     local  in=$1
     local out=$2
 
     if [[ $@ < 2 ]] ; then
-        echo "usage: sslstrip [in_host:]in_port out_host:out_port"
-        return 1
+        die "usage: sslstrip [in_host:]in_port out_host:out_port"
     fi
 
     local cmd="sudo stunnel -c -d $in -r $out -f"
-    echo -e $GREEN2"running: $cmd"$NO_COLOR2
+    INFO "running: $cmd"
     xtitle "sslstrip $cmd" && $cmd
-}
+) }
 
 ### SCREEN #####################################################################
 
@@ -1095,9 +1087,6 @@ function _fix_pwd () {
 
     if [ $length -gt $max_length ] ; then
 
-        # local left_split=$(($max_length/2))
-        # local right_split=$left_split
-
         local left_split=$(($max_length-4))
         local right_split=4
 
@@ -1106,14 +1095,8 @@ function _fix_pwd () {
         local left=${_pwd:0:$left_split}
         local right=${_pwd:$right_start:$length}
 
-        # echo "$length - $split -> $max_length $left$right"
-
-        # _xtitle_pwd=${_pwd:0:$max_length}"..."
         _pwd=$left${RED}"*"${NO_COLOR}$right
         _xtitle_pwd=$left"..."$right
-
-        # _pwd=${_pwd:0:7}
-        # _pwd=${_pwd:0:14}$RED">"$NO_COLOR
 
     else
         _xtitle_pwd=$_pwd
@@ -1335,7 +1318,7 @@ _first_invoke=1
 ### MISC #######################################################################
 
 # run a previous command independent of the history
-function r() {
+function r() { (
 
     local CMD_FILE=~/.run_command
 
@@ -1343,8 +1326,7 @@ function r() {
 
     if [ "$cmd" = "" ] ; then
         if [ ! -e $CMD_FILE ] ; then
-            echo "got no command to run" >&2
-            return 1
+            DIE "got no command to run"
         fi
     else
         cmd=$(echo $cmd | perl -pe 's#./#cd $ENV{PWD} && \./#g')
@@ -1354,7 +1336,7 @@ function r() {
     v
 
     bash -i $CMD_FILE
-}
+) }
 
 ### NOTES ######################################################################
 
