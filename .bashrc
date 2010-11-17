@@ -530,6 +530,10 @@ export PERL_MM_USE_DEFAULT=1
 # testing
 alias prove="prove -lv --merge"
 
+function perlmoduleversion() {
+    perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' "$@"
+}
+
 # find a lib via PERL5LIB
 function pmpath() {
 
