@@ -721,6 +721,11 @@ function setupcpanm() { (
     INFO "You may now install modules with: cpanm -nq [module name]"
 ) }
 
+function cpanm() {
+    perl -e 'map { s/\//\:\:/g ; s/\.pm$//g } @ARGV; system("cpanm" , @ARGV);' \
+         -- "$@"
+}
+
 ### history ####################################################################
 
 # ignore commands  for history that start  with a space
