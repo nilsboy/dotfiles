@@ -137,7 +137,7 @@ EOF
 export -f xmv
 
 function normalize_file_names() {
-    xmv -nx "$@"
+    xmv -ndx "$@"
 }
 export -f normalize_file_names
 
