@@ -705,7 +705,8 @@ function setupcpanm() { (
     perl Makefile.PL --bootstrap 1>/dev/null
     make install 1>/dev/null
 
-    rm $WD -r
+    cd /tmp
+    rm $WD -rf
 
     INFO "setting up cpanm..."
     cd ~/bin
