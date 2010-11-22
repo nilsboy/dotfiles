@@ -719,6 +719,7 @@ function setupcpanm() { (
     perl -p -i -e 's/^#\!perl$/#\!\/usr\/bin\/perl/g' cpanm
     chmod +x cpanm
 
+    INFO "Now set your lib path like: PERL5LIB=$HOME/perl5/lib/perl5:$HOME/perldev/lib"
     INFO "You may now install modules with: cpanm -nq [module name]"
 ) }
 
