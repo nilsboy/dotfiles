@@ -380,6 +380,10 @@ function f() { (
     find . \! -regex ".*\/\..*" -iname "*$@*" | grep -i "$@"
 ) }
 
+function bak() {
+    cp $1{,_$(date +%Y%m%d_%H%M%S)};
+}
+
 if [ -r ~/.bashrc_local ] ; then
     source ~/.bashrc_local
 fi
