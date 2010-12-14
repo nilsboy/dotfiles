@@ -1501,4 +1501,8 @@ function note() {
         $BASH_SOURCE
 }
 
+function notecmdfu() {
+    curl "http://www.commandlinefu.com/commands/matching/$@/$(echo -n $@ | openssl base64)/plaintext";
+}
+
 ### THE END ####################################################################
