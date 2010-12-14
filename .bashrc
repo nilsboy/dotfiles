@@ -1510,4 +1510,9 @@ function notecmdfu() {
     curl "http://www.commandlinefu.com/commands/matching/$@/$(echo -n $@ | openssl base64)/plaintext";
 }
 
+# query wikipedia via dns
+function wp() {
+    dig +short txt "$(echo $@)".wp.dg.cx
+}
+
 ### THE END ####################################################################
