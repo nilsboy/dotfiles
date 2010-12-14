@@ -1416,7 +1416,7 @@ function r() { (
 # * disown - remove jobs from current shell
 
 # NOTES ON networking
-# * netstat -tapn
+# * list all open ports and their associated apps: netstat -tapn
 # * netstat -tulpn | grep 25
 # * fuser
 # * lsof -i -n
@@ -1512,7 +1512,7 @@ function notecmdfu() {
 
 # query wikipedia via dns
 function wp() {
-    dig +short txt "$(echo $@)".wp.dg.cx
+    dig +short txt "$*".wp.dg.cx | perl -pe 's/\\//g'
 }
 
 ### THE END ####################################################################
