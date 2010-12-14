@@ -814,6 +814,11 @@ function set_remote_host() {
     REMOTE_HOST=$(who -m --ips | perl -ne 'print "$1$2" if /(?:\ ([\d\.]+$)|\((.*?)[\:\)]+)/')
 }
 
+function freeport() {
+    netstat  -atn \
+        | perl -0777 -ne '@ports = /tcp.*?\:(\d+)\s+/imsg ; for $port (32768..61000) {if(!grep(/^$port$/, @ports)) { print $port; last } }'
+}
+
 ### .bashrc_identify_user_stuff
 
 function set_remote_user_from_ssh_key() {
