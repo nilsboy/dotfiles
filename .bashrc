@@ -228,6 +228,12 @@ bind 'set show-all-if-ambiguous on'
 # don't duplicate completed part off already complete term when within a term
 bind 'set skip-completed-text on'
 
+# never ask to show all completions - just do
+bind 'set completion-query-items -1'
+
+# don't show completions in pager
+bind 'set page-completions off'
+
 # remove domain from hostname if necessary
 HOSTNAME=${HOSTNAME%%.*}
 
