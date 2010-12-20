@@ -501,16 +501,18 @@ fi
 
 ### mysql ######################################################################
 
+alias mysql='mysql --show-warnings --pager="less -niSFX"'
+
 # fix mysql prompt to show real hostname - NEVER localhost
 function mysql() {
+
     local h=$(perl -e '"'"$*"'" =~ /[-]+h(?:ost)*\ (\S+)/ && print $1')
 
     if [[ ! $h || $h = localhost ]] ; then
         h=$HOSTNAME
     fi
-    xtitle "mysql@$h" \
-        && MYSQL_PS1="\\u@$h:\\d db> " \
-        command mysql --show-warnings --pager="less -niSFX" "$@"
+
+    xtitle "mysql@$h" && MYSQL_PS1="\\u@$h:\\d db> " command mysql "$@"
 }
 
 ### perl #######################################################################
