@@ -509,7 +509,8 @@ function mysql() {
         h=$HOSTNAME
     fi
     xtitle "mysql@$h" \
-        && MYSQL_PS1="\\u@$h:\\d db> " command mysql --show-warnings "$@"
+        && MYSQL_PS1="\\u@$h:\\d db> " \
+        command mysql --show-warnings --pager="less -niSFX" "$@"
 }
 
 ### perl #######################################################################
