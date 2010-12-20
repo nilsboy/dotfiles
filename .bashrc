@@ -383,7 +383,7 @@ function f() { (
 ) }
 
 function bak() {
-    cp $1{,_$(date +%Y%m%d_%H%M%S)};
+    cp ${1?filename not specified}{,_$(date +%Y%m%d_%H%M%S)};
 }
 
 if [ -r ~/.bashrc_local ] ; then
