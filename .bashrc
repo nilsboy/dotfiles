@@ -501,13 +501,15 @@ fi
 
 ### mysql ######################################################################
 
-# unset mysql function
-unset mysql
+# fix mysql prompt to show real hostname - NEVER localhost
+function mysql() {
+    local h=$(perl -e '"'"$*"'" =~ /[-]+h(?:ost)*\ (\S+)/ && print $1')
 
-# mysql prompt
-export MYSQL_PS1="\\u@\\h:\\d db> "
-
-alias mysql="mysql --show-warnings"
+    if [[ ! $h || $h = localhost ]] ; then
+        h=$HOSTNAME
+    fi
+    MYSQL_PS1="\\u@$h:\\d db> " command mysql --show-warnings "$@"
+}
 
 ### perl #######################################################################
 
