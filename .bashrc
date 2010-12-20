@@ -508,7 +508,8 @@ function mysql() {
     if [[ ! $h || $h = localhost ]] ; then
         h=$HOSTNAME
     fi
-    MYSQL_PS1="\\u@$h:\\d db> " command mysql --show-warnings "$@"
+    xtitle "mysql@$h" \
+        && MYSQL_PS1="\\u@$h:\\d db> " command mysql --show-warnings "$@"
 }
 
 ### perl #######################################################################
