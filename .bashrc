@@ -466,6 +466,26 @@ function unix2dos() {
     perl -i -pe 's/\n/\r\n/' "$@"
 }
 
+# fetch a page - in case no other tool is available
+function caturl() {
+
+    local IFS=$'\n';
+
+    perl - $@ <<'EOF'
+
+    use LWP::UserAgent;
+    my $ua = LWP::UserAgent->new;
+    $ua->add_handler( response_done =>
+        sub { my ( $response, $ua, $h ) = @_; die if $response->is_error } );
+
+    my $url = $ARGV[0];
+    $url = "http://" . $url if $url !~ /^.+\:\/\//;
+    my $req = HTTP::Request->new( GET => $url );
+    print $ua->request($req)->content;
+EOF
+
+}
+
 ### xorg #######################################################################
 
 function xtitle () {
@@ -818,8 +838,8 @@ function h() {
 ### network ####################################################################
 
 function publicip() {
-    wget http://checkip.dyndns.org/ -q -O - \
-        | grep -Eo '\<[[:digit:]]{1,3}(\.[[:digit:]]{1,3}){3}\>'
+    caturl http://checkip.dyndns.org \
+        | perl -ne '/Address\: (.+?)</i || die; print $1'
 }
 
 function set_remote_host() {
