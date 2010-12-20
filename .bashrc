@@ -1420,7 +1420,7 @@ function r() { (
 #    apt-get install build-essential
 #    sudo apt-get build-dep Paketname
 #    ./configure
-#    sudo checkinstall
+#    sudo checkinstall -D
 
 # NOTES ON console
 # * switch console: chvty
