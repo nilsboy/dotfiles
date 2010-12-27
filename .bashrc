@@ -269,10 +269,6 @@ if [ -x /usr/bin/lesspipe ] ; then
     eval "$(lesspipe)"
 fi
 
-if [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
-fi
-
 # absolute path
 function abs() {
     if [ ! "$@" ] ; then
@@ -435,7 +431,41 @@ function reloadbashrc() {
     bashrc_clean_environment
 
     . ~/.bashrc
+
 }
+
+function bashrc_store_all_functions_into_files() {
+
+    local note="# automatic bashrc export - do not edit"
+
+    while read funct ; do
+
+        local is_export=
+
+        if [ -e $funct ] ; then
+
+            grep -q "$note" $funct && is_export=1
+
+            if ! [ $is_export ] ; then
+                WARN "file exists: $funct"
+                continue
+            fi
+        fi
+
+        echo "$note" > $funct
+        echo -n "# " >> $funct
+        type $funct >> $funct
+        echo >> $funct
+        echo $funct '"$@"' >> $funct
+
+        chmod +x $funct
+
+    done<<EOF
+        $(perl -ne 'foreach (/^function ((?!_).+?)\(/) {print "$_\n" }' ~/.bashrc)
+EOF
+
+}
+
 
 function updatevimconfig() {
 
