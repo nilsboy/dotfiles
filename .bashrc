@@ -434,13 +434,17 @@ function reloadbashrc() {
 
 }
 
-function bashrc_store_all_functions_into_files() {
+function bashrc_export_functions_to_files() {
 
     local note="# automatic bashrc export - do not edit"
 
     while read funct ; do
 
         local is_export=
+
+        if [[ $funct = cpanm ]] ; then
+            continue;
+        fi
 
         if [ -e $funct ] ; then
 
@@ -452,10 +456,10 @@ function bashrc_store_all_functions_into_files() {
             fi
         fi
 
-        echo "$note" > $funct
-        echo -n "# " >> $funct
-        type $funct >> $funct
-        echo >> $funct
+        echo "$note"        > $funct
+        echo -n "# "       >> $funct
+        type $funct        >> $funct
+        echo               >> $funct
         echo $funct '"$@"' >> $funct
 
         chmod +x $funct
