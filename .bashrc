@@ -5,8 +5,9 @@ function xmv() {
     local IFS=$'\n'
 
     perl - $@ <<'EOF'
+
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use File::Basename;
 
 use Getopt::Long;
@@ -44,7 +45,10 @@ for (@ARGV) {
     my $dir = dirname($_);
     my $file = basename($_);
 
-    $abs = "$dir/$file";
+    $dir = "" if $dir eq ".";
+    $dir .= "/" if $dir;
+
+    $abs = $dir . $file;
     my $was = $file;
     $_ = $file;
 
@@ -52,14 +56,14 @@ for (@ARGV) {
 
     # vars to use in perlexpr
     $COUNT++;
-    $COUNT = sprintf("%08d", $COUNT);
+    $COUNT = sprintf("%0". length(scalar(@ARGV)) ."d", $COUNT);
 
     if ($op) {
         eval $op;
         die $@ if $@;
     }
 
-    my $will = "$dir/$_";
+    my $will = $dir . $_;
 
     if (!-e $abs) {
         warn "no such file: '$was'";
@@ -130,7 +134,6 @@ sub normalize {
 }
 EOF
 }
-export -f xmv
 
 function normalize_file_names() {
     xmv -ndx "$@"
