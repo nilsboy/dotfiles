@@ -233,6 +233,12 @@ bind 'set completion-query-items -1'
 # don't show completions in pager
 bind 'set page-completions off'
 
+# reenable ctrl+s for forward history search (XOFF)
+stty stop ^-
+
+# reenable ctrl+q (XON)
+stty start ^-
+
 # remove domain from hostname if necessary
 HOSTNAME=${HOSTNAME%%.*}
 
