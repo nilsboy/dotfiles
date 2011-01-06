@@ -540,6 +540,8 @@ function xtitle () {
     esac
 }
 
+BROWSER=links
+
 if [[ $DISPLAY ]] ; then
 
     if [[ $(type -p wmctrl) ]] ; then
@@ -554,7 +556,11 @@ if [[ $DISPLAY ]] ; then
         # not, this binding would malfunction at the start or end of a line.
         bind 'Control-v: "#\C-b\C-k#\C-x\C-?\"$(xclip -o -selection c)\"\e\C-e\C-x\C-m\C-a\C-y\C-?\C-e\C-y\ey\C-x\C-x\C-d"'
     fi
+
+    BROWSER=firefox
 fi
+
+export BROWSER
 
 ### mysql ######################################################################
 
@@ -1580,7 +1586,14 @@ function notecmdfu() {
 
 # query wikipedia via dns
 function wp() {
-    dig +short txt "$*".wp.dg.cx | perl -pe 's/\\//g'
+    dig +short txt "$*".wp.dg.cx | perl -0777 -pe 'exit 1 if ! $_ ; s/\\//g'
+}
+
+# quick command etc lookup
+function m() {
+    help "$*" 2>/dev/null \
+        || man "$*" 2>/dev/null \
+        || $BROWSER "http://www.google.com/search?q=$*";
 }
 
 ### THE END ####################################################################
