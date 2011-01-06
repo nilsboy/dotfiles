@@ -314,10 +314,8 @@ function parent() {
     echo $(ps -p $PPID -o comm=) "($PPID)"
 }
 
-if [[ $(type -p pstree) ]] ; then
-    alias pstree="pstree -A"
-else
-    alias pstree="ps axjf"
+if [[ ! $(type -p pstree) ]] ; then
+    alias p="ps axjf"
 fi
 
 function p() {
@@ -328,7 +326,9 @@ function p() {
         args=" +/$@"
     fi
 
-    pstree -aphl | grep -v "{" | less -R $args
+    pstree -aphl \
+        | perl -ne '$x = "# xxSKIPme"; print if $_ !~ /\{|less.+\+\/'$1'|$x/' \
+        | less -R $args
 }
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
@@ -557,7 +557,6 @@ if [[ $DISPLAY ]] ; then
 fi
 
 ### mysql ######################################################################
-
 
 # fix mysql prompt to show real hostname - NEVER localhost
 function mysql() {
