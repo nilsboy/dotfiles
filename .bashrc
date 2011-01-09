@@ -1,190 +1,19 @@
-### stuff also needed non-interactively ########################################
+### for all shells #############################################################
 
-function xmv() {
+export PATH=~/bin:~/perl5/bin:$PATH
+export PERL5LIB=~/perl5/lib/perl5:~/perldev/lib:$PERL5LIB
 
-    local IFS=$'\n'
-
-    perl - $@ <<'EOF'
-
-use strict;
-use warnings FATAL => 'all';
-use File::Basename;
-
-use Getopt::Long;
-Getopt::Long::Configure('bundling');
-
-my ($op, $include_directories, $dry, $normalize);
-$dry = 1;
-
-GetOptions(
-    'x|execute' => sub { $dry = 0 },
-    'd|include-directories' => \$include_directories,
-    'n|normalize'           => \$normalize,
-    'e|execute-perl=s'      => \$op,
-);
-
-if (!@ARGV) {
-    @ARGV = <STDIN>;
-    chop(@ARGV);
-}
-
-if (!@ARGV) {
-    die "Usage: xmv [-x] [-d] [-n] [-e perlexpr] [filenames]\n";
-}
-
-my %will  = ();
-my %was   = ();
-my $abort = 0;
-my $COUNT = 0;
-
-for (@ARGV) {
-
-    next if /^\.{1,2}$/;
-
-    my $abs = $_;
-    my $dir = dirname($_);
-    my $file = basename($_);
-
-    $dir = "" if $dir eq ".";
-    $dir .= "/" if $dir;
-
-    $abs = $dir . $file;
-    my $was = $file;
-    $_ = $file;
-
-    $_ = normalize($abs) if $normalize;
-
-    # vars to use in perlexpr
-    $COUNT++;
-    $COUNT = sprintf("%0". length(scalar(@ARGV)) ."d", $COUNT);
-
-    if ($op) {
-        eval $op;
-        die $@ if $@;
-    }
-
-    my $will = $dir . $_;
-
-    if (!-e $abs) {
-        warn "no such file: '$was'";
-        $abort = 1;
-        next;
-    }
-
-    if (-d $abs && !$include_directories) {
-        next;
-    }
-
-    my $other = $will{$will} if exists $will{$will};
-    if ($other) {
-        warn "name '$will' for '$abs' already taken by '$other'.";
-        $abort = 1;
-        next;
-    }
-
-    next if $will eq $abs;
-
-    if (-e $will) {
-        warn "file '$will' already exists.";
-        $abort = 1;
-        next;
-    }
-
-    $will{$will} = $abs;
-    $was{$abs}   = $will;
-}
-
-exit 1 if $abort;
-
-foreach my $was (sort keys %was) {
-
-    my $will = $was{$was};
-
-    print "moving '$was' -> '$will'\n";
-
-    next if $dry;
-
-    system("mv", $was, $will) && die $!;
-}
-
-sub normalize {
-    my ($abs) = @_;
-
-    my $file = basename($abs);
-    my $ext  = "";
-
-    if (!-d $abs && $file =~ /^(.+)(\..+?)$/) {
-        ($file, $ext) = ($1, $2);
-    }
-
-    $_ = $file;
-
-    s/www\.[^\.]+\.[^\.]+//g;
-
-    s/[^\w\.]+/_/g;
-
-    s/[\._]+/_/g;
-
-    s/^[\._]+//g;
-    s/[\._]+$//g;
-
-    $_ ||= "_empty_file_name";
-
-    return $_ . lc($ext);
-}
-EOF
-}
-
-function normalize_file_names() {
-    xmv -ndx "$@"
-}
-export -f normalize_file_names
-
-function replace() { (
-
-    local search=$1
-    local replace=$2
-    local files=$3
-
-    if [[ $search = "" || $replace = "" || $files = "" ]] ; then
-        DIE 'usage: replace "search" "replace" "file pattern"'
-    fi
-
-    find -iname "$files" -exec perl -p -i -e 's/'$search'/'$replace'/g' {} \;
-) }
-export -f replace
-
-function _LOG() {
-
-    local level=$1 ; shift
-    local color=$1 ; shift
-    local output_to=$1 ; shift
-
-    if [ -t $output_to ] ; then
-        echo -e "${color}${level}> $@${NO_COLOR2}" >&$output_to ;
-    else
-        echo -e "$(date +'%F %T') ${level}> $@" >&$output_to ;
-    fi
-}
-
-function DEBUG() { _LOG "DEBUG" $GRAY2   1 "$@" ; }
-function INFO()  { _LOG "INFO " $GREEN2  1 "$@" ; }
-function WARN()  { _LOG "WARN " $ORANGE2 1 "$@" ; }
-function ERROR() { _LOG "ERROR" $RED2    2 "$@" ; }
-function DIE()   { _LOG "FATAL" $RED2    2 "$@" ; exit 1 ; }
-
-export MODULEBUILDRC=~/perl5/.modulebuildrc
-export PERL_MM_OPT=INSTALL_BASE=~/perl5
-export PATH=~/perl5/bin:$PATH
-
-export PERL5LIB=~/perl5/lib/perl5:~/perldev/lib
-
-### for interactive shells only ################################################
+if [[ ! $JAVA_HOME ]] ; then
+    export JAVA_HOME=/usr/lib/jvm/java-6-sun
+fi
 
 [ -z "$PS1" ] && return
 
+### for interactive shells only ################################################
+
+### variables ##################################################################
+
 export REMOTE_HOME=$HOME
-export PATH=~/bin:$PATH
 
 export LANG="de_DE.UTF-8"
 # export LC_ALL="de_DE.UTF-8"
@@ -193,10 +22,13 @@ export LANG="de_DE.UTF-8"
 # use english messages on the command line
 export LC_MESSAGES=C
 
-function switch_to_iso() { export LANG=de_DE@euro ; }
-
 export EDITOR=vi
-alias vi="DISPLAY= vi"
+export BROWSER=links
+
+# remove domain from hostname if necessary
+HOSTNAME=${HOSTNAME%%.*}
+
+### input config ###############################################################
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -239,22 +71,20 @@ stty stop ^-
 # reenable ctrl+q (XON)
 stty start ^-
 
-# remove domain from hostname if necessary
-HOSTNAME=${HOSTNAME%%.*}
+### aliases ####################################################################
 
-if [[ $OSTYPE =~ linux ]] ; then
-    alias ls='ls --time-style=+"%F %H:%M" --color=auto'
-fi
-
+alias vi="DISPLAY= vi"
 alias cp="cp -i"
 alias mv="mv -i"
-alias less="less -i"
+alias less="less -in"
 alias crontab="crontab -i"
 
 alias j="jobs -l"
-alias l="ls -lh"
+alias l='ls -lh --time-style=+"%F %H:%M" --color=auto'
 alias lr="ls -rtlh"
+alias ls='ls --color=auto'
 alias lc="ls -rtlhc"
+
 alias xargs="xargs -I {}"
 
 alias apts="apt-cache search"
@@ -271,31 +101,80 @@ else
     alias td="find -type d | sort"
 fi
 
-alias filter_remove_comments="perl -ne 'print if ! /^#/ && ! /^$/'"
-
 # make less more friendly for non-text input files, see lesspipe(1)
-if [ -x /usr/bin/lesspipe ] ; then
+if [[ $(type -p lesspipe ) ]] ; then
     eval "$(lesspipe)"
 fi
 
-# absolute path
-function abs() {
-    if [ ! "$@" ] ; then
-        echo $(readlink -m .)/
-        return
-    fi
+### functions ##################################################################
 
-    if [ -d "$@" ] ; then
-        echo $(readlink -m "$@")/
+## helper functions ############################################################
+
+function _LOG() {
+
+    local level=$1 ; shift
+    local color=$1 ; shift
+    local output_to=$1 ; shift
+
+    if [ -t $output_to ] ; then
+        echo -e "${color}${level}> $@${NO_COLOR2}" >&$output_to ;
     else
-        readlink -m "$@"
+        echo -e "$(date +'%F %T') ${level}> $@" >&$output_to ;
     fi
 }
 
-# ssh url of a file or directory
-function url() {
-    echo $USER@$HOSTNAME:$(abs $1)
+function DEBUG() { _LOG "DEBUG" $GRAY2   1 "$@" ; }
+function INFO()  { _LOG "INFO " $GREEN2  1 "$@" ; }
+function WARN()  { _LOG "WARN " $ORANGE2 1 "$@" ; }
+function ERROR() { _LOG "ERROR" $RED2    2 "$@" ; }
+function DIE()   { _LOG "FATAL" $RED2    2 "$@" ; exit 1 ; }
+
+## system functions ############################################################
+
+function _check_env() {
+    echo "SHELL" $(echo $SHELL)
+    echo "PATH"  $(echo $PATH)
+    echo "PERL5LIB"  $(echo $PERL5LIB)
+    cat /proc/version
+    uname -a
+    cat /etc/issue.net
 }
+
+function switch_to_iso() { export LANG=de_DE@euro ; }
+
+## misc functions ##############################################################
+
+alias filter_remove_comments="perl -ne 'print if ! /^#/ && ! /^$/'"
+alias filter_quote="fmt -s | perl -pe 's/^/> /g'"
+
+# run a previous command independent of the history
+function r() { (
+
+    local CMD_FILE=~/.run_command
+
+    local cmd=$@
+
+    if [ "$cmd" = "" ] ; then
+        if [ ! -e $CMD_FILE ] ; then
+            DIE "got no command to run"
+        fi
+    else
+        cmd=$(echo $cmd | perl -pe 's#./#cd $ENV{PWD} && \./#g')
+        echo "$cmd" > $CMD_FILE
+    fi
+
+    v
+
+    bash -i $CMD_FILE
+) }
+
+function timestamp2date() {
+    local timestamp=$1
+    perl -MPOSIX -e \
+    'print strftime("%F %T", localtime(substr("'$timestamp'", 0, 10))) . "\n"'
+}
+
+## shell helpers functions #####################################################
 
 # clear screen also create distance to last command for easy viewing
 function v() {
@@ -317,8 +196,98 @@ function v() {
 }
 
 function parent() {
-    echo $(ps -p $PPID -o comm=) "($PPID)"
+    echo $(ps -p $PPID -o comm=)
 }
+
+## file handling functions #####################################################
+
+# replace strings in files
+function replace() { (
+
+    local search=$1
+    local replace=$2
+    local files=$3
+
+    if [[ $search = "" || $replace = "" || $files = "" ]] ; then
+        DIE 'usage: replace "search" "replace" "file pattern"'
+    fi
+
+    find -iname "$files" -exec perl -p -i -e 's/'$search'/'$replace'/g' {} \;
+) }
+
+# absolute path
+function abs() {
+    if [ ! "$@" ] ; then
+        echo $(readlink -m .)/
+        return
+    fi
+
+    if [ -d "$@" ] ; then
+        echo $(readlink -m "$@")/
+    else
+        readlink -m "$@"
+    fi
+}
+
+function find_older_than_days() {
+    find . -type f -ctime +$@
+}
+
+alias find_last_changes='find -type f -printf "%CF %CH:%CM %h/%f\n" | sort'
+alias find_largest_files='find -type f -mount -printf "%k %p\n" | sort -rg | cut -d \  -f 2- | xargs -I {} du -sh {} | less'
+
+export GREP_OPTIONS="--color=auto"
+alias listgrep="grep -xFf"
+
+# a simple grep without the need for quoting or excluding dot files
+alias g="set -f && _g"
+function _g() { (
+
+    if [[ ! $@ ]] ; then
+        DIE "usage: g [search term]"
+    fi
+
+    grep -rsinP --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@" .
+    set +f
+) }
+
+# a simple grep files matching pattern without the need for quoting or
+# excluding dot files
+alias gi="set -f && _gi"
+function _gi() { (
+
+    if [[ $# < 2 ]] ; then
+        DIE "usage: gi [filename pattern] [search term]"
+    fi
+
+    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include="$@" .
+    set +f
+) }
+
+# quick find a file matching a pattern
+function f() { (
+
+    if [[ ! $@ ]] ; then
+        DIE "usage: f [filename pattern]"
+    fi
+
+    find . \! -regex ".*\/\..*" -iname "*$@*" | grep -i "$@"
+) }
+
+# backup a file appending a date
+function bak() {
+    cp ${1?filename not specified}{,_$(date +%Y%m%d_%H%M%S)};
+}
+
+function dos2unix() {
+    perl -i -pe 's/\r//g' "$@"
+}
+
+function unix2dos() {
+    perl -i -pe 's/\n/\r\n/' "$@"
+}
+
+## process management ##########################################################
 
 if [[ ! $(type -p pstree) ]] ; then
     alias p="ps axjf"
@@ -339,6 +308,45 @@ function p() {
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
 
+### functions for lookups ######################################################
+
+# display notes defined inside the bashrc
+function note() {
+
+    local search=$1
+
+    if [[ ! $search ]] ; then
+        perl -ne 'print " * $1\n" if /^# NOTES ON (.*)/' \
+            $BASH_SOURCE | sort
+        return
+    fi
+
+    perl -0777 -ne \
+      'foreach(/^(# NOTES ON '$search'.*?\n\n)/imsg){ s/# //g; print "\n$_" }' \
+        $BASH_SOURCE
+}
+
+function notecmdfu() {
+    curl "http://www.commandlinefu.com/commands/matching/$@/$(echo -n $@ | openssl base64)/plaintext";
+}
+
+# query wikipedia via dns
+function wp() {
+    dig +short txt "$*".wp.dg.cx | perl -0777 -pe 'exit 1 if ! $_ ; s/\\//g'
+}
+
+# quick command help lookup
+function m() {
+
+    if [[ $(help "$*" 2>/dev/null) ]] ; then
+        help "$*" | less
+        return
+    fi
+
+    man "$*" 2>/dev/null \
+       || $BROWSER "http://www.google.com/search?q=$*";
+}
+
 # translate a word
 function tl() {
     links -dump "http://dict.leo.org/ende?lang=de&search=$@" \
@@ -346,67 +354,43 @@ function tl() {
         | tac;
 }
 
-function find_older_than_days() {
-    find . -type f -ctime +$@
+### network functions ##########################################################
+
+function publicip() {
+    caturl http://checkip.dyndns.org \
+        | perl -ne '/Address\: (.+?)</i || die; print $1'
 }
 
-alias find_last_changes='find -type f -printf "%CF %CH:%CM %h/%f\n" | sort'
-alias find_largest_files='find -type f -mount -printf "%k %p\n" | sort -rg | cut -d \  -f 2- | xargs -I {} du -sh {} | less'
-
-export GREP_OPTIONS="--color=auto"
-alias listgrep="grep -xFf"
-
-# a simple grep without need for quoting or excluding dot files
-alias g="set -f && _g"
-function _g() { (
-
-    if [[ ! $@ ]] ; then
-        DIE "usage: g [search term]"
-    fi
-
-    grep -rsinP --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@" .
-    set +f
-) }
-
-function gi() { (
-
-    if [[ $# < 2 ]] ; then
-        DIE "usage: gi [filename pattern] [search term]"
-    fi
-
-    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include="$@" .
-    set +f
-) }
-
-function f() { (
-
-    if [[ ! $@ ]] ; then
-        DIE "usage: f [filename pattern]"
-    fi
-
-    find . \! -regex ".*\/\..*" -iname "*$@*" | grep -i "$@"
-) }
-
-function bak() {
-    cp ${1?filename not specified}{,_$(date +%Y%m%d_%H%M%S)};
+function set_remote_host() {
+    REMOTE_HOST=$(who -m --ips | perl -ne 'print "$1$2" if /(?:\ ([\d\.]+$)|\((.*?)[\:\)]+)/')
 }
 
-if [ -r ~/.bashrc_local ] ; then
-    source ~/.bashrc_local
-fi
-
-if [[ ! $JAVA_HOME ]] ; then
-    export JAVA_HOME=/usr/lib/jvm/java-6-sun
-fi
-
-function _check_env() {
-    echo "SHELL" $(echo $SHELL)
-    echo "PATH"  $(echo $PATH)
-    echo "PERL5LIB"  $(echo $PERL5LIB)
-    cat /proc/version
-    uname -a
-    cat /etc/issue.net
+function freeport() {
+    netstat  -atn \
+        | perl -0777 -ne '@ports = /tcp.*?\:(\d+)\s+/imsg ; for $port (32768..61000) {if(!grep(/^$port$/, @ports)) { print $port; last } }'
 }
+
+# fetch a page - in case no other tool is available
+function caturl() {
+
+    local IFS=$'\n';
+
+    perl - $@ <<'EOF'
+
+    use LWP::UserAgent;
+    my $ua = LWP::UserAgent->new;
+    $ua->add_handler( response_done =>
+        sub { my ( $response, $ua, $h ) = @_; die if $response->is_error } );
+
+    my $url = $ARGV[0];
+    $url = "http://" . $url if $url !~ /^.+\:\/\//;
+    my $req = HTTP::Request->new( GET => $url );
+    print $ua->request($req)->content;
+EOF
+
+}
+
+### conf files handling ########################################################
 
 function updatebashrc() {
 
@@ -479,7 +463,6 @@ EOF
 
 }
 
-
 function updatevimconfig() {
 
     for dir in ~/.vim/colors  ~/.vim/plugin ; do
@@ -493,41 +476,113 @@ function updatevimconfig() {
     wget -qO ~/.vim/plugin/taglist.vim http://github.com/evenless/etc/raw/master/.vim/plugin/taglist.vim
 }
 
-# alias quote="fmt -s | perl -pe 's/^/> /g'"
+### .bashrc_identify_user_stuff
 
-function timestamp2date() {
-    local timestamp=$1
-    perl -MPOSIX -e \
-    'print strftime("%F %T", localtime(substr("'$timestamp'", 0, 10))) . "\n"'
-}
+function set_remote_user_from_ssh_key() {
 
-function dos2unix() {
-    perl -i -pe 's/\r//g' "$@"
-}
+    if [[ $SSH_CONNECTION = "" ]] ; then
+        return
+    fi
 
-function unix2dos() {
-    perl -i -pe 's/\n/\r\n/' "$@"
-}
+    if [[ $(type -p ssh-add) = "" ]] ; then
+        return
+    fi
 
-# fetch a page - in case no other tool is available
-function caturl() {
+    local agent_key auth_key auth_files
 
-    local IFS=$'\n';
+    if [[ -r ~/.ssh/authorized_keys ]] ; then
+        auth_files="$HOME/.ssh/authorized_keys"
+    fi
 
-    perl - $@ <<'EOF'
+    if [[ -r ~/.ssh/authorized_keys2 ]] ; then
+        auth_files="$auth_files $HOME/.ssh/authorized_keys2"
+    fi
 
-    use LWP::UserAgent;
-    my $ua = LWP::UserAgent->new;
-    $ua->add_handler( response_done =>
-        sub { my ( $response, $ua, $h ) = @_; die if $response->is_error } );
+    if [[ $auth_files = "" ]] ; then
+        echo "no authorizedkeys-files"
+        return
+    fi
 
-    my $url = $ARGV[0];
-    $url = "http://" . $url if $url !~ /^.+\:\/\//;
-    my $req = HTTP::Request->new( GET => $url );
-    print $ua->request($req)->content;
+    while read agent_key ; do
+
+        agent_key=${agent_key%%=*}
+
+        if [[ $agent_key = "" ]] ; then
+            continue
+        fi
+
+        auth_key=$(grep -i "${agent_key}" $auth_files | tail -1)
+
+        if [[ $auth_key != "" ]] ; then
+            break
+        fi
+
+    done<<EOF
+        $(ssh-add -L 2>/dev/null)
 EOF
 
+    if [[ "$auth_key" =~ \[remote_user=(.+)\](.*)$ ]] ; then
+        export REMOTE_USER=${BASH_REMATCH[1]}
+        REMOTE_FULL_NAME=${BASH_REMATCH[2]}
+    else
+        return
+    fi
+
+    if [[ $REMOTE_FULL_NAME ]] ; then
+        export REMOTE_FULL_NAME
+    fi
+
+    if [ "$REMOTE_USER" != $USER ] ; then
+
+        export REMOTE_HOME="$HOME/$REMOTE_USER"
+
+        if [ ! -d "$REMOTE_HOME" ] ; then
+            echo "creating remote home: $REMOTE_HOME..." >&2
+            mkdir "$REMOTE_HOME" || exit 1
+        fi
+
+    fi
 }
+
+function load_remote_host_bash_rc() {
+
+    if [[ $REMOTE_USER != "" ]] ; then
+        return
+    fi
+
+    set_remote_user_from_ssh_key
+
+    if [[ $REMOTE_USER = "" ]] ; then
+        return
+    fi
+
+    local remote_bashrc="$REMOTE_HOME/.bashrc"
+
+    if [[ -e $remote_bashrc ]] ; then
+        source $remote_bashrc
+    fi
+}
+
+### END .bashrc_identify_user_stuff
+
+function _export_identify_user_stuff() {
+
+    perl -0777 -ne '/### \.bashrc_identify_user_stuff(.*?)###.*bashrc_identify_user_stuff/msg && print "$1\n"' $BASH_SOURCE \
+    > $HOME/.bashrc_identify_user_stuff
+
+    cat >> $HOME/.bashrc_identify_user_stuff <<EOF
+load_remote_host_bash_rc
+unset set_remote_user_from_ssh_key
+unset load_remote_host_bash_rc
+EOF
+
+    grep .bashrc_identify_user_stuff $HOME/.bashrc 2>&1 1>/dev/null \
+        && return
+
+    echo 'source ~/.bashrc_identify_user_stuff' \
+        >> $HOME/.bashrc
+}
+
 
 ### xorg #######################################################################
 
@@ -546,8 +601,6 @@ function xtitle () {
     esac
 }
 
-BROWSER=links
-
 if [[ $DISPLAY ]] ; then
 
     if [[ $(type -p wmctrl) ]] ; then
@@ -563,10 +616,118 @@ if [[ $DISPLAY ]] ; then
         bind 'Control-v: "#\C-b\C-k#\C-x\C-?\"$(xclip -o -selection c)\"\e\C-e\C-x\C-m\C-a\C-y\C-?\C-e\C-y\ey\C-x\C-x\C-d"'
     fi
 
-    BROWSER=firefox
+    export BROWSER=firefox
 fi
 
-export BROWSER
+### SSH ########################################################################
+
+# NOTES ON ssh
+# * prevent timeouts: /etc/ssh/ssh_config + ServerAliveInterval 5
+# * tunnel (reverse/port forwarding):
+#     * forward: ssh -v -L 3333:localhost:443 host
+#     * reverse:  ssh -nNT [via host] -R [local src port]:[dst host]:[dst port]
+#     * socks proxy: ssh -D 1080 host -p port / tsocks program
+#     * keep tunnel alive: autossh
+# * mount using ssh: sshfs / shfs
+# * cssh = clusterssh
+
+function grabssh () {
+    local SSHVARS="SSH_CLIENT SSH_TTY SSH_AUTH_SOCK SSH_CONNECTION DISPLAY"
+
+    for x in ${SSHVARS} ; do
+        (eval echo $x=\$$x) | sed  's/=/="/
+                                    s/$/"/
+                                    s/^/export /'
+    done 1>$HOME/.ssh_agent_env
+}
+
+alias fixssh="source ~/.ssh_agent_env"
+alias nosshagent="grabssh && unset SSH_AUTH_SOCK SSH_CLIENT SSH_CONNECTION SSH_TTY"
+
+# ssh url of a file or directory
+function url() {
+    echo $USER@$HOSTNAME:$(abs $1)
+}
+
+function _ssh_alias() {
+
+    local IFS=$'\n'
+
+    local cmd=$(perl - $@ <<'EOF'
+
+        use strict;
+        use warnings;
+
+        my($host, $port, @files) = @ARGV;
+
+        my $cmd = "ssh -p $port $host";
+
+        if(@files == 1) {
+            push(@files, "tmp/");
+        }
+
+        if(@files) {
+            my $dst = pop(@files);
+            my $src = join(" ", @files);
+            $cmd = "scp -P $port $src $host:$dst";
+        }
+
+        print "$cmd";
+EOF
+)
+
+    eval "$cmd"
+}
+
+function sshtunnel() { (
+
+    local  in=$1
+    local  gw=$2
+    local out=$3
+
+    if [[ $@ < 3 ]] ; then
+        DIE "usage: sshtunnel [in_host:]in_port user@gateway out_host:out_port"
+    fi
+
+    local cmd="ssh -v -N -L $in:$out $gw"
+    INFO "running: $cmd"
+    xtitle "sshtunnel $cmd" && $cmd
+) }
+
+function sslstrip() { (
+
+    local  in=$1
+    local out=$2
+
+    if [[ $@ < 2 ]] ; then
+        die "usage: sslstrip [in_host:]in_port out_host:out_port"
+    fi
+
+    local cmd="sudo stunnel -c -d $in -r $out -f"
+    INFO "running: $cmd"
+    xtitle "sslstrip $cmd" && $cmd
+) }
+
+### SCREEN #####################################################################
+
+alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen"
+
+function srd() {
+
+    grabssh
+
+    local ok
+
+    screen -rd $1 && ok=1
+
+    if [[ ! $ok ]] ; then
+        screen -rd main && ok=1
+    fi
+
+    if [[ $ok ]] ; then
+        clear
+    fi
+}
 
 ### mysql ######################################################################
 
@@ -599,6 +760,9 @@ function mysql() {
 
 # for cpan
 export FTP_PASSIVE=1
+
+export MODULEBUILDRC=~/perl5/.modulebuildrc
+export PERL_MM_OPT=INSTALL_BASE=~/perl5
 
 # less questions from cpan
 export PERL_MM_USE_DEFAULT=1
@@ -750,7 +914,7 @@ function vii() {
     command vi $file
 }
 
-# edit a lib via PERL5LIB
+# edit a lib via PATH
 function vib() {
 
     local file=$(binpathfuzzy "$@")
@@ -808,627 +972,146 @@ function cpanm() {
          -- "$@"
 }
 
-### history ####################################################################
+### function xmv ###############################################################
 
-# ignore commands  for history that start  with a space
-HISTCONTROL=ignorespace:ignoredups
-HISTIGNORE="truecrypt*"
-# HISTIGNORE="truecrypt*:blubb*"
-# HISTTIMEFORMAT="[ %Y-%m-%d %H:%M:%S ] "
-
-# Make Bash append rather than overwrite the history on disk
-shopt -s histappend
-
-# prevent history truncation
-unset HISTFILESIZE
-
-### eternal history
-
-_bashrc_eternal_history_file=~/.bash_eternal_history
-
-if [ "$REMOTE_USER" != "" ] ; then
-    _bashrc_eternal_history_file=$REMOTE_HOME/.bash_eternal_history
-fi
-
-if [ ! -e $_bashrc_eternal_history_file ] ; then
-    touch $_bashrc_eternal_history_file
-    chmod 0600 $_bashrc_eternal_history_file
-fi
-
-function _add_to_history() {
-
-    # prevent historizing last command of last session on new shells
-    if [ $_first_invoke != 0 ] ; then
-        _first_invoke=0
-        return
-    fi
-
-    # remove history position (by splitting)
-    local history=$(history 1)
-
-    [[ $_last_history = $history ]] && return;
-
-    read -r pos cmd <<< $history
-
-    local quoted_pwd=${PWD//\"/\\\"}
-
-    # update cleanup_eternal_history if changed:
-    local line="$USER"
-    line="$line $(date +'%F %T')"
-    line="$line $BASHPID"
-    line="$line \"$quoted_pwd\""
-    line="$line \"$last_return_values\""
-    line="$line $cmd"
-    echo "$line" >> $_bashrc_eternal_history_file
-
-    _last_history=$history
-
-    history -a
-}
-
-# search in eternal history
-function h() {
-
-    if [ "$*" = "" ] ; then
-        tail -100 $_bashrc_eternal_history_file
-        return
-    fi
-
-    if [[ $1 == d ]] ; then
-       tail -100 $_bashrc_eternal_history_file | \
-            cut -d \  -f 5 | sort -u | perl -pe 's/"//g' 
-    else
-        grep -i "$*" $_bashrc_eternal_history_file | tail -100 \
-            | grep -i "$*"
-    fi
-}
-
-### network ####################################################################
-
-function publicip() {
-    caturl http://checkip.dyndns.org \
-        | perl -ne '/Address\: (.+?)</i || die; print $1'
-}
-
-function set_remote_host() {
-    REMOTE_HOST=$(who -m --ips | perl -ne 'print "$1$2" if /(?:\ ([\d\.]+$)|\((.*?)[\:\)]+)/')
-}
-
-function freeport() {
-    netstat  -atn \
-        | perl -0777 -ne '@ports = /tcp.*?\:(\d+)\s+/imsg ; for $port (32768..61000) {if(!grep(/^$port$/, @ports)) { print $port; last } }'
-}
-
-### .bashrc_identify_user_stuff
-
-function set_remote_user_from_ssh_key() {
-
-    if [[ $SSH_CONNECTION = "" ]] ; then
-        return
-    fi
-
-    if [[ $(type -p ssh-add) = "" ]] ; then
-        return
-    fi
-
-    local agent_key auth_key auth_files
-
-    if [[ -r ~/.ssh/authorized_keys ]] ; then
-        auth_files="$HOME/.ssh/authorized_keys"
-    fi
-
-    if [[ -r ~/.ssh/authorized_keys2 ]] ; then
-        auth_files="$auth_files $HOME/.ssh/authorized_keys2"
-    fi
-
-    if [[ $auth_files = "" ]] ; then
-        echo "no authorizedkeys-files"
-        return
-    fi
-
-    while read agent_key ; do
-
-        agent_key=${agent_key%%=*}
-
-        if [[ $agent_key = "" ]] ; then
-            continue
-        fi
-
-        auth_key=$(grep -i "${agent_key}" $auth_files | tail -1)
-
-        if [[ $auth_key != "" ]] ; then
-            break
-        fi
-
-    done<<EOF
-        $(ssh-add -L 2>/dev/null)
-EOF
-
-    if [[ "$auth_key" =~ \[remote_user=(.+)\](.*)$ ]] ; then
-        export REMOTE_USER=${BASH_REMATCH[1]}
-        REMOTE_FULL_NAME=${BASH_REMATCH[2]}
-    else
-        return
-    fi
-
-    if [[ $REMOTE_FULL_NAME ]] ; then
-        export REMOTE_FULL_NAME
-    fi
-
-    if [ "$REMOTE_USER" != $USER ] ; then
-
-        export REMOTE_HOME="$HOME/$REMOTE_USER"
-
-        if [ ! -d "$REMOTE_HOME" ] ; then
-            echo "creating remote home: $REMOTE_HOME..." >&2
-            mkdir "$REMOTE_HOME" || exit 1
-        fi
-
-    fi
-}
-
-function load_remote_host_bash_rc() {
-
-    if [[ $REMOTE_USER != "" ]] ; then
-        return
-    fi
-
-    set_remote_user_from_ssh_key
-
-    if [[ $REMOTE_USER = "" ]] ; then
-        return
-    fi
-
-    local remote_bashrc="$REMOTE_HOME/.bashrc"
-
-    if [[ -e $remote_bashrc ]] ; then
-        source $remote_bashrc
-    fi
-}
-
-### END .bashrc_identify_user_stuff
-
-function _export_identify_user_stuff() {
-
-    perl -0777 -ne '/### \.bashrc_identify_user_stuff(.*?)###.*bashrc_identify_user_stuff/msg && print "$1\n"' $BASH_SOURCE \
-    > $HOME/.bashrc_identify_user_stuff
-
-    cat >> $HOME/.bashrc_identify_user_stuff <<EOF
-load_remote_host_bash_rc
-unset set_remote_user_from_ssh_key
-unset load_remote_host_bash_rc
-EOF
-
-    grep .bashrc_identify_user_stuff $HOME/.bashrc 2>&1 1>/dev/null \
-        && return
-
-    echo 'source ~/.bashrc_identify_user_stuff' \
-        >> $HOME/.bashrc
-}
-
-### SSH ########################################################################
-
-# NOTES ON ssh
-# * prevent timeouts: /etc/ssh/ssh_config + ServerAliveInterval 5
-# * tunnel (reverse/port forwarding):
-#     * forward: ssh -v -L 3333:localhost:443 host
-#     * reverse:  ssh -nNT [via host] -R [local src port]:[dst host]:[dst port]
-#     * socks proxy: ssh -D 1080 host -p port / tsocks program
-#     * keep tunnel alive: autossh
-# * mount using ssh: sshfs / shfs
-# * cssh = clusterssh
-
-function grabssh () {
-    local SSHVARS="SSH_CLIENT SSH_TTY SSH_AUTH_SOCK SSH_CONNECTION DISPLAY"
-
-    for x in ${SSHVARS} ; do
-        (eval echo $x=\$$x) | sed  's/=/="/
-                                    s/$/"/
-                                    s/^/export /'
-    done 1>$HOME/.ssh_agent_env
-}
-
-alias fixssh="source ~/.ssh_agent_env"
-alias nosshagent="grabssh && unset SSH_AUTH_SOCK SSH_CLIENT SSH_CONNECTION SSH_TTY"
-
-function _ssh_alias() {
+function xmv() {
 
     local IFS=$'\n'
 
-    local cmd=$(perl - $@ <<'EOF'
+    perl - $@ <<'EOF'
 
-        use strict;
-        use warnings;
+use strict;
+use warnings FATAL => 'all';
+use File::Basename;
 
-        my($host, $port, @files) = @ARGV;
+use Getopt::Long;
+Getopt::Long::Configure('bundling');
 
-        my $cmd = "ssh -p $port $host";
+my ($op, $include_directories, $dry, $normalize);
+$dry = 1;
 
-        if(@files == 1) {
-            push(@files, "tmp/");
-        }
+GetOptions(
+    'x|execute' => sub { $dry = 0 },
+    'd|include-directories' => \$include_directories,
+    'n|normalize'           => \$normalize,
+    'e|execute-perl=s'      => \$op,
+);
 
-        if(@files) {
-            my $dst = pop(@files);
-            my $src = join(" ", @files);
-            $cmd = "scp -P $port $src $host:$dst";
-        }
+if (!@ARGV) {
+    @ARGV = <STDIN>;
+    chop(@ARGV);
+}
 
-        print "$cmd";
+if (!@ARGV) {
+    die "Usage: xmv [-x] [-d] [-n] [-e perlexpr] [filenames]\n";
+}
+
+my %will  = ();
+my %was   = ();
+my $abort = 0;
+my $COUNT = 0;
+
+for (@ARGV) {
+
+    next if /^\.{1,2}$/;
+
+    my $abs = $_;
+    my $dir = dirname($_);
+    my $file = basename($_);
+
+    $dir = "" if $dir eq ".";
+    $dir .= "/" if $dir;
+
+    $abs = $dir . $file;
+    my $was = $file;
+    $_ = $file;
+
+    $_ = normalize($abs) if $normalize;
+
+    # vars to use in perlexpr
+    $COUNT++;
+    $COUNT = sprintf("%0". length(scalar(@ARGV)) ."d", $COUNT);
+
+    if ($op) {
+        eval $op;
+        die $@ if $@;
+    }
+
+    my $will = $dir . $_;
+
+    if (!-e $abs) {
+        warn "no such file: '$was'";
+        $abort = 1;
+        next;
+    }
+
+    if (-d $abs && !$include_directories) {
+        next;
+    }
+
+    my $other = $will{$will} if exists $will{$will};
+    if ($other) {
+        warn "name '$will' for '$abs' already taken by '$other'.";
+        $abort = 1;
+        next;
+    }
+
+    next if $will eq $abs;
+
+    if (-e $will) {
+        warn "file '$will' already exists.";
+        $abort = 1;
+        next;
+    }
+
+    $will{$will} = $abs;
+    $was{$abs}   = $will;
+}
+
+exit 1 if $abort;
+
+foreach my $was (sort keys %was) {
+
+    my $will = $was{$was};
+
+    print "moving '$was' -> '$will'\n";
+
+    next if $dry;
+
+    system("mv", $was, $will) && die $!;
+}
+
+sub normalize {
+    my ($abs) = @_;
+
+    my $file = basename($abs);
+    my $ext  = "";
+
+    if (!-d $abs && $file =~ /^(.+)(\..+?)$/) {
+        ($file, $ext) = ($1, $2);
+    }
+
+    $_ = $file;
+
+    s/www\.[^\.]+\.[^\.]+//g;
+
+    s/[^\w\.]+/_/g;
+
+    s/[\._]+/_/g;
+
+    s/^[\._]+//g;
+    s/[\._]+$//g;
+
+    $_ ||= "_empty_file_name";
+
+    return $_ . lc($ext);
+}
 EOF
-)
-
-    eval "$cmd"
 }
 
-function sshtunnel() { (
-
-    local  in=$1
-    local  gw=$2
-    local out=$3
-
-    if [[ $@ < 3 ]] ; then
-        DIE "usage: sshtunnel [in_host:]in_port user@gateway out_host:out_port"
-    fi
-
-    local cmd="ssh -v -N -L $in:$out $gw"
-    INFO "running: $cmd"
-    xtitle "sshtunnel $cmd" && $cmd
-) }
-
-function sslstrip() { (
-
-    local  in=$1
-    local out=$2
-
-    if [[ $@ < 2 ]] ; then
-        die "usage: sslstrip [in_host:]in_port out_host:out_port"
-    fi
-
-    local cmd="sudo stunnel -c -d $in -r $out -f"
-    INFO "running: $cmd"
-    xtitle "sslstrip $cmd" && $cmd
-) }
-
-### SCREEN #####################################################################
-
-alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen"
-
-function srd() {
-
-    grabssh
-
-    local ok
-
-    screen -rd $1 && ok=1
-
-    if [[ ! $ok ]] ; then
-        screen -rd main && ok=1
-    fi
-
-    if [[ $ok ]] ; then
-        clear
-    fi
+function normalize_file_names() {
+    xmv -ndx "$@"
 }
-
-### PROMPT #####################################################################
-
-function _set_colors() {
-
-    # tput is supposed to be more platform independent
-    # but is it always included?
-
-    #disable any colors
-    NO_COLOR="\[\033[0m\]"
-    NO_COLOR2="\033[0m"
-
-    BLACK="\[\033[0;30m\]"
-
-    RED="\[\033[1;31m\]"
-    RED2="\033[1;31m"
-
-    RED="\[\033[0;31m\]"
-    RED2="\033[0;31m"
-
-    GREEN="\[\033[0;32m\]"
-    GREEN2="\033[0;32m"
-
-    GRAY="\[\033[0;37m\]"
-    GRAY2="\033[0;37m"
-
-    ORANGE="\[\033[0;33m\]"
-    ORANGE2="\033[0;33m"
-
-    BLUE="\[\033[0;34m\]"
-    BLUE2="\033[0;34m"
-
-    MAGENTA="\[\033[0;35m\]"
-    CYAN="\[\033[0;36m\]"
-    WHITE="\[\033[0;37m\]"
-
-    BROWN="\[\033[0;33m\]"
-
-    # background colors
-    BG_BLACK="\[\033[40m\]"
-    BG_RED="\[\033[41m\]"
-    BG_GREEN="\[\033[42m\]"
-    BG_YELLOW="\[\033[43m\]"
-    BG_BLUE="\[\033[44m\]"
-    BG_MAGENTA="\[\033[45m\]"
-    BG_CYAN="\[\033[46m\]"
-    BG_WHITE="\[\033[47m\]"
-    BG_BROWN="\[\033[44;XXm\]"
-}
-
-function _fix_pwd () {
-
-    _pwd=$PWD
-
-    local top_dir
-
-    if [[ $_pwd = $HOME ]] ;  then
-        _pwd="~"
-    elif [[ $_pwd = $HOME/ ]] ;  then
-        _pwd="~"
-    else
-        _pwd=${_pwd##/*/}
-    fi
-
-    local max_length=14
-    local length=${#_pwd}
-
-    if [ $length -gt $max_length ] ; then
-
-        local left_split=$(($max_length-4))
-        local right_split=4
-
-        local right_start=$(($length-$right_split))
-
-        local left=${_pwd:0:$left_split}
-        local right=${_pwd:$right_start:$length}
-
-        _pwd=$left${RED}"*"${NO_COLOR}$right
-        _xtitle_pwd=$left"..."$right
-
-    else
-        _xtitle_pwd=$_pwd
-    fi
-}
-
-function _track_time() {
-    _track_now=$SECONDS
-
-    if [ "$_track_then" = "" ] ; then
-        _track_then=$_track_now
-    fi
-
-    echo $(($_track_now-$_track_then))
-    # _then=$now # useless here!?!
-}
-
-function _humanize_secs() {
-
-    local secs=$1
-    local human
-
-    if  [ $secs -ge 359999 ] ; then # 99 h
-        human=$(($secs / 60 / 60 / 24))d
-    elif [ $secs -ge 5999 ] ; then # 99 m
-        human=$(($secs / 60 / 60))h
-    elif [ $secs -ge 60 ] ; then
-        human=$(($secs / 60))m
-    else
-        human=$secs"s"
-    fi
-
-    if [ ${#human} = 2 ] ; then
-        human=" "$human
-    fi
-
-    echo "$human"
-}
-
-function _set_bg_jobs_count() {
-
-    local job
-    _bg_jobs_count=0
-    _bg_jobs_running_count=0
-
-    local IFS
-
-    while read job ; do
-
-        [ -z "$job" ] && continue
-
-        _bg_jobs_count=$(($_bg_jobs_count+1))
-
-    done<<EOF
-        $(jobs)
-EOF
-
-    while read job ; do
-
-        [ -z "$job" ] && continue
-
-        _bg_jobs_running_count=$(($_bg_jobs_running_count+1))
-
-    done<<EOF
-        $(jobs -r)
-EOF
-
-    if [[ $_bg_jobs_count == 0 ]] ; then
-        unset _bg_jobs_count
-    else
-        if [[ $_bg_jobs_running_count -gt 0 ]] ; then
-            _bg_jobs_count=${RED}$_bg_jobs_count${NO_COLOR}
-        fi
-
-        _bg_jobs_count=" "$_bg_jobs_count
-    fi
-}
-
-function _color_user() {
-
-    if [[ $USER == "root" ]] ; then
-        echo ${RED}$USER${NO_COLOR}
-    else
-        echo $USER
-    fi
-}
-
-function _print_on_error() {
-
-    local last_return_values=${PIPESTATUS[*]}
-
-    for item in ${last_return_values[*]} ; do
-
-        if [ $item != 0 ] ; then
-            echo -e ${RED2}exit: $last_return_values$NO_COLOR2 >&2
-            break
-        fi
-
-    done
-}
-
-function _prompt_command() {
-
-    _print_on_error
-    local secs=$(_track_time)
-    local time=$(_humanize_secs $secs)
-    local hostname=$(_color_user)@$GREEN$HOSTNAME$NO_COLOR
-    _fix_pwd
-    _set_bg_jobs_count
-
-    # $NO_COLOR first to reset color setting from other programs
-    PS1=$GRAY"$time$NO_COLOR $hostname:$_pwd${_bg_jobs_count}""$NO_COLOR> "
-    xtitle $USER@$HOSTNAME:$_xtitle_pwd
-
-    _add_to_history
-
-    # has to be done here!?!
-    _track_then=$SECONDS
-
-    # TODO
-    # $_PROMPT_WMCTRL
-}
-
-function _simple_prompt_command() {
-
-    _print_on_error
-    local secs=$(_track_time)
-    local time=$(_humanize_secs $secs)
-    _fix_pwd
-    _set_bg_jobs_count
-
-    local if_root=""
-    if [[ $USER == "root" ]] ; then
-        if_root="${RED}root$NO_COLOR "
-    fi
-
-    PS1=$NO_COLOR"$GRAY$time$NO_COLOR $if_root$_pwd${_bg_jobs_count}"">$NO_COLOR "
-    xtitle $USER@$HOSTNAME:$_xtitle_pwd
-
-    _add_to_history
-
-    # has to be done here!?!
-    _track_then=$SECONDS
-}
-
-function _spare_prompt_command() {
-
-    _print_on_error
-    _fix_pwd
-    _set_bg_jobs_count
-
-    PS1=$NO_COLOR"$_pwd${_bg_jobs_count}""$NO_COLOR> "
-    xtitle  $USER@$HOSTNAME:$_xtitle_pwd
-
-    _add_to_history
-}
-
-function _prompt() {
-    PROMPT_COMMAND=_prompt_command
-}
-
-function _simple_prompt() {
-    PROMPT_COMMAND=_simple_prompt_command
-}
-
-function _spare_prompt() {
-    PROMPT_COMMAND=_spare_prompt_command
-}
-
-unset PS1
-
-### STARTUP ####################################################################
-
-function _init_bash() {
-    _set_colors
-    unset _set_colors
-
-    set_remote_host
-
-    set_remote_user_from_ssh_key
-    load_remote_host_bash_rc
-
-    if [[ "$REMOTE_USER" != "" ]] ; then
-
-        if [[ -r $REMOTE_HOME/.vimrc ]] ; then
-            export MYVIMRC=$REMOTE_HOME/.vimrc
-        fi
-
-        if [[ -r $REMOTE_HOME/.screenrc ]] ; then
-            alias screen="screen -c $REMOTE_HOME/.screenrc"
-        fi
-
-        if [[ -d "$REMOTE_HOME" ]] ; then
-            cd "$REMOTE_HOME"
-        fi
-    fi
-
-    case $(ps -p $PPID -o comm=) in
-        screen|screen.real)
-            _simple_prompt
-        ;;
-        *)
-            if [[ $REMOTE_HOST ]] ; then
-                _prompt
-            else
-                _original_user=$USER
-                _simple_prompt
-            fi
-        ;;
-    esac
-}
-
-_init_bash
-unset _init_bash
-unset _init_perl5lib
-
-_first_invoke=1
-
-### MISC #######################################################################
-
-# run a previous command independent of the history
-function r() { (
-
-    local CMD_FILE=~/.run_command
-
-    local cmd=$@
-
-    if [ "$cmd" = "" ] ; then
-        if [ ! -e $CMD_FILE ] ; then
-            DIE "got no command to run"
-        fi
-    else
-        cmd=$(echo $cmd | perl -pe 's#./#cd $ENV{PWD} && \./#g')
-        echo "$cmd" > $CMD_FILE
-    fi
-
-    v
-
-    bash -i $CMD_FILE
-) }
 
 ### NOTES ######################################################################
 
@@ -1568,38 +1251,369 @@ function r() { (
 # * sudo update-rc.d vncserver defaults 
 # * sudo update-rc.d -f vncserver remove
 
-### NOTE #######################################################################
+### history ####################################################################
 
-# display notes defined inside the bashrc
-function note() {
+# ignore commands  for history that start  with a space
+HISTCONTROL=ignorespace:ignoredups
+HISTIGNORE="truecrypt*"
+# HISTIGNORE="truecrypt*:blubb*"
+# HISTTIMEFORMAT="[ %Y-%m-%d %H:%M:%S ] "
 
-    local search=$1
+# Make Bash append rather than overwrite the history on disk
+shopt -s histappend
 
-    if [[ ! $search ]] ; then
-        perl -ne 'print " * $1\n" if /^# NOTES ON (.*)/' \
-            $BASH_SOURCE | sort
+# prevent history truncation
+unset HISTFILESIZE
+
+### eternal history
+
+_bashrc_eternal_history_file=~/.bash_eternal_history
+
+if [ "$REMOTE_USER" != "" ] ; then
+    _bashrc_eternal_history_file=$REMOTE_HOME/.bash_eternal_history
+fi
+
+if [ ! -e $_bashrc_eternal_history_file ] ; then
+    touch $_bashrc_eternal_history_file
+    chmod 0600 $_bashrc_eternal_history_file
+fi
+
+function _add_to_history() {
+
+    # prevent historizing last command of last session on new shells
+    if [ $_first_invoke != 0 ] ; then
+        _first_invoke=0
         return
     fi
 
-    perl -0777 -ne \
-      'foreach(/^(# NOTES ON '$search'.*?\n\n)/imsg){ s/# //g; print "\n$_" }' \
-        $BASH_SOURCE
+    # remove history position (by splitting)
+    local history=$(history 1)
+
+    [[ $_last_history = $history ]] && return;
+
+    read -r pos cmd <<< $history
+
+    local quoted_pwd=${PWD//\"/\\\"}
+
+    # update cleanup_eternal_history if changed:
+    local line="$USER"
+    line="$line $(date +'%F %T')"
+    line="$line $BASHPID"
+    line="$line \"$quoted_pwd\""
+    line="$line \"$last_return_values\""
+    line="$line $cmd"
+    echo "$line" >> $_bashrc_eternal_history_file
+
+    _last_history=$history
+
+    history -a
 }
 
-function notecmdfu() {
-    curl "http://www.commandlinefu.com/commands/matching/$@/$(echo -n $@ | openssl base64)/plaintext";
+# search in eternal history
+function h() {
+
+    if [ "$*" = "" ] ; then
+        tail -100 $_bashrc_eternal_history_file
+        return
+    fi
+
+    if [[ $1 == d ]] ; then
+       tail -100 $_bashrc_eternal_history_file | \
+            cut -d \  -f 5 | sort -u | perl -pe 's/"//g' 
+    else
+        grep -i "$*" $_bashrc_eternal_history_file | tail -100 \
+            | grep -i "$*"
+    fi
 }
 
-# query wikipedia via dns
-function wp() {
-    dig +short txt "$*".wp.dg.cx | perl -0777 -pe 'exit 1 if ! $_ ; s/\\//g'
+### PROMPT #####################################################################
+
+function _set_colors() {
+
+    # disable any colors
+    NO_COLOR="\[\033[0m\]"
+    NO_COLOR2="\033[0m"
+
+    BLACK="\[\033[0;30m\]"
+
+    RED="\[\033[1;31m\]"
+    RED2="\033[1;31m"
+
+    RED="\[\033[0;31m\]"
+    RED2="\033[0;31m"
+
+    GREEN="\[\033[0;32m\]"
+    GREEN2="\033[0;32m"
+
+    GRAY="\[\033[0;37m\]"
+    GRAY2="\033[0;37m"
+
+    ORANGE="\[\033[0;33m\]"
+    ORANGE2="\033[0;33m"
+
+    BLUE="\[\033[0;34m\]"
+    BLUE2="\033[0;34m"
+
+    MAGENTA="\[\033[0;35m\]"
+    CYAN="\[\033[0;36m\]"
+    WHITE="\[\033[0;37m\]"
+
+    BROWN="\[\033[0;33m\]"
+
+    # background colors
+    BG_BLACK="\[\033[40m\]"
+    BG_RED="\[\033[41m\]"
+    BG_GREEN="\[\033[42m\]"
+    BG_YELLOW="\[\033[43m\]"
+    BG_BLUE="\[\033[44m\]"
+    BG_MAGENTA="\[\033[45m\]"
+    BG_CYAN="\[\033[46m\]"
+    BG_WHITE="\[\033[47m\]"
+    BG_BROWN="\[\033[44;XXm\]"
 }
 
-# quick command etc lookup
-function m() {
-    help "$*" 2>/dev/null \
-        || man "$*" 2>/dev/null \
-        || $BROWSER "http://www.google.com/search?q=$*";
+function _fix_pwd () {
+
+    _pwd=$PWD
+
+    local top_dir
+
+    if [[ $_pwd = $HOME ]] ;  then
+        _pwd="~"
+    elif [[ $_pwd = $HOME/ ]] ;  then
+        _pwd="~"
+    else
+        _pwd=${_pwd##/*/}
+    fi
+
+    local max_length=14
+    local length=${#_pwd}
+
+    if [ $length -gt $max_length ] ; then
+
+        local left_split=$(($max_length-4))
+        local right_split=4
+
+        local right_start=$(($length-$right_split))
+
+        local left=${_pwd:0:$left_split}
+        local right=${_pwd:$right_start:$length}
+
+        _pwd=$left${RED}"*"${NO_COLOR}$right
+        _xtitle_pwd=$left"..."$right
+
+    else
+        _xtitle_pwd=$_pwd
+    fi
 }
 
-### THE END ####################################################################
+function _track_time() {
+    _track_now=$SECONDS
+
+    if [ "$_track_then" = "" ] ; then
+        _track_then=$_track_now
+    fi
+
+    echo $(($_track_now-$_track_then))
+    # _then=$now # useless here!?!
+}
+
+function humanize_secs() {
+
+    local secs=$1
+    local human
+
+    if  [ $secs -ge 359999 ] ; then # 99 h
+        human=$(($secs / 60 / 60 / 24))d
+    elif [ $secs -ge 5999 ] ; then # 99 m
+        human=$(($secs / 60 / 60))h
+    elif [ $secs -ge 60 ] ; then
+        human=$(($secs / 60))m
+    else
+        human=$secs"s"
+    fi
+
+    if [ ${#human} = 2 ] ; then
+        human=" "$human
+    fi
+
+    echo "$human"
+}
+
+function _set_bg_jobs_count() {
+
+    local job
+    _bg_jobs_count=0
+    _bg_jobs_running_count=0
+
+    local IFS
+
+    while read job ; do
+
+        [ -z "$job" ] && continue
+
+        _bg_jobs_count=$(($_bg_jobs_count+1))
+
+    done<<EOF
+        $(jobs)
+EOF
+
+    while read job ; do
+
+        [ -z "$job" ] && continue
+
+        _bg_jobs_running_count=$(($_bg_jobs_running_count+1))
+
+    done<<EOF
+        $(jobs -r)
+EOF
+
+    if [[ $_bg_jobs_count == 0 ]] ; then
+        unset _bg_jobs_count
+    else
+        if [[ $_bg_jobs_running_count -gt 0 ]] ; then
+            _bg_jobs_count=${RED}$_bg_jobs_count${NO_COLOR}
+        fi
+
+        _bg_jobs_count=" "$_bg_jobs_count
+    fi
+}
+
+function _color_user() {
+
+    if [[ $USER == "root" ]] ; then
+        echo ${RED}$USER${NO_COLOR}
+    else
+        echo $USER
+    fi
+}
+
+function _print_on_error() {
+
+    local last_return_values=${PIPESTATUS[*]}
+
+    for item in ${last_return_values[*]} ; do
+
+        if [ $item != 0 ] ; then
+            echo -e ${RED2}exit: $last_return_values$NO_COLOR2 >&2
+            break
+        fi
+
+    done
+}
+
+function _prompt_command_default() {
+
+    _print_on_error
+    local secs=$(_track_time)
+    local time=$(humanize_secs $secs)
+    local hostname=$(_color_user)@$GREEN$HOSTNAME$NO_COLOR
+    _fix_pwd
+    _set_bg_jobs_count
+
+    # $NO_COLOR first to reset color setting from other programs
+    PS1=$GRAY"$time$NO_COLOR $hostname:$_pwd${_bg_jobs_count}""$NO_COLOR> "
+    xtitle $USER@$HOSTNAME:$_xtitle_pwd
+
+    _add_to_history
+
+    # has to be done here!?!
+    _track_then=$SECONDS
+
+    # TODO
+    # $_PROMPT_WMCTRL
+}
+
+function _prompt_command_simple() {
+
+    _print_on_error
+    local secs=$(_track_time)
+    local time=$(humanize_secs $secs)
+    _fix_pwd
+    _set_bg_jobs_count
+
+    local if_root=""
+    if [[ $USER == "root" ]] ; then
+        if_root="${RED}root$NO_COLOR "
+    fi
+
+    PS1=$NO_COLOR"$GRAY$time$NO_COLOR $if_root$_pwd${_bg_jobs_count}"">$NO_COLOR "
+    xtitle $USER@$HOSTNAME:$_xtitle_pwd
+
+    _add_to_history
+
+    # has to be done here!?!
+    _track_then=$SECONDS
+}
+
+function _prompt_command_spare() {
+
+    _print_on_error
+    _fix_pwd
+    _set_bg_jobs_count
+
+    PS1=$NO_COLOR"$_pwd${_bg_jobs_count}""$NO_COLOR> "
+    xtitle  $USER@$HOSTNAME:$_xtitle_pwd
+
+    _add_to_history
+}
+
+function prompt_default() {
+    PROMPT_COMMAND=_prompt_command_default
+}
+
+function prompt_simple() {
+    PROMPT_COMMAND=_prompt_command_simple
+}
+
+function prompt_spare() {
+    PROMPT_COMMAND=_prompt_command_spare
+}
+
+unset PS1
+
+### STARTUP ####################################################################
+
+_set_colors
+unset _set_colors
+
+set_remote_host
+set_remote_user_from_ssh_key
+load_remote_host_bash_rc
+
+if [[ "$REMOTE_USER" != "" ]] ; then
+
+    if [[ -r $REMOTE_HOME/.vimrc ]] ; then
+        export MYVIMRC=$REMOTE_HOME/.vimrc
+    fi
+
+    if [[ -r $REMOTE_HOME/.screenrc ]] ; then
+        alias screen="screen -c $REMOTE_HOME/.screenrc"
+    fi
+
+    if [[ -d "$REMOTE_HOME" ]] ; then
+        cd "$REMOTE_HOME"
+    fi
+fi
+
+case $(parent) in
+    screen|screen.real|tmux)
+        prompt_simple
+    ;;
+    *)
+        if [[ $REMOTE_HOST ]] ; then
+            prompt_default
+        else
+            _original_user=$USER
+            prompt_simple
+        fi
+    ;;
+esac
+
+_first_invoke=1
+
+if [ -r ~/.bashrc_local ] ; then
+    source ~/.bashrc_local
+fi
+
+### END ########################################################################
