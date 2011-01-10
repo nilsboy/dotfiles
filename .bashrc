@@ -344,7 +344,7 @@ function m() {
     fi
 
     man "$*" 2>/dev/null \
-       || $BROWSER "http://www.google.com/search?q=$*";
+       || $BROWSER "http://www.duckduckgo.com/?q=$*";
 }
 
 # translate a word
@@ -427,38 +427,45 @@ function reloadbashrc() {
 
 }
 
-function bashrc_export_functions_to_files() {
+function bashrc_export_function_to_file() {
+
+    local funct=${1?specify function name}
+    local file=$2
+
+    if ! [[ $file ]] ; then
+        file=$funct
+    fi
 
     local note="# automatic bashrc export - do not edit"
+    local is_export=
+
+    if [ -e $funct ] ; then
+        grep -q "$note" $funct && is_export=1
+
+        if ! [ $is_export ] ; then
+            WARN "skipping - file exists: $funct"
+            continue
+        fi
+    fi
+
+    echo "$note"        > $file
+    echo -n "# "       >> $file
+    type $funct        >> $file
+    echo               >> $file
+    echo $funct '"$@"' >> $file
+
+    chmod +x $file
+}
+
+function bashrc_export_functions_to_files() {
 
     while read funct ; do
 
-        local is_export=
-
-        if [[ $funct = cpanm ]] ; then
-            continue;
-        fi
-
-        if [ -e $funct ] ; then
-
-            grep -q "$note" $funct && is_export=1
-
-            if ! [ $is_export ] ; then
-                WARN "file exists: $funct"
-                continue
-            fi
-        fi
-
-        echo "$note"        > $funct
-        echo -n "# "       >> $funct
-        type $funct        >> $funct
-        echo               >> $funct
-        echo $funct '"$@"' >> $funct
-
-        chmod +x $funct
+    bashrc_export_function_to_file $funct
 
     done<<EOF
-        $(perl -ne 'foreach (/^function ((?!_).+?)\(/) {print "$_\n" }' ~/.bashrc)
+        $(perl -ne 'foreach (/^function ((?!_).+?)\(/) {print "$_\n" }' \
+            ~/.bashrc)
 EOF
 
 }
