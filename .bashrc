@@ -234,7 +234,14 @@ function find_older_than_days() {
 }
 
 alias find_last_changes='find -type f -printf "%CF %CH:%CM %h/%f\n" | sort'
-alias find_largest_files='find -type f -mount -printf "%k %p\n" | sort -rg | cut -d \  -f 2- | xargs -I {} du -sh {} | less'
+
+function find_largest_files() {
+    find . -mount -type f -printf "%k %p\n" \
+        | sort -rg \
+        | cut -d \  -f 2- \
+        | xargs -I {} du -sh {} \
+        | less
+}
 
 export GREP_OPTIONS="--color=auto"
 alias listgrep="grep -xFf"
