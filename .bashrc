@@ -174,7 +174,7 @@ function timestamp2date() {
     'print strftime("%F %T", localtime(substr("'$timestamp'", 0, 10))) . "\n"'
 }
 
-## shell helpers functions #####################################################
+## shell helper functions ######################################################
 
 # clear screen also create distance to last command for easy viewing
 function v() {
@@ -333,7 +333,7 @@ function note() {
         $BASH_SOURCE
 }
 
-function notecmdfu() {
+function cmdfu() {
     curl "http://www.commandlinefu.com/commands/matching/$@/$(echo -n $@ | openssl base64)/plaintext";
 }
 
@@ -368,8 +368,8 @@ function publicip() {
         | perl -ne '/Address\: (.+?)</i || die; print $1'
 }
 
-function set_remote_host() {
-    REMOTE_HOST=$(who -m --ips | perl -ne 'print "$1$2" if /(?:\ ([\d\.]+$)|\((.*?)[\:\)]+)/')
+function remotehost() {
+    echo ${SSH_CLIENT%% *}
 }
 
 function freeport() {
@@ -1591,7 +1591,7 @@ unset PS1
 _set_colors
 unset _set_colors
 
-set_remote_host
+export REMOTE_HOST=$(remotehost)
 set_remote_user_from_ssh_key
 load_remote_host_bash_rc
 
