@@ -334,7 +334,8 @@ function note() {
 }
 
 function cmdfu() {
-    curl "http://www.commandlinefu.com/commands/matching/$@/$(echo -n $@ | openssl base64)/plaintext";
+    curl "http://www.commandlinefu.com/commands/matching/$@/$(echo -n $@ | openssl base64)/plaintext" \
+        | less -F
 }
 
 # query wikipedia via dns
@@ -345,13 +346,33 @@ function wp() {
 # quick command help lookup
 function m() {
 
-    if [[ $(help "$*" 2>/dev/null) ]] ; then
-        help "$*" | less
-        return
+    local cmd=$1
+    local arg=$2
+
+    if [[ $arg ]] ; then
+        arg="   "$arg
+    else
+        arg='^$'
     fi
 
-    man "$*" 2>/dev/null \
-       || $BROWSER "http://www.duckduckgo.com/?q=$*";
+    (
+        help $cmd   && return
+        man  $cmd   && return
+
+        if [[ $(type -p $cmd) ]] ; then
+            $cmd --help 2>&1 \
+                | perl -0777 -pe 'exit 1 if /^$/' && return
+            $cmd -h 2>&1 \
+                | perl -0777 -pe 'exit 1 if /^$/' && return
+        fi
+
+        aptw $cmd && perl -e 'print "-" x 80, "\n"'
+
+        links -dump http://man.cx/$cmd \
+            | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/'
+
+    ) 2>/dev/null \
+        | less -F +/"$arg"
 }
 
 # translate a word
