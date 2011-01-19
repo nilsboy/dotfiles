@@ -19,6 +19,10 @@ fi
 [[ $REMOTE_HOME   ]] || export REMOTE_HOME=$HOME
 [[ $REMOTE_BASHRC ]] || export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 
+if [[ ! $_first_invoke && $REMOTE_HOME != $HOME ]] ; then
+    export PATH=$REMOTE_HOME/bin:$PATH
+fi
+
 export LANG="de_DE.UTF-8"
 # export LC_ALL="de_DE.UTF-8"
 # export LC_CTYPE="de_DE.UTF-8"
@@ -84,10 +88,11 @@ alias less="less -in"
 alias crontab="crontab -i"
 
 alias j="jobs -l"
-alias l='ls -lh --time-style=+"%F %H:%M" --color=auto'
-alias lr="ls -rtlh"
-alias ls='ls --color=auto'
-alias lc="ls -rtlhc"
+
+alias  l='ls --color=auto --time-style=+"%F %H:%M" -lh'
+alias lr='ls --color=auto --time-style=+"%F %H:%M" -rtlh'
+alias ls='ls --color=auto --time-style=+"%F %H:%M"'
+alias lc='ls --color=auto --time-style=+"%F %H:%M" -rtlhc'
 
 alias xargs="xargs -I {}"
 
@@ -98,7 +103,7 @@ alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 
 if [[ $(type -p tree) ]] ; then
-    alias t="tree --noreport --dirsfirst"
+    alias  t="tree --noreport --dirsfirst"
     alias td="tree --noreport -d"
 else
     alias t="find | sort"
