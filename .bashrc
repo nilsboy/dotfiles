@@ -749,19 +749,31 @@ alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen"
 
 function srd() {
 
+    local session=$1
+
+    if [[ ! $session ]] ; then
+        session=main
+    fi
+
     grabssh
 
-    local ok
+    (
+        if tmux has-session -t $session ; then
+            tmux -2 att -d -t $session
+            exit 0
+        fi
 
-    screen -rd $1 && ok=1
+        if tmux ls 1>/dev/null ; then
+            tmux -2 att -d
+            exit 0
+        fi
 
-    if [[ ! $ok ]] ; then
-        screen -rd main && ok=1
-    fi
+        screen -rd $session && exit
+        screen -rd && exit
 
-    if [[ $ok ]] ; then
-        clear
-    fi
+        exit 1
+
+    ) 2>/dev/null && clear
 }
 
 ### mysql ######################################################################
