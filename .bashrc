@@ -1,7 +1,9 @@
 ### for all shells #############################################################
 
-export PATH=~/bin:~/perl5/bin:$PATH
-export PERL5LIB=~/perl5/lib/perl5:~/perldev/lib:$PERL5LIB
+if [[ ! $_first_invoke ]] ; then
+    export PATH=~/bin:~/perl5/bin:$PATH
+    export PERL5LIB=~/perl5/lib/perl5:~/perldev/lib:$PERL5LIB
+fi
 
 if [[ ! $JAVA_HOME ]] ; then
     export JAVA_HOME=/usr/lib/jvm/java-6-sun
@@ -13,7 +15,9 @@ fi
 
 ### variables ##################################################################
 
-export REMOTE_HOME=$HOME
+[[ $REMOTE_USER   ]] || export REMOTE_USER=$USER
+[[ $REMOTE_HOME   ]] || export REMOTE_HOME=$HOME
+[[ $REMOTE_BASHRC ]] || export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 
 export LANG="de_DE.UTF-8"
 # export LC_ALL="de_DE.UTF-8"
@@ -129,15 +133,31 @@ function WARN()  { _LOG "WARN " $ORANGE2 1 "$@" ; }
 function ERROR() { _LOG "ERROR" $RED2    2 "$@" ; }
 function DIE()   { _LOG "FATAL" $RED2    2 "$@" ; exit 1 ; }
 
+function SHOW()  {
+    local var=$1
+    shift
+    echo -e "$GREEN2$var$NO_COLOR2:\n$@\n"
+}
+
 ## system functions ############################################################
 
-function _check_env() {
-    echo "SHELL" $(echo $SHELL)
-    echo "PATH"  $(echo $PATH)
-    echo "PERL5LIB"  $(echo $PERL5LIB)
-    cat /proc/version
-    uname -a
-    cat /etc/issue.net
+function showenv() {
+
+    while read v ; do
+        SHOW $v ${!v}
+    done<<EOF
+        REMOTE_USER
+        REMOTE_HOME
+        REMOTE_BASHRC
+        HISTFILE_ETERNAL
+        SHELL
+        PATH
+        PERL5LIB
+EOF
+
+    SHOW Linux $(cat /etc/issue.net)
+    SHOW uname $(uname -a)
+    SHOW kernel $(cat /proc/version)
 }
 
 function switch_to_iso() { export LANG=de_DE@euro ; }
@@ -511,9 +531,24 @@ function updatevimconfig() {
     wget -qO ~/.vim/plugin/taglist.vim http://github.com/evenless/etc/raw/master/.vim/plugin/taglist.vim
 }
 
-### .bashrc_identify_user_stuff
+### export multiuser environment ###############################################
 
-function set_remote_user_from_ssh_key() {
+function bashrc_export_setup_multiuser_environment() { (
+
+    set -e
+
+    local funct=bashrc_setup_multiuser_environment
+    local file=~/.$funct
+
+    bashrc_export_function_to_file $funct $file
+
+    grep -q "$funct" $HOME/.bashrc && exit 0
+
+    echo "source $file" >> $HOME/.bashrc
+) }
+
+
+function bashrc_setup_multiuser_environment() {
 
     if [[ $SSH_CONNECTION = "" ]] ; then
         return
@@ -577,47 +612,13 @@ EOF
         fi
 
     fi
-}
 
-function load_remote_host_bash_rc() {
+    export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 
-    if [[ $REMOTE_USER != "" ]] ; then
-        return
-    fi
-
-    set_remote_user_from_ssh_key
-
-    if [[ $REMOTE_USER = "" ]] ; then
-        return
-    fi
-
-    local remote_bashrc="$REMOTE_HOME/.bashrc"
-
-    if [[ -e $remote_bashrc ]] ; then
-        source $remote_bashrc
+    if [[ -e $REMOTE_BASHRC ]] ; then
+        source $REMOTE_BASHRC
     fi
 }
-
-### END .bashrc_identify_user_stuff
-
-function _export_identify_user_stuff() {
-
-    perl -0777 -ne '/### \.bashrc_identify_user_stuff(.*?)###.*bashrc_identify_user_stuff/msg && print "$1\n"' $BASH_SOURCE \
-    > $HOME/.bashrc_identify_user_stuff
-
-    cat >> $HOME/.bashrc_identify_user_stuff <<EOF
-load_remote_host_bash_rc
-unset set_remote_user_from_ssh_key
-unset load_remote_host_bash_rc
-EOF
-
-    grep .bashrc_identify_user_stuff $HOME/.bashrc 2>&1 1>/dev/null \
-        && return
-
-    echo 'source ~/.bashrc_identify_user_stuff' \
-        >> $HOME/.bashrc
-}
-
 
 ### xorg #######################################################################
 
@@ -1314,15 +1315,12 @@ unset HISTFILESIZE
 
 ### eternal history
 
-_bashrc_eternal_history_file=~/.bash_eternal_history
+# echo $REMOTE_HOME
+HISTFILE_ETERNAL=$REMOTE_HOME/.bash_eternal_history
 
-if [ "$REMOTE_USER" != "" ] ; then
-    _bashrc_eternal_history_file=$REMOTE_HOME/.bash_eternal_history
-fi
-
-if [ ! -e $_bashrc_eternal_history_file ] ; then
-    touch $_bashrc_eternal_history_file
-    chmod 0600 $_bashrc_eternal_history_file
+if [ ! -e $HISTFILE_ETERNAL ] ; then
+    touch $HISTFILE_ETERNAL
+    chmod 0600 $HISTFILE_ETERNAL
 fi
 
 function _add_to_history() {
@@ -1349,7 +1347,7 @@ function _add_to_history() {
     line="$line \"$quoted_pwd\""
     line="$line \"$last_return_values\""
     line="$line $cmd"
-    echo "$line" >> $_bashrc_eternal_history_file
+    echo "$line" >> $HISTFILE_ETERNAL
 
     _last_history=$history
 
@@ -1360,15 +1358,15 @@ function _add_to_history() {
 function h() {
 
     if [ "$*" = "" ] ; then
-        tail -100 $_bashrc_eternal_history_file
+        tail -100 $HISTFILE_ETERNAL
         return
     fi
 
     if [[ $1 == d ]] ; then
-       tail -100 $_bashrc_eternal_history_file | \
+       tail -100 $HISTFILE_ETERNAL | \
             cut -d \  -f 5 | sort -u | perl -pe 's/"//g' 
     else
-        grep -i "$*" $_bashrc_eternal_history_file | tail -100 \
+        grep -i "$*" $HISTFILE_ETERNAL | tail -100 \
             | grep -i "$*"
     fi
 }
@@ -1625,10 +1623,8 @@ _set_colors
 unset _set_colors
 
 export REMOTE_HOST=$(remotehost)
-set_remote_user_from_ssh_key
-load_remote_host_bash_rc
 
-if [[ "$REMOTE_USER" != "" ]] ; then
+if [[ $REMOTE_USER != $USER ]] ; then
 
     if [[ -r $REMOTE_HOME/.vimrc ]] ; then
         export MYVIMRC=$REMOTE_HOME/.vimrc
