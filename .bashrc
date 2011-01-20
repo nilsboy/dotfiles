@@ -445,18 +445,19 @@ EOF
 
 ### conf files handling ########################################################
 
-function updatebashrc() {
+function updatebashrc() { (
+
+    set -e
 
     wget -q --no-check-certificate \
         -O /tmp/bashrc.$$ http://github.com/evenless/etc/raw/master/.bashrc \
-        || return 1
 
-    mv -f /tmp/bashrc.$$ ~/.bashrc
+    mv -f /tmp/bashrc.$$ $REMOTE_BASHRC
 
     bashrc_clean_environment
 
-    . ~/.bashrc
-}
+    . $REMOTE_BASHRC
+) }
 
 function bashrc_clean_environment() {
 
@@ -467,7 +468,7 @@ function bashrc_clean_environment() {
     while read funct ; do
         unset $funct
     done<<EOF
-        $(perl -ne 'foreach (/^function (.+?)\(/) {print "$_\n" }' ~/.bashrc)
+        $(perl -ne 'foreach (/^function (.+?)\(/) {print "$_\n" }' $REMOTE_BASHRC)
 EOF
 
 }
@@ -476,7 +477,7 @@ function reloadbashrc() {
 
     bashrc_clean_environment
 
-    . ~/.bashrc
+    . $REMOTE_BASHRC
 
 }
 
