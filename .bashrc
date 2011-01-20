@@ -549,9 +549,9 @@ function bashrc_export_setup_multiuser_environment() { (
 
     grep -q "$funct" $HOME/.bashrc && exit 0
 
-    echo "source $file" >> $HOME/.bashrc
+    echo                    >> $HOME/.bashrc
+    echo "source ~/.$funct" >> $HOME/.bashrc
 ) }
-
 
 function bashrc_setup_multiuser_environment() {
 
