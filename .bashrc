@@ -18,6 +18,7 @@ fi
 [[ $REMOTE_USER   ]] || export REMOTE_USER=$USER
 [[ $REMOTE_HOME   ]] || export REMOTE_HOME=$HOME
 [[ $REMOTE_BASHRC ]] || export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
+[[ $REMOTE_HOST   ]] || export REMOTE_HOST=${SSH_CLIENT%% *}
 
 if [[ ! $_first_invoke && $REMOTE_HOME != $HOME ]] ; then
     export PATH=$REMOTE_HOME/bin:$PATH
@@ -81,7 +82,7 @@ stty start ^-
 
 ### aliases ####################################################################
 
-alias vi="DISPLAY= vi"
+alias vi="DISPLAY= vi -i $REMOTE_HOME/.viminfo -u $REMOTE_HOME/.vimrc"
 alias cp="cp -i"
 alias mv="mv -i"
 alias less="less -in"
@@ -153,6 +154,7 @@ function showenv() {
     done<<EOF
         REMOTE_USER
         REMOTE_HOME
+        REMOTE_HOST
         REMOTE_BASHRC
         HISTFILE_ETERNAL
         SHELL
@@ -308,7 +310,7 @@ function f() { (
 
 # backup a file appending a date
 function bak() {
-    cp ${1?filename not specified}{,_$(date +%Y%m%d_%H%M%S)};
+    cp -v ${1?filename not specified}{,_$(date +%Y%m%d_%H%M%S)};
 }
 
 function dos2unix() {
@@ -414,10 +416,6 @@ function publicip() {
         | perl -ne '/Address\: (.+?)</i || die; print $1'
 }
 
-function remotehost() {
-    echo ${SSH_CLIENT%% *}
-}
-
 function freeport() {
     netstat  -atn \
         | perl -0777 -ne '@ports = /tcp.*?\:(\d+)\s+/imsg ; for $port (32768..61000) {if(!grep(/^$port$/, @ports)) { print $port; last } }'
@@ -481,6 +479,16 @@ function reloadbashrc() {
 
 }
 
+function bashrc_export_function() {
+
+    local funct=${1?specify function name}
+
+    echo -n "# "
+    type $funct
+    echo
+    echo $funct '"$@"'
+}
+
 function bashrc_export_function_to_file() {
 
     local funct=${1?specify function name}
@@ -502,11 +510,8 @@ function bashrc_export_function_to_file() {
         fi
     fi
 
-    echo "$note"        > $file
-    echo -n "# "       >> $file
-    type $funct        >> $file
-    echo               >> $file
-    echo $funct '"$@"' >> $file
+    echo "$note"                   > $file
+    bashrc_export_function $funct >> $file
 
     chmod +x $file
 }
@@ -519,107 +524,83 @@ function bashrc_export_functions_to_files() {
 
     done<<EOF
         $(perl -ne 'foreach (/^function ((?!_).+?)\(/) {print "$_\n" }' \
-            ~/.bashrc)
+            $REMOTE_BASHRC)
 EOF
 
 }
 
 function updatevimconfig() {
 
-    for dir in ~/.vim/colors  ~/.vim/plugin ; do
+    for dir in $REMOTE_HOME/.vim/colors  $REMOTE_HOME/.vim/plugin ; do
         if [ ! -d $dir ] ; then
             mkdir -p $dir
         fi
     done
 
-    wget -qO ~/.vimrc http://github.com/evenless/etc/raw/master/.vimrc
-    wget -qO ~/.vim/colors/autumnleaf256.vim http://github.com/evenless/etc/raw/master/.vim/colors/autumnleaf256.vim
-    wget -qO ~/.vim/plugin/taglist.vim http://github.com/evenless/etc/raw/master/.vim/plugin/taglist.vim
+    wget -qO $REMOTE_HOME/.vimrc http://github.com/evenless/etc/raw/master/.vimrc
+    wget -qO $REMOTE_HOME/.vim/colors/autumnleaf256.vim http://github.com/evenless/etc/raw/master/.vim/colors/autumnleaf256.vim
+    wget -qO $REMOTE_HOME/.vim/plugin/taglist.vim http://github.com/evenless/etc/raw/master/.vim/plugin/taglist.vim
 }
 
 ### export multiuser environment ###############################################
 
-function bashrc_export_setup_multiuser_environment() { (
+function bashrc_setup_multiuser_account() {
 
-    set -e
+    local remote_user=$REMOTE_USER
+    local server=${1?specify server}
+
+    ssh $server "test -d $remote_user/.ssh || mkdir -p $remote_user/.ssh"
+
+    ssh-add -L | ssh $server "cat > $remote_user/.ssh/authorized_keys"
+    scp $REMOTE_BASHRC $server:$remote_user/
+    scp $REMOTE_HOME/.vimrc $server:$remote_user/
+    scp $REMOTE_HOME/.screenrc $server:$remote_user/
 
     local funct=bashrc_setup_multiuser_environment
-    local file=~/.$funct
 
-    bashrc_export_function_to_file $funct $file
+    bashrc_export_function $funct \
+        | perl -0777 -pe 's/^.*?\n{|\n}.*//smg' \
+        | ssh $server "cat > ~/.$funct"
 
-    grep -q "$funct" $HOME/.bashrc && exit 0
-
-    echo                    >> $HOME/.bashrc
-    echo "source ~/.$funct" >> $HOME/.bashrc
-) }
+    echo 'source ~/.'$funct \
+        | ssh $server "grep -q $funct ~/.bashrc || cat >> ~/.bashrc"
+}
 
 function bashrc_setup_multiuser_environment() {
 
-    if [[ $SSH_CONNECTION = "" ]] ; then
-        return
-    fi
+    [[ $SSH_CONNECTION ]] || return
 
-    if [[ $(type -p ssh-add) = "" ]] ; then
-        return
-    fi
+    export REMOTE_HOST=${SSH_CLIENT%% *}
 
-    local agent_key auth_key auth_files
+    type -p ssh-add 1>/dev/null || return
 
-    if [[ -r ~/.ssh/authorized_keys ]] ; then
-        auth_files="$HOME/.ssh/authorized_keys"
-    fi
-
-    if [[ -r ~/.ssh/authorized_keys2 ]] ; then
-        auth_files="$auth_files $HOME/.ssh/authorized_keys2"
-    fi
-
-    if [[ $auth_files = "" ]] ; then
-        echo "no authorizedkeys-files"
-        return
-    fi
+    shopt -s nullglob
+    auth_files=(*/.ssh/authorized_keys)
+    [[ $auth_files ]] || return
 
     while read agent_key ; do
 
         agent_key=${agent_key%%=*}
 
-        if [[ $agent_key = "" ]] ; then
-            continue
-        fi
+        [[ $agent_key ]] || continue;
 
-        auth_key=$(grep -i "${agent_key}" $auth_files | tail -1)
+        for auth_file in ${auth_files[@]} ; do
 
-        if [[ $auth_key != "" ]] ; then
-            break
-        fi
+            if grep -q "${agent_key}" $auth_file ; then
+                export REMOTE_USER=${auth_file%%/.ssh/authorized_keys}
+                break 2
+            fi
 
-    done<<EOF
-        $(ssh-add -L 2>/dev/null)
-EOF
+        done
 
-    if [[ "$auth_key" =~ \[remote_user=(.+)\](.*)$ ]] ; then
-        export REMOTE_USER=${BASH_REMATCH[1]}
-        REMOTE_FULL_NAME=${BASH_REMATCH[2]}
-    else
-        return
-    fi
+    done<<<$(ssh-add -L 2>/dev/null)
 
-    if [[ $REMOTE_FULL_NAME ]] ; then
-        export REMOTE_FULL_NAME
-    fi
-
-    if [ "$REMOTE_USER" != $USER ] ; then
-
+    if [[ "$REMOTE_USER" != $USER ]] ; then
         export REMOTE_HOME="$HOME/$REMOTE_USER"
-
-        if [ ! -d "$REMOTE_HOME" ] ; then
-            echo "creating remote home: $REMOTE_HOME..." >&2
-            mkdir "$REMOTE_HOME" || exit 1
-        fi
-
     fi
 
     export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
+
 
     if [[ -e $REMOTE_BASHRC ]] ; then
         source $REMOTE_BASHRC
@@ -683,7 +664,7 @@ function grabssh () {
     done 1>$HOME/.ssh_agent_env
 }
 
-alias fixssh="source ~/.ssh_agent_env"
+alias fixssh="source $REMOTE_HOME/.ssh_agent_env"
 alias nosshagent="grabssh && unset SSH_AUTH_SOCK SSH_CLIENT SSH_CONNECTION SSH_TTY"
 
 # ssh url of a file or directory
@@ -753,6 +734,7 @@ function sslstrip() { (
 ### SCREEN #####################################################################
 
 alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen"
+alias screen="screen -c $REMOTE_HOME/.screenrc"
 
 function srd() {
 
@@ -1628,17 +1610,8 @@ unset PS1
 _set_colors
 unset _set_colors
 
-export REMOTE_HOST=$(remotehost)
 
 if [[ $REMOTE_USER != $USER ]] ; then
-
-    if [[ -r $REMOTE_HOME/.vimrc ]] ; then
-        export MYVIMRC=$REMOTE_HOME/.vimrc
-    fi
-
-    if [[ -r $REMOTE_HOME/.screenrc ]] ; then
-        alias screen="screen -c $REMOTE_HOME/.screenrc"
-    fi
 
     if [[ -d "$REMOTE_HOME" ]] ; then
         cd "$REMOTE_HOME"
@@ -1661,8 +1634,10 @@ esac
 
 _first_invoke=1
 
-if [ -r ~/.bashrc_local ] ; then
-    source ~/.bashrc_local
+if [ -r $REMOTE_HOME/.bashrc_local ] ; then
+    source $REMOTE_HOME/.bashrc_local
 fi
+
+true
 
 ### END ########################################################################
