@@ -456,7 +456,7 @@ function updatebashrc() { (
 
     bashrc_clean_environment
 
-    . $REMOTE_BASHRC
+    reloadbashrc
 ) }
 
 function bashrc_clean_environment() {
