@@ -454,8 +454,6 @@ function updatebashrc() { (
 
     mv -f /tmp/bashrc.$$ $REMOTE_BASHRC
 
-    bashrc_clean_environment
-
     reloadbashrc
 ) }
 
@@ -474,11 +472,8 @@ EOF
 }
 
 function reloadbashrc() {
-
     bashrc_clean_environment
-
-    . $REMOTE_BASHRC
-
+    source $REMOTE_BASHRC
 }
 
 function bashrc_export_function() {
