@@ -376,15 +376,15 @@ function m() {
     local cmd=$1
     local arg=$2
 
-    if [[ $arg ]] ; then
-        arg="   "$arg
-    else
+    if [[ $arg =~ ^- ]] ; then
+       arg="   "$arg
+    elif [[ ! $arg ]] ; then
         arg='^$'
     fi
 
     (
-        help $cmd   && return
-        man  $cmd   && return
+        help -m $cmd && return
+        MAN_KEEP_FORMATTING=1 man $cmd && return
 
         if [[ $(type -p $cmd) ]] ; then
             $cmd --help 2>&1 \
@@ -393,13 +393,15 @@ function m() {
                 | perl -0777 -pe 'exit 1 if /^$/' && return
         fi
 
-        aptw $cmd && perl -e 'print "-" x 80, "\n"'
 
         links -dump http://man.cx/$cmd \
-            | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/'
+            | perl -0777 -pe 's/^.*\n(?=\s*NAME)|\n\s*COMMENTS.*$//smg' \
+            | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/' \
+            && return
 
-    ) 2>/dev/null \
-        | less -F +/"$arg"
+        aptw $cmd
+
+    ) 2>/dev/null | less -F +/"$arg"
 }
 
 # translate a word
