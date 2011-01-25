@@ -384,7 +384,7 @@ function m() {
 
     (
         help -m $cmd && return
-        MAN_KEEP_FORMATTING=1 man $cmd && return
+        MAN_KEEP_FORMATTING=1 man -a $cmd && return
 
         if [[ $(type -p $cmd) ]] ; then
             $cmd --help 2>&1 \
