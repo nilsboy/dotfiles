@@ -31,7 +31,6 @@ export LANG="de_DE.UTF-8"
 # use english messages on the command line
 export LC_MESSAGES=C
 
-export EDITOR=vi
 export BROWSER=links
 
 # remove domain from hostname if necessary
@@ -82,7 +81,8 @@ stty start ^-
 
 ### aliases ####################################################################
 
-alias vi="DISPLAY= vi -i $REMOTE_HOME/.viminfo -u $REMOTE_HOME/.vimrc"
+export EDITOR="DISPLAY= vi -i $REMOTE_HOME/.viminfo -u $REMOTE_HOME/.vimrc"
+alias vi=$EDITOR
 alias cp="cp -i"
 alias mv="mv -i"
 alias less="less -in"
