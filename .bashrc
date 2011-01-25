@@ -729,8 +729,8 @@ function sslstrip() { (
 
 ### SCREEN #####################################################################
 
-alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen"
-alias screen="screen -c $REMOTE_HOME/.screenrc"
+alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen -c $REMOTE_HOME/.screenrc"
+alias   tmux="xtitle   tmux@$HOSTNAME ; export DISPLAY= ; tmux"
 
 function srd() {
 
