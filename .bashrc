@@ -592,15 +592,14 @@ function bashrc_setup_multiuser_environment() {
 
     done<<<$(ssh-add -L 2>/dev/null)
 
-    if [[ "$REMOTE_USER" != $USER ]] ; then
+    if [[ $REMOTE_USER ]] ; then
+
         export REMOTE_HOME="$HOME/$REMOTE_USER"
-    fi
+        export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 
-    export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
-
-
-    if [[ -e $REMOTE_BASHRC ]] ; then
-        source $REMOTE_BASHRC
+        if [[ -e $REMOTE_BASHRC ]] ; then
+            source $REMOTE_BASHRC
+        fi
     fi
 }
 
