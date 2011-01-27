@@ -1347,12 +1347,20 @@ function h() {
     fi
 
     if [[ $1 == d ]] ; then
-       tail -100 $HISTFILE_ETERNAL | \
-            cut -d \  -f 5 | sort -u | perl -pe 's/"//g' 
+       tac $HISTFILE_ETERNAL \
+            | cut -d \  -f 5 \
+            | uniqunsorted \
+            | perl -pe 's/"//g'  \
+            | tac \
+            | tail -100
     else
         grep -i "$*" $HISTFILE_ETERNAL | tail -100 \
             | grep -i "$*"
     fi
+}
+
+function uniqunsorted() {
+    perl -ne 'print $_ if ! exists $seen{$_} ; $seen{$_} = 1'
 }
 
 ### PROMPT #####################################################################
