@@ -1646,6 +1646,14 @@ esac
 
 _first_invoke=1
 
+OLDPWD=$(h d | tail -1)
+
+if [[ $OLDPWD ]] ; then
+    if [[ -d $OLDPWD ]] ; then
+        cd $OLDPWD
+    fi
+fi
+
 if [ -r $REMOTE_HOME/.bashrc_local ] ; then
     source $REMOTE_HOME/.bashrc_local
 fi
