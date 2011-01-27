@@ -1351,10 +1351,18 @@ function h() {
             | cut -d \  -f 5 \
             | uniqunsorted \
             | perl -pe 's/"//g'  \
-            | tac \
-            | tail -100
+            | head -100 \
+            | tac
+    elif [[ $1 == l ]] ; then
+       tac $HISTFILE_ETERNAL \
+            | perl -nae 'print if $F[4] eq "\"" . $ENV{PWD} . "\""' \
+            | head -100 \
+            | tac
     else
-        grep -i "$*" $HISTFILE_ETERNAL | tail -100 \
+        tac $HISTFILE_ETERNAL \
+            | grep -i "$*" \
+            | head -100 \
+            | tac \
             | grep -i "$*"
     fi
 }
