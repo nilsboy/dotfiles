@@ -162,9 +162,18 @@ function showenv() {
         PERL5LIB
 EOF
 
-    SHOW Linux $(cat /etc/issue.net)
-    SHOW uname $(uname -a)
-    SHOW kernel $(cat /proc/version)
+    SHOW Uname $(uname -a)
+    SHOW Kernel $(cat /proc/version)
+
+
+    local ubuntu_version=$(cat /etc/issue | perl -ne 'print $1 if /ubuntu (.+?) /i')
+
+    if [[ $ubuntu_version ]] ; then
+        local release=$(note ubuntu | perl -ne 'print $1 if /^\s+'$ubuntu_version'\s+(.+?)\s+\d+/')
+        SHOW Ubuntu $ubuntu_version $release
+    else
+        SHOW Linux $(cat /etc/issue.net)
+    fi
 }
 
 function switch_to_iso() { export LANG=de_DE@euro ; }
