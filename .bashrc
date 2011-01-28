@@ -165,12 +165,11 @@ EOF
     SHOW Uname $(uname -a)
     SHOW Kernel $(cat /proc/version)
 
-
-    local ubuntu_version=$(cat /etc/issue | perl -ne 'print $1 if /ubuntu (.+?) /i')
+    local ubuntu_version=$(cat /etc/issue | perl -ne 'print $1 if /ubuntu (\d+\.\d+)/i')
 
     if [[ $ubuntu_version ]] ; then
-        local release=$(note ubuntu | perl -ne 'print $1 if /^\s+'$ubuntu_version'\s+(.+?)\s+\d+/')
-        SHOW Ubuntu $ubuntu_version $release
+        local release=$(note ubuntu | perl -ne 'print $_ if /^\s+'$ubuntu_version'\s+(.+?)\s+\d+/')
+        SHOW Ubuntu $release
     else
         SHOW Linux $(cat /etc/issue.net)
     fi
