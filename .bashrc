@@ -142,7 +142,7 @@ function DIE()   { _LOG "FATAL" $RED2    2 "$@" ; exit 1 ; }
 function SHOW()  {
     local var=$1
     shift
-    echo -e "$GREEN2$var$NO_COLOR2:\n$@\n"
+    echo -e "$GREEN2$var$NO_COLOR2: $@"
 }
 
 ## system functions ############################################################
