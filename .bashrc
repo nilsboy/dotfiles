@@ -403,7 +403,7 @@ function m() {
 
 
         links -dump http://man.cx/$cmd \
-            | perl -0777 -pe 's/^.*\n(?=\s*NAME)|\n\s*COMMENTS.*$//smg' \
+            | perl -0777 -pe 's/^.*\n(?=\s*NAME\s*$)|\n\s*COMMENTS.*$//smg' \
             | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/' \
             && return
 
