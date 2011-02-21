@@ -581,6 +581,8 @@ function bashrc_setup_multiuser_environment() {
 
     shopt -s nullglob
     auth_files=(*/.ssh/authorized_keys)
+    shopt -u nullglob
+
     [[ $auth_files ]] || return
 
     while read agent_key ; do
