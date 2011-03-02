@@ -714,12 +714,24 @@ function sshtunnel() { (
     local  gw=$2
     local out=$3
 
-    if [[ $@ < 3 ]] ; then
-        DIE "usage: sshtunnel [in_host:]in_port user@gateway out_host:out_port"
+    if [[ ${#@} < 2 ]] ; then
+        DIE "usage: sshtunnel [[in_host:]in_port] user@gateway out_host:out_port"
     fi
 
-    local cmd="ssh -v -N -L $in:$out $gw"
-    INFO "running: $cmd"
+    if [[ ${#@} < 3 ]] ; then
+        gw=$1
+        out=$2
+
+        in=$(freeport)
+        INFO "Using local port: $in"
+    fi
+
+    if [[ $out =~ ^[^\:]+$ ]] ; then
+        out="localhost:$out"
+    fi
+
+    local cmd="ssh -N -L $in:$out $gw"
+    INFO "Running: $cmd"
     xtitle "sshtunnel $cmd" && $cmd
 ) }
 
