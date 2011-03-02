@@ -715,7 +715,7 @@ function sshtunnel() { (
     local out=$3
 
     if [[ ${#@} < 2 ]] ; then
-        DIE "usage: sshtunnel [[in_host:]in_port] user@gateway out_host:out_port"
+        DIE "usage: sshtunnel [[in_host:]in_port] user@gateway [out_host:]out_port"
     fi
 
     if [[ ${#@} < 3 ]] ; then
