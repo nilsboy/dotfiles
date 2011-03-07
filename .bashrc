@@ -1337,6 +1337,7 @@ function normalize_file_names() {
 #     10.04 LTS   Lucid Lynx        2010-04-29   2013-04      2015-04
 #     10.10       Maverick Meerkat  2010-10-10   2012-04
 #     11.04       Natty Narwhal     2011-04-28   2012-10
+#     11.10       Oneiric Ocelot    2011-10-??   2013-04
 
 # NOTES ON vim
 # * :help quickref
