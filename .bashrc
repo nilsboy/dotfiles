@@ -331,7 +331,7 @@ function unix2dos() {
 
 ## process management ##########################################################
 
-if [[ ! $(type -p pstree) ]] ; then
+if [[ ! $(type -t pstree) ]] ; then
     alias p="ps axjf"
 fi
 
