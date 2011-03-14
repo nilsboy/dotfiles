@@ -95,6 +95,8 @@ alias lr='ls --color=auto --time-style=+"%F %H:%M" -rtlh'
 alias ls='ls --color=auto --time-style=+"%F %H:%M"'
 alias lc='ls --color=auto --time-style=+"%F %H:%M" -rtlhc'
 
+alias cdh='cd $REMOTE_HOME'
+
 alias xargs="xargs -I {}"
 
 alias apts="apt-cache search"
