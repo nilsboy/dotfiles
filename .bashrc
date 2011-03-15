@@ -83,6 +83,10 @@ stty start ^-
 
 export EDITOR="DISPLAY= vi -i $REMOTE_HOME/.viminfo -u $REMOTE_HOME/.vimrc"
 alias vi=$EDITOR
+
+# edit shell commands in vi with Ctrl-x Ctrl-e
+export VISUAL=$EDITOR
+
 alias cp="cp -i"
 alias mv="mv -i"
 alias less="less -in"
@@ -1230,6 +1234,7 @@ function normalize_file_names() {
 
 # NOTES ON files
 # * replace in files: replace
+# * truncate a file without removing its inode: > file
 
 # NOTES ON bios
 # * infos of system: getSystemId
@@ -1272,7 +1277,7 @@ function normalize_file_names() {
 # NOTES ON man and the like
 # * apropos - search the manual page names and descriptions
 
-# NOTES ON kill
+# NOTES ON processes
 # * to kill a long running job
 #    ps -eafl |\
 #       grep -i "dot \-Tsvg" |\ 
@@ -1379,6 +1384,10 @@ if [ ! -e $HISTFILE_ETERNAL ] ; then
 fi
 
 function _add_to_history() {
+
+    if [[ $BASHRC_NO_HISTORY ]] ; then
+        return
+    fi
 
     # prevent historizing last command of last session on new shells
     if [ $_first_invoke != 0 ] ; then
@@ -1628,7 +1637,7 @@ function _prompt_command_default() {
     _set_bg_jobs_count
 
     # $NO_COLOR first to reset color setting from other programs
-    PS1=$GRAY"$time$NO_COLOR $hostname:$_pwd${_bg_jobs_count}""$NO_COLOR> "
+    PS1=$GRAY"$time$NO_COLOR $hostname:$_pwd${_bg_jobs_count}"">$BASHRC_BG_COLOR "
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
@@ -1653,7 +1662,7 @@ function _prompt_command_simple() {
         if_root="${RED}root$NO_COLOR "
     fi
 
-    PS1=$NO_COLOR"$GRAY$time$NO_COLOR $if_root$_pwd${_bg_jobs_count}"">$NO_COLOR "
+    PS1=$NO_COLOR"$GRAY$time$NO_COLOR $if_root$_pwd${_bg_jobs_count}"">$BASHRC_BG_COLOR "
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
@@ -1668,7 +1677,7 @@ function _prompt_command_spare() {
     _fix_pwd
     _set_bg_jobs_count
 
-    PS1=$NO_COLOR"$_pwd${_bg_jobs_count}""$NO_COLOR> "
+    PS1=$NO_COLOR"$_pwd${_bg_jobs_count}""$BASHRC_BG_COLOR> "
     xtitle  $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
@@ -1684,6 +1693,12 @@ function prompt_simple() {
 
 function prompt_spare() {
     PROMPT_COMMAND=_prompt_command_spare
+}
+
+function godark() {
+    BASHRC_NO_HISTORY=1
+    unset HISTFILE
+    BASHRC_BG_COLOR=$GREEN
 }
 
 unset PS1
