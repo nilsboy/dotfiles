@@ -455,17 +455,19 @@ EOF
 
 ### conf files handling ########################################################
 
-function updatebashrc() { (
+function updatebashrc() {
 
+(
     set -e
 
     wget -q --no-check-certificate \
         -O /tmp/bashrc.$$ http://github.com/evenless/etc/raw/master/.bashrc \
 
     mv -f /tmp/bashrc.$$ $REMOTE_BASHRC
+)
 
     reloadbashrc
-) }
+}
 
 function bashrc_clean_environment() {
 
