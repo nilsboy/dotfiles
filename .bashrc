@@ -1030,7 +1030,7 @@ function setupcpanm() { (
 ) }
 
 function cpanm() {
-    perl -e 'map { s/\//\:\:/g ; s/\.pm$//g } @ARGV; system("cpanm" , @ARGV);' \
+    perl -e 'map { s/\//\:\:/g ; s/\.pm$//g } @ARGV; system("cpanm" , @ARGV) && exit 1;' \
          -- "$@"
 }
 
