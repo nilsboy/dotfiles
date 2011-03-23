@@ -1363,7 +1363,6 @@ function normalize_file_names() {
 
 # ignore commands  for history that start  with a space
 HISTCONTROL=ignorespace:ignoredups
-HISTIGNORE="truecrypt*"
 # HISTIGNORE="truecrypt*:blubb*"
 # HISTTIMEFORMAT="[ %Y-%m-%d %H:%M:%S ] "
 
@@ -1401,6 +1400,11 @@ function _add_to_history() {
     [[ $_last_history = $history ]] && return;
 
     read -r pos cmd <<< $history
+
+    if [[ $cmd == "rm "* ]] ; then
+        history -d $pos
+        cmd="# $cmd"
+    fi
 
     local quoted_pwd=${PWD//\"/\\\"}
 
