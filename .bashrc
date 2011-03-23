@@ -295,9 +295,15 @@ function _g() { (
         DIE "usage: g [search term]"
     fi
 
+    trap "exit 1" SIGINT
+
     grep -rsinP --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@" .
+)
+
+    local exit_code=$?
     set +f
-) }
+    return $exit_code
+}
 
 # a simple grep files matching pattern without the need for quoting or
 # excluding dot files
@@ -308,9 +314,15 @@ function _gi() { (
         DIE "usage: gi [filename pattern] [search term]"
     fi
 
+    trap "exit 1" SIGINT
+
     grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include="$@" .
+)
+
+    local exit_code=$?
     set +f
-) }
+    return $exit_code
+}
 
 # quick find a file matching a pattern
 function f() { (
