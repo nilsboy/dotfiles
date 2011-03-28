@@ -1425,7 +1425,7 @@ function _add_to_history() {
     line="$line $(date +'%F %T')"
     line="$line $BASHPID"
     line="$line \"$quoted_pwd\""
-    line="$line \"$last_return_values\""
+    line="$line \"$bashrc_last_return_values\""
     line="$line $cmd"
     echo "$line" >> $HISTFILE_ETERNAL
 
@@ -1631,12 +1631,10 @@ function _color_user() {
 
 function _print_on_error() {
 
-    local last_return_values=${PIPESTATUS[*]}
-
-    for item in ${last_return_values[*]} ; do
+    for item in ${bashrc_last_return_values[*]} ; do
 
         if [ $item != 0 ] ; then
-            echo -e ${RED2}exit: $last_return_values$NO_COLOR2 >&2
+            echo -e ${RED2}exit: $bashrc_last_return_values$NO_COLOR2 >&2
             break
         fi
 
@@ -1644,6 +1642,8 @@ function _print_on_error() {
 }
 
 function _prompt_command_default() {
+
+    bashrc_last_return_values=${PIPESTATUS[*]}
 
     _print_on_error
     local secs=$(_track_time)
@@ -1667,6 +1667,8 @@ function _prompt_command_default() {
 
 function _prompt_command_simple() {
 
+    bashrc_last_return_values=${PIPESTATUS[*]}
+
     _print_on_error
     local secs=$(_track_time)
     local time=$(humanize_secs $secs)
@@ -1688,6 +1690,8 @@ function _prompt_command_simple() {
 }
 
 function _prompt_command_spare() {
+
+    bashrc_last_return_values=${PIPESTATUS[*]}
 
     _print_on_error
     _fix_pwd
