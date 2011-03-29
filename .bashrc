@@ -445,8 +445,16 @@ function publicip() {
 }
 
 function freeport() {
+
+    local port=$1
+    local ports="32768..61000";
+
+    if [[ $port ]] ; then
+        ports="$port,$ports";
+    fi
+
     netstat  -atn \
-        | perl -0777 -ne '@ports = /tcp.*?\:(\d+)\s+/imsg ; for $port (32768..61000) {if(!grep(/^$port$/, @ports)) { print $port; last } }'
+        | perl -0777 -ne '@ports = /tcp.*?\:(\d+)\s+/imsg ; for $port ('$ports') {if(!grep(/^$port$/, @ports)) { print $port; last } }'
 }
 
 # fetch a page - in case no other tool is available
@@ -741,16 +749,41 @@ function sshtunnel() { (
     if [[ ${#@} < 3 ]] ; then
         gw=$1
         out=$2
-
-        in=$(freeport)
-        INFO "Using local port: $in"
+        unset in
     fi
 
-    if [[ $out =~ ^[^\:]+$ ]] ; then
-        out="localhost:$out"
+    local out_host
+    local out_port
+
+    if [[ $out =~ ^.+\:.+$ ]] ; then
+        out_host=${out%%:*}
+        out_port=${out##*:}
+    else
+        out_host="localhost"
+        out_port=$out
     fi
 
-    local cmd="ssh -N -L $in:$out $gw"
+    local in_host
+    local in_port
+
+    if [[ $in ]] ; then
+        if [[ $in =~ ^.+\:.+$ ]] ; then
+            in_host=${in%%:*}
+            in_port=${in##*:}
+        else
+            in_host=$in
+            in_port=$(freeport $out_port)
+        fi
+    else
+        in_host="localhost"
+        in_port=$(freeport $out_port)
+    fi
+
+    if [[ $in_port != $out_port ]] ; then
+        WARN "Using local port: $in_port"
+    fi
+
+    local cmd="ssh -N -L $in_host:$in_port:$out_host:$out_port $gw"
     INFO "Running: $cmd"
     xtitle "sshtunnel $cmd" && $cmd
 ) }
