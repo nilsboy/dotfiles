@@ -771,8 +771,8 @@ function sshtunnel() { (
             in_host=${in%%:*}
             in_port=${in##*:}
         else
-            in_host=$in
-            in_port=$(freeport $out_port)
+            in_host="localhost"
+            in_port=$in
         fi
     else
         in_host="localhost"
