@@ -297,7 +297,7 @@ function _g() { (
 
     trap "exit 1" SIGINT
 
-    grep -rsinP --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@" .
+    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* "$@" .
 )
 
     local exit_code=$?
