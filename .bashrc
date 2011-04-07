@@ -1244,7 +1244,7 @@ sub normalize {
 
     $_ = $file;
 
-    s/www\.[^\.]+\.[^\W]+//g;
+    s/www\.[^\.]+\.[[:alnum:]]+//g;
 
     s/[^\w\.]+/_/g;
 
