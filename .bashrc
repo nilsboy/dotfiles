@@ -258,16 +258,23 @@ function replace() { (
 
 # absolute path
 function abs() {
-    if [ ! "$@" ] ; then
-        echo $(readlink -m .)/
-        return
-    fi
 
-    if [ -d "$@" ] ; then
-        echo $(readlink -m "$@")/
-    else
-        readlink -m "$@"
-    fi
+    perl - "$@" <<'EOF'
+
+        use strict;
+        use warnings;
+        use Cwd 'abs_path';
+
+        my $file = $ARGV[0] || ".";
+
+        $file = abs_path($file);
+
+        $file .= "/" if -d $file;
+        $file =~ s/(["`\\\$ ])/\\$1/g;
+
+        print "$file\n";
+EOF
+
 }
 
 function find_older_than_days() {
