@@ -710,7 +710,7 @@ alias nosshagent="grabssh && unset SSH_AUTH_SOCK SSH_CLIENT SSH_CONNECTION SSH_T
 
 # ssh url of a file or directory
 function url() {
-    echo $USER@$HOSTNAME:$(abs $1)
+    echo $USER@$HOSTNAME:$(abs "$@")
 }
 
 function _ssh_alias() {
@@ -721,26 +721,47 @@ function _ssh_alias() {
 
         use strict;
         use warnings;
+        use Cwd 'abs_path';
 
         my($host, $port, @files) = @ARGV;
 
         my $cmd = "ssh -p $port $host";
 
-        if(@files == 1) {
-            push(@files, "tmp/");
+        my @tmp = ();
+        my $is_get = 0;
+
+        foreach(@files) {
+            if($_ eq "-g") {
+                $is_get = 1;
+            } else {
+                push(@tmp, $_);
+            }
         }
 
+        @files = @tmp;
+
         if(@files) {
-            my $dst = pop(@files);
-            my $src = join(" ", @files);
-            $cmd = "scp -P $port $src $host:$dst";
+
+            my $dst = "";
+
+            if(@files > 1) {
+                $dst = pop(@files) . "/";
+            }
+
+            my $src = join(",", @files);
+
+            if($is_get) {
+                $cmd = "scp -P $port $host:{$src} $dst";
+            } else {
+                $cmd = "scp -P $port {$src} $host:$dst";
+            }
         }
 
         print "$cmd";
 EOF
 )
 
-    eval "$cmd"
+    eval "$cmd";
 }
 
 function sshtunnel() { (
