@@ -79,6 +79,11 @@ stty stop ^-
 # reenable ctrl+q (XON)
 stty start ^-
 
+### keyboard shortcuts #########################################################
+
+# ctrl-l clear screen but stay in current row
+bind -x '"\C-l":printf "\33[2J"'
+
 ### aliases ####################################################################
 
 export EDITOR="DISPLAY= vi -i $REMOTE_HOME/.viminfo -u $REMOTE_HOME/.vimrc"
