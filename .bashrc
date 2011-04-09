@@ -92,8 +92,6 @@ alias mv="mv -i"
 alias less="less -in"
 alias crontab="crontab -i"
 
-alias j="jobs -l"
-
 alias  l='ls --color=auto --time-style=+"%F %H:%M" -lh'
 alias lr='ls --color=auto --time-style=+"%F %H:%M" -rtlh'
 alias ls='ls --color=auto --time-style=+"%F %H:%M"'
@@ -374,6 +372,80 @@ function p() {
 }
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
+
+function j() {
+
+export _bashrc_jobs=$(jobs)
+export _bashrc_columns=$COLUMNS
+
+perl <<'EOF'
+
+    use strict;
+    use warnings;
+    no warnings 'uninitialized';
+
+    my $black = "\x1b[38;5;0m";
+    my $gray  = "\x1b[38;5;250m";
+    my $dark_gray  = "\x1b[38;5;244m";
+    my $red   = "\x1b[38;5;124m";
+
+    my %last_args = ();
+
+    foreach(split("\n", $ENV{_bashrc_jobs})) {
+
+        my ($jid, $state, $cmd) = /^(\[\d+\][+-]*)\s+(\S+)\s+(.+)\s*$/;
+
+        $jid =~ s/[\[\]]//g;
+        $jid = " $jid" if $jid !~ /\d\d/g;
+        my ($wd) = $cmd =~ /\s+\(wd\:\ (.+)\)\s*$/;
+        $cmd =~ s/\s+\(wd\:\ (.+)\)\s*$//g;
+
+        $cmd =~ s/^(\w+=\w*\s+)*//g;
+
+        my $args = $cmd;
+
+        ($cmd) = $cmd =~ /^\s*([^\s]+)/;
+
+        my ($last_arg) = $args;
+        $last_arg =~ s/(\||\().*$//g;
+        $last_arg =~ s/\w*>.*$//g;
+        $last_arg =~ s/[\s&]*$//g;
+        ($last_arg) = $last_arg =~ /[\s]*([^\s]+|$)$/;
+        $last_arg =~ s/.*\///g;
+
+        if($args eq $cmd) {
+            $args = "";
+        }
+
+        if($last_arg eq $cmd) {
+            $last_arg = "";
+        }
+
+        if($cmd eq "(") {
+            $cmd .= ")";
+        } else {
+            $args = "";
+        }
+        my $max = $ENV{_bashrc_columns} - length($cmd) - length($last_arg) - 5 - 1;
+        my $length = length($args);
+
+        if($length > $max) {
+            my $leave = $max / 2;
+            $args = substr($args, 0, $leave - 1) . "$red*$gray"
+                . substr($args, $length - $leave + 1, $leave);
+        }
+
+        my $fg = $black;
+        $fg = $red if $state =~ /running/i;
+
+        print $fg;
+
+        printf("%-3s %s %s %s\n", $jid, $cmd, $last_arg, $gray . $args);
+
+        print $black;
+    }
+EOF
+}
 
 ### functions for lookups ######################################################
 
