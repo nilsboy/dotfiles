@@ -228,15 +228,6 @@ function v() {
         i=$(($i + 1))
         echo
     done
-
-    clear
-
-    i=1
-    while [ $i -le 8 ] ; do
-        i=$(($i + 1))
-        echo -n "----------"
-    done
-    echo
 }
 
 function parent() {
