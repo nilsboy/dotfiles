@@ -391,6 +391,8 @@ perl <<'EOF'
 
         my ($jid, $state, $cmd) = /^(\[\d+\][+-]*)\s+(\S+)\s+(.+)\s*$/;
 
+        next if ! $jid;
+
         $jid =~ s/[\[\]]//g;
         $jid = " $jid" if $jid !~ /\d\d/g;
         my ($wd) = $cmd =~ /\s+\(wd\:\ (.+)\)\s*$/;
@@ -829,7 +831,7 @@ function _ssh_alias() {
 EOF
 )
 
-    eval "$cmd";
+    eval "$cmd"
 }
 
 function sshtunnel() { (
@@ -1716,26 +1718,19 @@ function _set_bg_jobs_count() {
     _bg_jobs_count=0
     _bg_jobs_running_count=0
 
-    local IFS
+    while read job state crap ; do
 
-    while read job ; do
+        if [[ $job =~ ^\[[0-9]+\] ]] ; then
 
-        [ -z "$job" ] && continue
+            _bg_jobs_count=$(($_bg_jobs_count+1))
 
-        _bg_jobs_count=$(($_bg_jobs_count+1))
+            if [[ $state = Running ]] ; then
+                _bg_jobs_running_count=$(($_bg_jobs_running_count+1))
+            fi
+        fi
 
     done<<EOF
         $(jobs)
-EOF
-
-    while read job ; do
-
-        [ -z "$job" ] && continue
-
-        _bg_jobs_running_count=$(($_bg_jobs_running_count+1))
-
-    done<<EOF
-        $(jobs -r)
 EOF
 
     if [[ $_bg_jobs_count == 0 ]] ; then
