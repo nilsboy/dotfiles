@@ -1852,14 +1852,6 @@ unset PS1
 _set_colors
 unset _set_colors
 
-
-if [[ $REMOTE_USER != $USER ]] ; then
-
-    if [[ -d "$REMOTE_HOME" ]] ; then
-        cd "$REMOTE_HOME"
-    fi
-fi
-
 case $(parent) in
     screen|screen.real|tmux)
         prompt_simple
@@ -1868,7 +1860,6 @@ case $(parent) in
         if [[ $REMOTE_HOST ]] ; then
             prompt_default
         else
-            _original_user=$USER
             prompt_simple
         fi
     ;;
@@ -1876,17 +1867,24 @@ esac
 
 _first_invoke=1
 
-OLDPWD=$(h d | tail -1)
+_OLDPWD=$(h d | tail -2 | head -1)
+LAST_SESSION_PWD=$(h d | tail -1)
 
-if [[ $OLDPWD ]] ; then
-    if [[ -d $OLDPWD ]] ; then
-        cd $OLDPWD
+if [[ $LAST_SESSION_PWD ]] ; then
+
+    if [[ -d "$LAST_SESSION_PWD" ]] ; then
+        cd "$LAST_SESSION_PWD"
     fi
+
+elif [[ -d "$REMOTE_HOME" ]] ; then
+        cdh
 fi
 
 if [ -r $REMOTE_HOME/.bashrc_local ] ; then
     source $REMOTE_HOME/.bashrc_local
 fi
+
+OLDPWD=$_OLDPWD
 
 true
 
