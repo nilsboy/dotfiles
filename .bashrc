@@ -989,7 +989,8 @@ function pmpath() {
         eval qq{require $module};
         $module =~ s{::}{/}g;
         $module =~ s/$/.pm/g;
-        print $INC{$module} || exit 1;
+        $INC{$module} || exit 1;
+        print $INC{$module} . "\n";
 EOF
 }
 
