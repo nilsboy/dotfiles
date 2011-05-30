@@ -992,7 +992,7 @@ function srd() {
             exit 0
         fi
 
-        if tmux ls 1>/dev/null ; then
+        if tmux has-session ; then
             tmux -2 att -d
             exit 0
         fi
@@ -1002,7 +1002,7 @@ function srd() {
 
         exit 1
 
-    ) 2>/dev/null && clear
+    ) && clear
 }
 
 ### mysql ######################################################################
