@@ -1619,6 +1619,7 @@ function _add_to_history() {
     if [[ $cmd == "rm "* ]] ; then
         history -d $pos
         cmd="# $cmd"
+        history -s "$cmd"
     fi
 
     local quoted_pwd=${PWD//\"/\\\"}
