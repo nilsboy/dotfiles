@@ -1085,6 +1085,7 @@ function mysql() {
 # * DBI->trace(2 => "/tmp/dbi.trace");
 # * ignore broken system locales in perl programs
 #    PERL_BADLANG=0
+# * corelist - perl core modules
 
 # for cpan
 export FTP_PASSIVE=1
