@@ -836,6 +836,8 @@ fi
 # * mount using ssh: sshfs / shfs
 # * cssh = clusterssh
 
+alias ssh="ssh -A"
+
 function grabssh () {
     local SSHVARS="SSH_CLIENT SSH_TTY SSH_AUTH_SOCK SSH_CONNECTION DISPLAY"
 
