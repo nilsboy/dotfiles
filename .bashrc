@@ -103,6 +103,9 @@ alias ls='ls --color=auto --time-style=+"%F %H:%M"'
 alias lc='ls --color=auto --time-style=+"%F %H:%M" -rtlhc'
 
 alias cdh='cd $REMOTE_HOME'
+alias cdt='cd $REMOTE_HOME/tmp'
+
+alias greppath="compgen -c | grep -i "
 
 alias xargs="xargs -I {}"
 
