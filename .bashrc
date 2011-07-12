@@ -1449,6 +1449,12 @@ function normalize_file_names() {
 # * generate unique ID: uuidgen (not thread safe?)
 # * unaliased version of a program: prefix with slash i.e.: \ls file
 
+# NOTES ON cron
+# * make cron scripts use bashrc (now path can use ~ too)
+#    SHELL=/bin/bash
+#    BASH_ENV=~/.bashrc
+#    PATH=~/bin:/usr/bin/:/bin
+
 # NOTES ON files
 # * replace in files: replace
 # * truncate a file without removing its inode: > file
