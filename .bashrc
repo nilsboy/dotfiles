@@ -229,7 +229,7 @@ function filltemplate {
         use warnings;
         use File::Copy;
 
-        die "Usage: create_from_template".
+        die "Usage: filltemplate" .
             " file_to_create_from_template field1=value1 field2=value2 ...\n"
             if @ARGV < 2;
 
