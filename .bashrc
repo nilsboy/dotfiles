@@ -1035,6 +1035,8 @@ function mysql() {
 # * One liners
 #     http://blog.ksplice.com/2010/05/top-10-perl-one-liner-tricks/
 # * DBI->trace(2 => "/tmp/dbi.trace");
+# * ignore broken system locales in perl programs
+#    PERL_BADLANG=0
 
 # for cpan
 export FTP_PASSIVE=1
