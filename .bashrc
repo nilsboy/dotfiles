@@ -218,6 +218,51 @@ function timestamp2date() {
     'print strftime("%F %T", localtime(substr("'$timestamp'", 0, 10))) . "\n"'
 }
 
+function filltemplate {
+
+    perl - $@ <<'EOF'
+
+        use strict;
+        use warnings;
+        use File::Copy;
+
+        die "Usage: create_from_template".
+            " file_to_create_from_template field1=value1 field2=value2 ...\n"
+            if @ARGV < 2;
+
+        my ($file, @tuples) = @ARGV;
+        my $template = $file. ".template";
+
+        die "Template not found: $template" if !-e $template;
+        die "Specify mappings." if !@tuples;
+
+        $/ = undef;
+
+        open(my $templatef, "<", $template) || die $!;
+        my $data = <$templatef>;
+        close($templatef);
+
+        for my $tuple (@tuples) {
+
+            my ($name, $value) = $tuple =~ /^(.+?)=(.+)$/;
+
+            $name = "TEMPL_" . uc($name);
+
+            die "No such field: $name\n" if $data !~ /$name/;
+
+            $data =~ s/$name/$value/igm;
+        }
+
+        my $temp = "/tmp/$file.$$"; 
+        open(my $tempf, ">", $temp) || die $!;
+        print $tempf $data;
+        close($tempf);
+
+        move($temp, $file) || die $!;
+EOF
+
+}
+
 ## shell helper functions ######################################################
 
 # clear screen also create distance to last command for easy viewing
