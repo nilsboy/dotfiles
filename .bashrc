@@ -97,13 +97,17 @@ alias mv="mv -i"
 alias less="less -in"
 alias crontab="crontab -i"
 
-alias  l='ls --color=auto --time-style=+"%F %H:%M" -lh'
-alias lr='ls --color=auto --time-style=+"%F %H:%M" -rtlh'
-alias ls='ls --color=auto --time-style=+"%F %H:%M"'
-alias lc='ls --color=auto --time-style=+"%F %H:%M" -rtlhc'
+alias ls='ls --color=auto --time-style=+"%F %H:%M" '
+alias  l='ls -lh'
+alias lr='ls -rtlh'
+alias lc='ls -rtlhc'
 
 alias cdh='cd $REMOTE_HOME'
 alias cdt='cd $REMOTE_HOME/tmp'
+
+function cdl() {
+    cd $(h d | grep -i $1 | tail -1)
+}
 
 alias greppath="compgen -c | grep -i "
 
