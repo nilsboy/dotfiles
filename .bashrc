@@ -108,7 +108,7 @@ alias cdt='cd $REMOTE_HOME/tmp'
 function cdl() {
     local dir=$(h d a | perl -ne 's/\n//g; print "$_\n" if /'$1'/i && -d' | head -1)
 
-    if [[ ! $dir ]] ; then
+    if [[ ! "$dir" ]] ; then
         return 1
     fi
 
