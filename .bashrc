@@ -106,7 +106,13 @@ alias cdh='cd $REMOTE_HOME'
 alias cdt='cd $REMOTE_HOME/tmp'
 
 function cdl() {
-    cd $(h d | grep -i $1 | tail -1)
+    local dir=$(h d a | perl -ne 's/\n//g; print "$_\n" if /'$1'/i && -d' | head -1)
+
+    if [[ ! $dir ]] ; then
+        return 1
+    fi
+
+    cd "$dir"
 }
 
 alias greppath="compgen -c | grep -i "
@@ -1710,12 +1716,19 @@ function h() {
     fi
 
     if [[ $1 == d ]] ; then
-       tac $HISTFILE_ETERNAL \
-            | cut -d \  -f 5 \
-            | uniqunsorted \
-            | perl -pe 's/"//g'  \
-            | head -100 \
-            | tac
+        if [[ $2 == a ]] ; then
+           tac $HISTFILE_ETERNAL \
+                | cut -d \  -f 5 \
+                | uniqunsorted \
+                | perl -pe ' s/"//g;'
+        else
+           tac $HISTFILE_ETERNAL \
+                | cut -d \  -f 5 \
+                | uniqunsorted \
+                | perl -pe 's/"//g'  \
+                | head -100 \
+                | tac
+        fi
     elif [[ $1 == l ]] ; then
        tac $HISTFILE_ETERNAL \
             | perl -nae 'print if $F[4] eq "\"" . $ENV{PWD} . "\""' \
