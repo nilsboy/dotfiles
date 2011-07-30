@@ -13,6 +13,9 @@ fi
 
 ### for interactive shells only ################################################
 
+# set vi edit mode
+set -o vi
+
 ### variables ##################################################################
 
 [[ $REMOTE_USER   ]] || export REMOTE_USER=$USER
@@ -83,6 +86,11 @@ stty start ^-
 
 # ctrl-l clear screen but stay in current row
 bind -x '"\C-l":printf "\33[2J"'
+
+if [[ $DISPLAY ]] ; then
+    # swap caps lock with escape
+    xmodmap -e 'clear Lock' -e 'keycode 0x42 = Escape'
+fi
 
 ### aliases ####################################################################
 
