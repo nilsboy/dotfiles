@@ -1818,7 +1818,7 @@ function _fix_pwd () {
     local max_length=14
     local length=${#_pwd}
 
-    if [ $length -gt $max_length ] ; then
+    if [ $length -gt $(($max_length + 1)) ] ; then
 
         local left_split=$(($max_length-4))
         local right_split=4
