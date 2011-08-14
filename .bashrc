@@ -137,8 +137,8 @@ alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 
 if [[ $(type -p tree) ]] ; then
-    alias  t="tree --noreport --dirsfirst"
-    alias td="tree --noreport -d"
+    alias  t=simpletree
+    alias td="simpletree -d"
 else
     alias t="find | sort"
     alias td="find -type d | sort"
@@ -1372,7 +1372,7 @@ function unjar() { (
     done
 ) }
 
-### function xmv ###############################################################
+### xmv ########################################################################
 
 function xmv() {
 
@@ -1511,6 +1511,86 @@ EOF
 
 function normalize_file_names() {
     xmv -ndx "$@"
+}
+
+### simpletree() ###############################################################
+
+function simpletree() {
+
+    COLUMNS=$COLUMNS perl - $@ <<'EOF'
+
+use strict;
+use warnings;
+no warnings 'uninitialized';
+use File::Basename;
+
+my $dirs_only = 1 if $ARGV[0] eq "-d";
+
+my $depth = 0;
+my $first = 1;
+my $max   = $ENV{COLUMNS};
+
+listdir(".");
+
+sub listdir {
+    my ($dir) = @_;
+
+    my $prefix;
+
+    if ( !$first ) {
+        $prefix = "  " x $depth;
+    }
+    else {
+        $first = 0;
+    }
+
+    $depth++;
+
+    # $prefix .= " ";
+
+    my @files = ();
+    foreach my $file (<$dir/*>) {
+
+        if ( -d $file ) {
+
+            if ( -l $file ) {
+                print shorten( $prefix . basename($file) . " -> " . readlink $file ) . "\n";
+                next;
+            }
+
+            print shorten( $prefix . basename($file) ) . "\n";
+
+            listdir($file);
+            next;
+        }
+
+        next if $dirs_only;
+
+        if ( -l $file ) {
+            $file .= " -> " . readlink $file;
+        }
+
+        push( @files, $file );
+    }
+
+    foreach my $file (@files) {
+        print shorten( $prefix . basename($file) ) . "\n";
+    }
+
+    $depth--;
+}
+
+sub shorten {
+    my ($s) = @_;
+
+    return $s if length($s) <= $max;
+
+    my $left = substr( $s, 0, $max - 4 - 3 );
+    my $right = substr( $s, length($s) - 4, length($s) );
+
+    return $left . "..." . $right;
+}
+EOF
 }
 
 ### NOTES ######################################################################
