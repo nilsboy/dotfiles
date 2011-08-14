@@ -13,9 +13,6 @@ fi
 
 ### for interactive shells only ################################################
 
-# set vi edit mode
-set -o vi
-
 ### variables ##################################################################
 
 [[ $REMOTE_USER   ]] || export REMOTE_USER=$USER
@@ -40,6 +37,11 @@ export BROWSER=links
 HOSTNAME=${HOSTNAME%%.*}
 
 ### input config ###############################################################
+
+export INPUTRC=$REMOTE_HOME/.inputrc
+
+# set vi edit mode
+bind 'set editing-mode vi'
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -113,6 +115,7 @@ alias lc='ls -rtlhc'
 alias cdh='cd $REMOTE_HOME'
 alias cdt='cd $REMOTE_HOME/tmp'
 
+# search history for an existing directory containing string and go there
 function cdl() {
     local dir=$(h d a | perl -ne 's/\n//g; print "$_\n" if /'$1'/i && -d' | head -1)
 
@@ -693,18 +696,15 @@ EOF
 
 ### conf files handling ########################################################
 
-function updatebashrc() {
-
-(
-    set -e
-
-    wget -q --no-check-certificate \
-        -O /tmp/bashrc.$$ http://github.com/evenless/etc/raw/master/.bashrc \
-
-    mv -f /tmp/bashrc.$$ $REMOTE_BASHRC
-)
-
-    reloadbashrc
+# cp dotfile from github
+function _cphub() {
+    local tmp=$(basename $1).$$
+    (
+        set -e
+        wget -q --no-check-certificate \
+            -O $tmp http://github.com/evenless/etc/raw/master/$1
+    )
+    mv -f $tmp $1
 }
 
 function bashrc_clean_environment() {
@@ -718,13 +718,35 @@ function bashrc_clean_environment() {
     done<<EOF
         $(perl -ne 'foreach (/^function (.+?)\(/) {print "$_\n" }' $REMOTE_BASHRC)
 EOF
+}
 
+function updatebashrc() {
+    (
+        set -e
+        cd $REMOTE_HOME
+        _cphub .bashrc
+    )
+    reloadbashrc
 }
 
 function reloadbashrc() {
     bashrc_clean_environment
     source $REMOTE_BASHRC
 }
+
+function setupdotfiles() { (
+    set -e
+
+    cd $REMOTE_HOME
+
+    mkdir -p .vim/colors .vim/plugin
+
+    _cphub .vimrc
+    _cphub .vim/colors/autumnleaf256.vim
+    _cphub .vim/plugin/taglist.vim
+
+    echo 'set editing-mode vi' > $INPUTRC
+) }
 
 function bashrc_export_function() {
 
@@ -773,20 +795,6 @@ function bashrc_export_functions_to_files() {
         $(perl -ne 'foreach (/^function ((?!_).+?)\(/) {print "$_\n" }' \
             $REMOTE_BASHRC)
 EOF
-
-}
-
-function updatevimconfig() {
-
-    for dir in $REMOTE_HOME/.vim/colors  $REMOTE_HOME/.vim/plugin ; do
-        if [ ! -d $dir ] ; then
-            mkdir -p $dir
-        fi
-    done
-
-    wget -qO $REMOTE_HOME/.vimrc http://github.com/evenless/etc/raw/master/.vimrc
-    wget -qO $REMOTE_HOME/.vim/colors/autumnleaf256.vim http://github.com/evenless/etc/raw/master/.vim/colors/autumnleaf256.vim
-    wget -qO $REMOTE_HOME/.vim/plugin/taglist.vim http://github.com/evenless/etc/raw/master/.vim/plugin/taglist.vim
 }
 
 ### export multiuser environment ###############################################
@@ -2002,13 +2010,12 @@ function godark() {
     BASHRC_BG_COLOR=$GREEN
 }
 
-unset PS1
-
 ### STARTUP ####################################################################
 
 _set_colors
 unset _set_colors
 
+unset PS1
 case $(parent) in
     screen|screen.real|tmux)
         prompt_simple
