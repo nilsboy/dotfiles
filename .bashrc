@@ -135,14 +135,8 @@ alias aptw="apt-cache show"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
-
-if [[ $(type -p tree) ]] ; then
-    alias  t=simpletree
-    alias td="simpletree -d"
-else
-    alias t="find | sort"
-    alias td="find -type d | sort"
-fi
+alias  t=simpletree
+alias td="simpletree -d"
 
 # make less more friendly for non-text input files, see lesspipe(1)
 if [[ $(type -p lesspipe ) ]] ; then
