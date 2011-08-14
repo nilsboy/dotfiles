@@ -731,7 +731,7 @@ function updatebashrc() {
 
 function reloadbashrc() {
     bashrc_clean_environment
-    source $REMOTE_BASHRC
+    source ~/.bashrc
 }
 
 function setupdotfiles() { (
