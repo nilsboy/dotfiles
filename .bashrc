@@ -846,14 +846,13 @@ function bashrc_setup_multiuser_environment() {
 
     done<<<$(ssh-add -L 2>/dev/null)
 
-    if [[ $REMOTE_USER ]] ; then
+    [[ $REMOTE_USER ]] || return
 
-        export REMOTE_HOME="$HOME/$REMOTE_USER"
-        export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
+    export REMOTE_HOME="$HOME/$REMOTE_USER"
+    export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 
-        if [[ -e $REMOTE_BASHRC ]] ; then
-            source $REMOTE_BASHRC
-        fi
+    if [[ -e $REMOTE_BASHRC ]] ; then
+        source $REMOTE_BASHRC
     fi
 }
 
@@ -876,6 +875,7 @@ function xtitle () {
 
 if [[ $DISPLAY ]] ; then
 
+    # make windows blink if prompt appears
     if [[ $(type -p wmctrl) ]] ; then
         _PROMPT_WMCTRL="wmctrl -i -r $WINDOWID -b add,DEMANDS_ATTENTION"
     fi
@@ -913,7 +913,7 @@ function grabssh () {
         (eval echo $x=\$$x) | sed  's/=/="/
                                     s/$/"/
                                     s/^/export /'
-    done 1>$HOME/.ssh_agent_env
+    done 1>$REMOTE_HOME/.ssh_agent_env
 }
 
 alias fixssh="source $REMOTE_HOME/.ssh_agent_env"
