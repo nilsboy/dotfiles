@@ -1523,8 +1523,14 @@ my $dirs_only = 1 if $ARGV[0] eq "-d";
 my $depth = 0;
 my $first = 1;
 my $max   = $ENV{COLUMNS};
+my ($root_dev) = stat ".";
+my $mounted = 0;
+my $dirlinks = 0;
 
 listdir(".");
+
+print "==> Skipped $mounted mounted / $dirlinks linked directories.\n"
+    if $mounted || $dirlinks;
 
 sub listdir {
     my ($dir) = @_;
@@ -1532,7 +1538,7 @@ sub listdir {
     my $prefix;
 
     if ( !$first ) {
-        $prefix = "  " x $depth;
+        $prefix = "   " x $depth;
     }
     else {
         $first = 0;
@@ -1540,21 +1546,30 @@ sub listdir {
 
     $depth++;
 
-    # $prefix .= " ";
-
     my @files = ();
     foreach my $file (<$dir/*>) {
 
         if ( -d $file ) {
 
+            my $normal_dir = 0;
+
+            my $dir = $prefix . "[" . basename($file) . "]";
+
+            my ($dev) = stat $file;
+
             if ( -l $file ) {
-                print shorten( $prefix . basename($file) . " -> " . readlink $file ) . "\n";
-                next;
+                $dir .= " -> " . readlink $file;
+                $dirlinks++;
+            } elsif($dev != $root_dev) {
+                $dir .= " MOUNTED";
+                $mounted++;
+            } else {
+                $normal_dir = 1;
             }
 
-            print shorten( $prefix . basename($file) ) . "\n";
+            print shorten( $dir ) . "\n";
 
-            listdir($file);
+            listdir($file) if $normal_dir;
             next;
         }
 
@@ -1567,11 +1582,13 @@ sub listdir {
         push( @files, $file );
     }
 
+    $depth--;
+
+    print "[.]\n" if $depth == 0 && @files;
+
     foreach my $file (@files) {
         print shorten( $prefix . basename($file) ) . "\n";
     }
-
-    $depth--;
 }
 
 sub shorten {
