@@ -703,6 +703,8 @@ function _cphub() {
 
 function bashrc_clean_environment() {
 
+    unset PROMPT_COMMAND
+
     # remove aliases
     unalias -a
 
@@ -2106,7 +2108,6 @@ function godark() {
 _set_colors
 unset _set_colors
 
-unset PS1
 case $(parent) in
     screen|screen.real|tmux)
         prompt_simple
