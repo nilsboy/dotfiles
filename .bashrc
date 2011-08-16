@@ -395,7 +395,7 @@ function f() { (
         DIE "usage: f [filename pattern]"
     fi
 
-    find . \! -regex ".*\/\..*" -mount -iname "*$@*" | grep -i "$@"
+    find . -mount \! -regex ".*\/\..*" -iname "*$@*" | grep -i "$@"
 ) }
 
 # backup a file appending a date
