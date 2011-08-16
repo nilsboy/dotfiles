@@ -577,7 +577,7 @@ function note() {
     fi
 
     perl -0777 -ne \
-      'foreach(/^(# NOTES ON '$search'.*?\n\n)/imsg){ s/# //g; print "\n$_" }' \
+      'foreach(/^(# NOTES ON '$search')/imsg){ s/# //g; print "\n$_" }' \
         $BASH_SOURCE
 }
 
@@ -1609,10 +1609,6 @@ EOF
 #    BASH_ENV=~/.bashrc
 #    PATH=~/bin:/usr/bin/:/bin
 
-# NOTES ON files
-# * replace in files: replace
-# * truncate a file without removing its inode: > file
-
 # NOTES ON bios
 # * infos of system: getSystemId
 
@@ -1641,9 +1637,6 @@ EOF
 # * switch console: chvty
 # * turn off console-blanking: echo -ne "\033[9;0]" > /dev/tty0
 # * lock: ctrl+s / unlock: ctrl+q
-
-# NOTES ON csv
-# * join
 
 # NOTES ON encoding
 # * recode UTF-8..ISO-8859-1 file_name
@@ -1676,9 +1669,12 @@ EOF
 # * recover partition: ddrescue
 # * recover deleted files: foremost jpg -o out_dir -i image_file
 
-# NOTES ON sort
+# NOTES ON text csv and other files
 # * sort by numeric column: sort -u -t, -k 1 -n file.csv > sort
 # * comm - compare two sorted files line by line with 3 column output
+# * join files horizontally: paste
+# * truncate a file without removing its inode: > file
+# * join csv files: join
 
 # NOTES ON sql / mysql
 # * INSERT
