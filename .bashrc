@@ -352,35 +352,19 @@ export GREP_OPTIONS="--color=auto"
 alias listgrep="grep -xFf"
 
 # a simple grep without the need for quoting or excluding dot files
-alias g="set -f && _g"
-function _g() { (
-
-    if [[ ! $@ ]] ; then
-        DIE "usage: g [search term]"
-    fi
-
-    trap "exit 1" SIGINT
-
-    f . | xargs grep -sinH "$*" {}
-)
-
-    local exit_code=$?
-    set +f
-    return $exit_code
-}
-
-# a simple grep files matching pattern without the need for quoting or
-# excluding dot files
 alias gi="set -f && _gi"
+alias  g="set -f && _gi ."
 function _gi() { (
 
     if [[ $# < 2 ]] ; then
-        DIE "usage: gi [filename pattern] [search term]"
+        DIE "\nusage: g  [search term]\nor   : gi [filename pattern] [search term]"
     fi
 
     trap "exit 1" SIGINT
 
-    grep -rsin --exclude-dir=.[a-zA-Z0-9]* --exclude=.* --include="$@" .
+    local pattern=$1; shift;
+
+    f $pattern | xargs grep -sinH "$*" {}
 )
 
     local exit_code=$?
