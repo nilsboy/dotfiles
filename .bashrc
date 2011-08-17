@@ -1459,8 +1459,10 @@ my $dirlinks = 0;
 
 listdir(".");
 
-print "==> Skipped $mounted mounted / $dirlinks linked directories.\n"
-    if $mounted || $dirlinks;
+print "==> Skipped $mounted mounted directories.\n"
+    if $mounted;
+print "==> Skipped $dirlinks linked directories.\n"
+    if $dirlinks;
 
 sub listdir {
     my ($dir) = @_;
@@ -1511,9 +1513,15 @@ sub listdir {
         }
 
         my $cleaned = $file;
-        $cleaned =~ s/[\d\W]+//g;
+        $cleaned =~ s/\..*$//g;
+        $cleaned =~ s/[\d\W_]+//g;
         $files{$cleaned}{count}++;
-        $files{$cleaned}{name} = $file if ! exists $files{$cleaned}{name};
+        if(exists $files{$cleaned}{name}) {
+            if(length $file > length $files{$cleaned}{name}) {
+                next;
+            }
+        }
+        $files{$cleaned}{name} = $file
     }
 
     $depth--;
@@ -1528,7 +1536,9 @@ sub listdir {
         else {
             $count = "";
         }
-        print shorten( $prefix . $files{$file}{name} . $count ) . "\n";
+        $file = $files{$file}{name};
+        $file =~ s/[\d\W_]{2,}/./g;
+        print shorten( $prefix . $file . $count ) . "\n";
     }
 }
 
