@@ -1476,7 +1476,7 @@ sub listdir {
 
     $depth++;
 
-    my @files = ();
+    my %files = ();
     foreach my $file (<$dir/*>) {
 
         if ( -d $file ) {
@@ -1505,19 +1505,30 @@ sub listdir {
 
         next if $dirs_only;
 
+        $file = basename($file);
         if ( -l $file ) {
             $file .= " -> " . readlink $file;
         }
 
-        push( @files, $file );
+        my $cleaned = $file;
+        $cleaned =~ s/[\d\W]+//g;
+        $files{$cleaned}{count}++;
+        $files{$cleaned}{name} = $file if ! exists $files{$cleaned}{name};
     }
 
     $depth--;
 
-    print "[.]\n" if $depth == 0 && @files;
+    print "[.]\n" if $depth == 0 && %files;
 
-    foreach my $file (@files) {
-        print shorten( $prefix . basename($file) ) . "\n";
+    foreach my $file (keys %files) {
+        my $count = $files{$file}{count};
+        if($count > 1) {
+            $count =  " ($count)"  if $count > 1;
+        }
+        else {
+            $count = "";
+        }
+        print shorten( $prefix . $files{$file}{name} . $count ) . "\n";
     }
 }
 
