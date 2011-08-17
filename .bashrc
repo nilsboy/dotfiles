@@ -581,11 +581,6 @@ function note() {
         $BASH_SOURCE
 }
 
-function cmdfu() {
-    curl "http://www.commandlinefu.com/commands/matching/$@/$(echo -n $@ | openssl base64)/plaintext" \
-        | less -F
-}
-
 # query wikipedia via dns
 function wp() {
     dig +short txt "$*".wp.dg.cx | perl -0777 -pe 'exit 1 if ! $_ ; s/\\//g'
@@ -908,57 +903,6 @@ alias nosshagent="grabssh && unset SSH_AUTH_SOCK SSH_CLIENT SSH_CONNECTION SSH_T
 # ssh url of a file or directory
 function url() {
     echo $USER@$HOSTNAME:$(abs "$@")
-}
-
-function _ssh_alias() {
-
-    local IFS=$'\n'
-
-    local cmd=$(perl - $@ <<'EOF'
-
-        use strict;
-        use warnings;
-        use Cwd 'abs_path';
-
-        my($host, $port, @files) = @ARGV;
-
-        my $cmd = "ssh -p $port $host";
-
-        my @tmp = ();
-        my $is_get = 0;
-
-        foreach(@files) {
-            if($_ eq "-g") {
-                $is_get = 1;
-            } else {
-                push(@tmp, $_);
-            }
-        }
-
-        @files = @tmp;
-
-        if(@files) {
-
-            my $dst = "";
-
-            if(@files > 1) {
-                $dst = pop(@files) . "/";
-            }
-
-            my $src = join(",", @files);
-
-            if($is_get) {
-                $cmd = "scp -P $port $host:{$src} $dst";
-            } else {
-                $cmd = "scp -P $port {$src} $host:$dst";
-            }
-        }
-
-        print "$cmd";
-EOF
-)
-
-    eval "$cmd"
 }
 
 function sshtunnel() { (
