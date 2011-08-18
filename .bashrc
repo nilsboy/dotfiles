@@ -1528,7 +1528,7 @@ sub listdir {
 
     print "[.]\n" if $depth == 0 && %files;
 
-    foreach my $file (keys %files) {
+    foreach my $file (sort keys %files) {
         my $count = $files{$file}{count};
         if($count > 1) {
             $count =  " ($count)"  if $count > 1;
