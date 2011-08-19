@@ -1538,6 +1538,7 @@ sub listdir {
         }
         $file = $files{$file}{name};
         $file =~ s/[\d\W_]{2,}/./g;
+        $file =~ s/^\.*//g;
         print shorten( $prefix . $file . $count ) . "\n";
     }
 }
