@@ -1545,8 +1545,8 @@ sub listdir {
             $link = readlink $entry;
             $cleaned .= " -> $link";
         } else {
-            $cleaned =~ s/\.[^\.]*$//g;
             $cleaned =~ s/[\d\W_]+//g;
+            $cleaned =~ s/\.[^\.]*$//g;
         }
 
         $files{$cleaned}{count}++;
