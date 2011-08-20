@@ -47,9 +47,6 @@ bind 'set editing-mode vi'
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 
-# case insensitive tab completion
-bind 'set completion-ignore-case on'
-
 # case insensitive pathname expansion
 shopt -s nocaseglob
 
@@ -57,14 +54,23 @@ shopt -s nocaseglob
 bind 'set bell-style none'
 # xset b off
 
+# keep original version of edited history entries
+bind 'set revert-all-at-newline on'
+
 # add slash to symlinks to directoryies on tab completion
 bind 'set mark-symlinked-directories on'
 
 # skip directories starting with a dot from tab completion
 bind 'set match-hidden-files off'
 
-# keep original version of edited history entries
-bind 'set revert-all-at-newline on'
+# case insensitive tab completion
+bind 'set completion-ignore-case on'
+
+# treat - and _ as equal in completion
+bind 'set completion-map-case on'
+
+# show common postfixes in completion
+bind 'set completion-prefix-display-length 1'
 
 # tab completion with single tab (don't ring the bell)
 bind 'set show-all-if-ambiguous on'
