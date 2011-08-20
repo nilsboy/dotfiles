@@ -1496,17 +1496,18 @@ sub listdir {
     $dir_label = shorten($dir_label);
 
     if ( !$normal_dir ) {
-        print "\n";
-        next;
+        print $dir_label . "\n";
+        $depth--;
+        return;
     }
 
     my @dirs       = ();
     my %files      = ();
     my $file_count = 0;
-    foreach my $file (<$dir/*>) {
+    foreach my $entry(<$dir/*>) {
 
-        if ( -d $file ) {
-            push( @dirs, $file );
+        if ( -d $entry ) {
+            push( @dirs, $entry);
             next;
         }
 
@@ -1514,21 +1515,26 @@ sub listdir {
 
         next if $dirs_only;
 
-        $file = basename($file);
-        if ( -l $file ) {
-            $file .= " -> " . readlink $file;
+        my $file = basename($entry);
+        my $cleaned = $file;
+        my $link;
+
+        if ( -l $entry) {
+            $link = readlink $entry;
+            $cleaned .= " -> $link";
+        } else {
+            $cleaned =~ s/\.[^\.]*$//g;
+            $cleaned =~ s/[\d\W_]+//g;
         }
 
-        my $cleaned = $file;
-        $cleaned =~ s/\.[^\.]*$//g;
-        $cleaned =~ s/[\d\W_]+//g;
         $files{$cleaned}{count}++;
         if ( exists $files{$cleaned}{name} ) {
-            if ( length $file > length $files{$cleaned}{name} ) {
+            if ( length $entry > length $files{$cleaned}{name} ) {
                 next;
             }
         }
         $files{$cleaned}{name} = $file;
+        $files{$cleaned}{link} = $link if $link;
     }
 
     $dir_label .= " (" . $file_count . ")" if $file_count;
@@ -1536,7 +1542,7 @@ sub listdir {
     print $dir_label;
 
     foreach my $lower_dir (@dirs) {
-        listdir($lower_dir) if $normal_dir;
+        listdir($lower_dir);
     }
 
     if ($dirs_only) {
@@ -1561,19 +1567,23 @@ sub listdir {
 
 DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
 
-        foreach my $file ( sort keys %{ $file_counts{$count_order} } ) {
+        foreach my $cleaned ( sort keys %{ $file_counts{$count_order} } ) {
 
             my $count = $count_order;
-            $count = $files{$file}{count} if !$sort_by_count;
+            $count = $files{$cleaned}{count} if !$sort_by_count;
 
             my $count_label;
             if ( $count > 1 ) {
                 $count_label = " ($count)" if $count > 1;
             }
 
-            $file = $files{$file}{name};
+            my $file = $files{$cleaned}{name};
+            my $link = $files{$cleaned}{link};
             $file =~ s/[\d\W_]{2,}/./g;
             $file =~ s/^\.*//g;
+            $file =~ s/\.*$//g;
+
+            $file .= " -> $link" if $link;
 
             print shorten( $prefix . $file . $count_label ) . "\n";
 
