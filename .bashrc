@@ -197,6 +197,7 @@ function SHOW()  {
 
 ## system functions ############################################################
 
+# display infos about the system
 function showenv() {
 
     while read v ; do
@@ -235,7 +236,7 @@ alias filter_quote="fmt -s | perl -pe 's/^/> /g'"
 # run a previous command independent of the history
 function r() { (
 
-    local CMD_FILE=~/.run_command
+    local CMD_FILE=$REMOTE_HOME/.run_command
 
     local cmd=$@
 
@@ -259,6 +260,7 @@ function timestamp2date() {
     'print strftime("%F %T", localtime(substr("'$timestamp'", 0, 10))) . "\n"'
 }
 
+# create a file from a template
 function filltemplate {
 
     perl - $@ <<'EOF'
@@ -316,6 +318,7 @@ function v() {
     done
 }
 
+# get parent process id
 function parent() {
     echo $(ps -p $PPID -o comm=)
 }
@@ -424,6 +427,7 @@ if [[ ! $(type -t pstree) ]] ; then
     alias p="ps axjf"
 fi
 
+# display or search pstree, exclude current process
 function p() {
 
     local args
@@ -439,6 +443,7 @@ function p() {
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
 
+# cleaned up jobs replacement
 function j() {
 
 export _bashrc_jobs=$(jobs)
@@ -652,11 +657,13 @@ function tl() {
 
 ### network functions ##########################################################
 
+# find own public ip if behind firewall etc
 function publicip() {
     caturl http://checkip.dyndns.org \
         | perl -ne '/Address\: (.+?)</i || die; print $1'
 }
 
+# find an unused port
 function freeport() {
 
     local port=$1
@@ -797,7 +804,8 @@ EOF
 
 ### export multiuser environment ###############################################
 
-function bashrc_setup_multiuser_account() {
+# setup multi user account on remote machine
+function setup_remote_multiuser_account() {
 
     local remote_user=$REMOTE_USER
     local server=${1?specify server}
@@ -819,6 +827,8 @@ function bashrc_setup_multiuser_account() {
         | ssh $server "grep -q $funct ~/.bashrc || cat >> ~/.bashrc"
 }
 
+# load user bashrc on a multi user account identifying a user via ssh key
+# expected dir structure: ~/your_username/.ssh/authorized_keys
 function bashrc_setup_multiuser_environment() {
 
     [[ $SSH_CONNECTION ]] || return
@@ -910,6 +920,8 @@ fi
 
 alias ssh="ssh -A"
 
+# save ssh-agent vars to be loaded in a nother session or on reconnect inside
+# screen or tmux
 function grabssh () {
     local SSHVARS="SSH_CLIENT SSH_TTY SSH_AUTH_SOCK SSH_CONNECTION DISPLAY"
 
@@ -920,7 +932,10 @@ function grabssh () {
     done 1>$REMOTE_HOME/.ssh_agent_env
 }
 
+# load ssh-agent vars stored by grabssh()
 alias fixssh="source $REMOTE_HOME/.ssh_agent_env"
+
+# remove connection to ssh-agent for testing purposes etc
 alias nosshagent="grabssh && unset SSH_AUTH_SOCK SSH_CLIENT SSH_CONNECTION SSH_TTY"
 
 # ssh url of a file or directory
@@ -928,6 +943,7 @@ function url() {
     echo $USER@$HOSTNAME:$(abs "$@")
 }
 
+# nicer ssh tunnel setup
 function sshtunnel() { (
 
     local  in=$1
@@ -980,6 +996,7 @@ function sshtunnel() { (
     xtitle "sshtunnel $cmd" && $cmd
 ) }
 
+# remove ssl encryption from https etc
 function sslstrip() { (
 
     local  in=$1
@@ -999,6 +1016,7 @@ function sslstrip() { (
 alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen -c $REMOTE_HOME/.screenrc"
 alias   tmux="xtitle   tmux@$HOSTNAME ; export DISPLAY= ; tmux"
 
+# reconnect to a screen or tmux session
 function srd() {
 
     local session=$1
@@ -1270,6 +1288,7 @@ function setupcpanm() { (
     INFO "You may now install modules with: cpanm -nq [module name]"
 ) }
 
+# allow cpanm to install modules specified via Path/File.pm
 function cpanm() {
     perl -e 'map { s/\//\:\:/g ; s/\.pm$//g } @ARGV; system("cpanm", "-nq" , @ARGV) && exit 1;' \
          -- "$@"
@@ -1277,6 +1296,7 @@ function cpanm() {
 
 ### java #######################################################################
 
+# recursively decompile a jar including contained jars
 function unjar() { (
 
     set -e
@@ -1321,6 +1341,7 @@ function unjar() { (
 
 ### xmv ########################################################################
 
+# rename files by perl expression protecting from duplicate resulting file names
 function xmv() {
 
     local IFS=$'\n'
@@ -1462,6 +1483,7 @@ function normalize_file_names() {
 
 ### simpletree() ###############################################################
 
+# tree substitute which groups similar named files
 function simpletree() {
 
     COLUMNS=$COLUMNS perl - $@ <<'EOF'
@@ -1885,12 +1907,14 @@ function h() {
     fi
 }
 
+# uniq replacement without the need of sorted input
 function uniqunsorted() {
     perl -ne 'print $_ if ! exists $seen{$_} ; $seen{$_} = 1'
 }
 
 ### PROMPT #####################################################################
 
+# some default colors
 function _set_colors() {
 
     # disable any colors
@@ -1935,6 +1959,7 @@ function _set_colors() {
     BG_BROWN="\[\033[44;XXm\]"
 }
 
+# shorten prompt dir to max 15 chars
 function _fix_pwd () {
 
     _pwd=$PWD
@@ -1970,6 +1995,7 @@ function _fix_pwd () {
     fi
 }
 
+# count seconds between prompt displays
 function _track_time() {
     _track_now=$SECONDS
 
@@ -2003,6 +2029,7 @@ function humanize_secs() {
     echo "$human"
 }
 
+# count background jobs running and stoped
 function _set_bg_jobs_count() {
 
     local job
@@ -2044,6 +2071,7 @@ function _color_user() {
     fi
 }
 
+# print error code of last command on failure
 function _print_on_error() {
 
     for item in ${bashrc_last_return_values[*]} ; do
@@ -2130,6 +2158,7 @@ function prompt_spare() {
     PROMPT_COMMAND=_prompt_command_spare
 }
 
+# turn of history for testing passwords etc
 function godark() {
     BASHRC_NO_HISTORY=1
     unset HISTFILE
@@ -2141,6 +2170,7 @@ function godark() {
 _set_colors
 unset _set_colors
 
+# set the appropriate prompt
 case $(parent) in
     screen|screen.real|tmux)
         prompt_simple
@@ -2159,6 +2189,7 @@ _first_invoke=1
 _OLDPWD=$(h d | tail -2 | head -1)
 LAST_SESSION_PWD=$(h d | tail -1)
 
+# cd to dir used last before logout
 if [[ $LAST_SESSION_PWD ]] ; then
 
     if [[ -d "$LAST_SESSION_PWD" ]] ; then
