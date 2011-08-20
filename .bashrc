@@ -398,6 +398,13 @@ function _gi() { (
     return $exit_code
 }
 
+function go() {
+    perl -e 'while(my $l = <STDIN>) { foreach(@ARGV) { if($l =~ /$_/i) { print $l; last; }; } }' "$@"
+}
+function ga() {
+    perl -e 'while(my $l = <STDIN>) { $m=1; foreach(@ARGV) { $m=0 if $l !~ /$_/i }; print $l if $m; }' "$@"
+}
+
 # quick find a file matching a pattern
 function f() { (
 
