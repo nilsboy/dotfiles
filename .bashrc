@@ -132,7 +132,23 @@ function cdl() {
     cd "$dir"
 }
 
-alias greppath="compgen -c | grep -i "
+# search for file or dir in cur dir and go there
+function cdf() {
+
+    local entry=$(f "$@" | head -1)
+
+    if [[ ! "$entry" ]] ; then
+        return 1
+    fi
+
+    if [[ -f "$entry" ]] ; then
+        entry=$(dirname "$entry")
+    fi
+
+    cd "$entry"
+}
+
+alias greppath="compgen -c | grep -i"
 
 alias xargs="xargs -I {}"
 
