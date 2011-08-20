@@ -1602,8 +1602,6 @@ sub listdir {
         return;
     }
 
-    print "\n" if $depth == 0 && %files && @dirs;
-
     $prefix .= "   ";
 
     my %file_counts = ();
