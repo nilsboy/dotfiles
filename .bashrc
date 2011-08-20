@@ -135,8 +135,9 @@ alias aptw="apt-cache show"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
-alias  t=simpletree
-alias td="simpletree -d"
+alias  t="simpletree "
+alias td="t -d"
+alias ts="t -s -c"
 
 # make less more friendly for non-text input files, see lesspipe(1)
 if [[ $(type -p lesspipe ) ]] ; then
@@ -1447,17 +1448,23 @@ use strict;
 use warnings;
 no warnings 'uninitialized';
 use File::Basename;
+use Getopt::Long;
+use Cwd;
 
-my $dirs_only = 1 if $ARGV[0] eq "-d";
+GetOptions(
+    "d|directories-only" => \my $dirs_only,
+    "s|summary"          => \my $summary_only,
+    "c|sort-by-count"    => \my $sort_by_count,
+) or die "usage: simpletree [-d] [-s] [-c]";
 
-my $depth = 0;
-my $first = 1;
-my $max   = $ENV{COLUMNS};
+my $depth      = -1;
+my $max        = $ENV{COLUMNS};
 my ($root_dev) = stat ".";
-my $mounted = 0;
-my $dirlinks = 0;
+my $mounted    = 0;
+my $dirlinks   = 0;
+my $root_dir   = getcwd;
 
-listdir(".");
+listdir($root_dir);
 
 print "==> Skipped $mounted mounted directories.\n"
     if $mounted;
@@ -1467,43 +1474,43 @@ print "==> Skipped $dirlinks linked directories.\n"
 sub listdir {
     my ($dir) = @_;
 
-    my $prefix;
-
-    if ( !$first ) {
-        $prefix = "   " x $depth;
-    }
-    else {
-        $first = 0;
-    }
-
     $depth++;
 
-    my %files = ();
+    my $prefix     = "   " x ($depth);
+    my $normal_dir = 0;
+    my ($dev)      = stat $dir;
+    my $dir_label  = $prefix . "[" . basename($dir) . "]";
+
+    if ( -l $dir ) {
+        $dir_label .= " -> " . readlink $dir;
+        $dirlinks++;
+    }
+    elsif ( $dev != $root_dev ) {
+        $dir .= " MOUNTED";
+        $mounted++;
+    }
+    else {
+        $normal_dir = 1;
+    }
+
+    $dir_label = shorten($dir_label);
+
+    if ( !$normal_dir ) {
+        print "\n";
+        next;
+    }
+
+    my @dirs       = ();
+    my %files      = ();
+    my $file_count = 0;
     foreach my $file (<$dir/*>) {
 
         if ( -d $file ) {
-
-            my $normal_dir = 0;
-
-            my $dir = $prefix . "[" . basename($file) . "]";
-
-            my ($dev) = stat $file;
-
-            if ( -l $file ) {
-                $dir .= " -> " . readlink $file;
-                $dirlinks++;
-            } elsif($dev != $root_dev) {
-                $dir .= " MOUNTED";
-                $mounted++;
-            } else {
-                $normal_dir = 1;
-            }
-
-            print shorten( $dir ) . "\n";
-
-            listdir($file) if $normal_dir;
+            push( @dirs, $file );
             next;
         }
+
+        $file_count++;
 
         next if $dirs_only;
 
@@ -1513,34 +1520,81 @@ sub listdir {
         }
 
         my $cleaned = $file;
-        $cleaned =~ s/\..*$//g;
+        $cleaned =~ s/\.[^\.]*$//g;
         $cleaned =~ s/[\d\W_]+//g;
         $files{$cleaned}{count}++;
-        if(exists $files{$cleaned}{name}) {
-            if(length $file > length $files{$cleaned}{name}) {
+        if ( exists $files{$cleaned}{name} ) {
+            if ( length $file > length $files{$cleaned}{name} ) {
                 next;
             }
         }
-        $files{$cleaned}{name} = $file
+        $files{$cleaned}{name} = $file;
     }
+
+    $dir_label .= " (" . $file_count . ")" if $file_count;
+    $dir_label .= "\n";
+    print $dir_label;
+
+    foreach my $lower_dir (@dirs) {
+        listdir($lower_dir) if $normal_dir;
+    }
+
+    if ($dirs_only) {
+        print $dir_label if $depth == 0;
+        $depth--;
+        return;
+    }
+
+    print "\n" if $depth == 0 && %files && @dirs;
+
+    $prefix .= "   ";
+
+    my %file_counts = ();
+    foreach my $file ( sort keys %files ) {
+        my $count = $files{$file}{count};
+        $count = 1 if !$sort_by_count;
+        my $example_file = $files{$file}{name};
+        $file_counts{$count}{$file} = $example_file;
+    }
+
+    my $shown_files = 0;
+
+DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
+
+        foreach my $file ( sort keys %{ $file_counts{$count_order} } ) {
+
+            my $count = $count_order;
+            $count = $files{$file}{count} if !$sort_by_count;
+
+            my $count_label;
+            if ( $count > 1 ) {
+                $count_label = " ($count)" if $count > 1;
+            }
+
+            $file = $files{$file}{name};
+            $file =~ s/[\d\W_]{2,}/./g;
+            $file =~ s/^\.*//g;
+
+            print shorten( $prefix . $file . $count_label ) . "\n";
+
+            $shown_files++;
+
+            if ( $shown_files == 3 && $summary_only ) {
+
+                next if keys %files == 4;
+
+                if ( keys %files > 3 ) {
+                    print $prefix . "...\n";
+                }
+
+                last DIR;
+            }
+        }
+    }
+
+    print $dir_label if $depth == 0 && %files && @dirs;
 
     $depth--;
-
-    print "[.]\n" if $depth == 0 && %files;
-
-    foreach my $file (sort keys %files) {
-        my $count = $files{$file}{count};
-        if($count > 1) {
-            $count =  " ($count)"  if $count > 1;
-        }
-        else {
-            $count = "";
-        }
-        $file = $files{$file}{name};
-        $file =~ s/[\d\W_]{2,}/./g;
-        $file =~ s/^\.*//g;
-        print shorten( $prefix . $file . $count ) . "\n";
-    }
 }
 
 sub shorten {
@@ -1553,6 +1607,7 @@ sub shorten {
 
     return $left . "..." . $right;
 }
+
 EOF
 }
 
