@@ -1880,11 +1880,11 @@ function _add_to_history() {
     history -a
 }
 
-# search in eternal history
-
 alias h="set -f && historysearch"
+
+# search in eternal history
 function historysearch() {
-    HISTFILE_ETERNAL=$HISTFILE_ETERNAL perl - "$@" <<'EOF'
+    HISTFILE_ETERNAL=$HISTFILE_ETERNAL perl - "$@" <<'EOF' | tac
 
 use strict;
 use warnings;
