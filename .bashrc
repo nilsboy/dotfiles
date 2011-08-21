@@ -844,6 +844,7 @@ function bashrc_setup_multiuser_environment() {
 
     type -p ssh-add 1>/dev/null || return
 
+    cd
     shopt -s nullglob
     auth_files=(*/.ssh/authorized_keys)
     shopt -u nullglob
