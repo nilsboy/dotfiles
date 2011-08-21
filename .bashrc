@@ -1020,8 +1020,9 @@ function sslstrip() { (
 ) }
 
 function _ssh_completion() {
-    historysearch -r --seperator ' ' ^ssh \\S+$ | perl -pe 's/ssh //g'
+    perl -ne 'print "$1 " if /^Host (.+)$/' $REMOTE_HOME/.ssh/config
 }
+complete -W "$(_ssh_completion)" ssh
 
 ### SCREEN #####################################################################
 
