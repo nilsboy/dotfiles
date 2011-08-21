@@ -123,7 +123,7 @@ alias cdt='cd $REMOTE_HOME/tmp'
 
 # search history for an existing directory containing string and go there
 function cdl() {
-    local dir=$(h d a | perl -ne 's/\n//g; print "$_\n" if /'$1'/i && -d' | head -1)
+    local dir=$(historysearch -d | grep -i "$@" | head -1)
 
     if [[ ! "$dir" ]] ; then
         return 1
@@ -1018,6 +1018,10 @@ function sslstrip() { (
     xtitle "sslstrip $cmd" && $cmd
 ) }
 
+function _ssh_completion() {
+    historysearch -r --seperator ' ' ^ssh \\S+$ | perl -pe 's/ssh //g'
+}
+
 ### SCREEN #####################################################################
 
 alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen -c $REMOTE_HOME/.screenrc"
@@ -1877,39 +1881,76 @@ function _add_to_history() {
 }
 
 # search in eternal history
-function h() {
 
-    if [ "$*" = "" ] ; then
-        tail -100 $HISTFILE_ETERNAL
-        return
-    fi
+alias h="set -f && historysearch"
+function historysearch() {
+    HISTFILE_ETERNAL=$HISTFILE_ETERNAL perl - "$@" <<'EOF'
 
-    if [[ $1 == d ]] ; then
-        if [[ $2 == a ]] ; then
-           tac $HISTFILE_ETERNAL \
-                | cut -d \  -f 5 \
-                | uniqunsorted \
-                | perl -pe ' s/"//g;'
-        else
-           tac $HISTFILE_ETERNAL \
-                | cut -d \  -f 5 \
-                | uniqunsorted \
-                | perl -pe 's/"//g'  \
-                | head -100 \
-                | tac
-        fi
-    elif [[ $1 == l ]] ; then
-       tac $HISTFILE_ETERNAL \
-            | perl -nae 'print if $F[4] eq "\"" . $ENV{PWD} . "\""' \
-            | head -100 \
-            | tac
-    else
-        tac $HISTFILE_ETERNAL \
-            | grep -i "$*" \
-            | head -100 \
-            | tac \
-            | grep -i "$*"
-    fi
+use strict;
+use warnings;
+no warnings 'uninitialized';
+use Getopt::Long;
+use Cwd;
+
+GetOptions(
+    "a|all" => \my $show_all,
+    "e|everything" => \my $show_everything,
+    "d|directories" => \my $show_dirs,
+    "r|succsessful-result-only" => \my $show_successful,
+    "l|commands-here" => \my $show_local,
+    "c|count=i" => \my $count,
+    "seperator=s" => \my $seperator,
+) or die "usage: h [-a] [search term]";
+
+my $search = join(" ", @ARGV);
+my $wd = cwd;
+
+# user 2011-08-20 21:02:47 19202 "dir" "0 1" cmd with options ...
+my $hist_regex = '^(.+) (.+) (.+) (\d+) "(.+)" "([\d ]+)" (.+)$';
+
+my $h = $ENV{HISTFILE_ETERNAL};
+open(F, "tac $h |") || die $!;
+
+my %shown = ();
+$count ||= 100;
+$seperator ||= "\n";
+
+while(<F>) {
+    my(@all) = $_ =~ /$hist_regex/g;
+    my($user, $date, $time, $pid, $dir, $result, $cmd) = @all;
+
+    next if $search && $cmd !~ /$search/i;
+    next if $show_successful && $result !~ /[0 ]+/g;
+
+    my $r;
+
+    if($show_dirs) {
+        $r = $dir;
+    }
+    elsif($show_local) {
+        $r = $cmd if $dir eq $wd;
+    }
+    else {
+        $r = $cmd;
+    }
+
+    next if exists $shown{$r};
+    $shown{$r} = 1;
+
+    if($show_everything) {
+        $r = join(" ", @all);
+    }
+
+    print $r . $seperator;
+
+    last if !$show_all && keys %shown == $count;
+}
+
+EOF
+
+    local exit_code=$?
+    set +f
+    return $exit_code
 }
 
 # uniq replacement without the need of sorted input
