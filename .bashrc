@@ -1022,7 +1022,10 @@ function sslstrip() { (
 function _ssh_completion() {
     perl -ne 'print "$1 " if /^Host (.+)$/' $REMOTE_HOME/.ssh/config
 }
-complete -W "$(_ssh_completion)" ssh
+
+if [[ -e $REMOTE_HOME/.ssh/config ]] ; then
+    complete -W "$(_ssh_completion)" ssh
+fi
 
 ### SCREEN #####################################################################
 
