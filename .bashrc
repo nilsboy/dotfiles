@@ -1924,7 +1924,8 @@ my $search = join(" ", @ARGV);
 my $wd = cwd;
 
 # user 2011-08-20 21:02:47 19202 "dir" "0 1" cmd with options ...
-my $hist_regex = '^(.+) (.+) (.+) (\d+) "(.+)" "([\d ]+)" (.+)$';
+#                  usr  date time  pid   dir   exit codes  cmd
+my $hist_regex = '^(.+) (.+) (.+) (\d*) "(.+)" "([\d ]+)" (.+)$';
 
 my $h = $ENV{HISTFILE_ETERNAL};
 open(F, "tac $h |") || die $!;
