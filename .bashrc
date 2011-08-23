@@ -1263,6 +1263,17 @@ function vib() {
     command vi $file
 }
 
+function vif() {
+
+    local entry=$(f "$@" | perl -lne 'print if ! -d' | head -1)
+
+    if [[ ! "$entry" ]] ; then
+        return 1
+    fi
+
+    command vi "$entry"
+}
+
 # setup local::lib and cpanm
 function setupcpanm() { (
 
@@ -1889,6 +1900,8 @@ alias h="set -f && historysearch"
 
 # search in eternal history
 function historysearch() {
+
+(
     HISTFILE_ETERNAL=$HISTFILE_ETERNAL perl - "$@" <<'EOF' | tac
 
 use strict;
@@ -1952,6 +1965,7 @@ while(<F>) {
 }
 
 EOF
+)
 
     local exit_code=$?
     set +f
