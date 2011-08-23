@@ -844,9 +844,8 @@ function bashrc_setup_multiuser_environment() {
 
     type -p ssh-add 1>/dev/null || return
 
-    cd
     shopt -s nullglob
-    auth_files=(*/.ssh/authorized_keys)
+    auth_files=(~/*/.ssh/authorized_keys)
     shopt -u nullglob
 
     [[ $auth_files ]] || return
@@ -860,7 +859,9 @@ function bashrc_setup_multiuser_environment() {
         for auth_file in ${auth_files[@]} ; do
 
             if grep -q "${agent_key}" $auth_file ; then
-                export REMOTE_USER=${auth_file%%/.ssh/authorized_keys}
+                REMOTE_USER=${auth_file%%/.ssh/authorized_keys};
+                REMOTE_USER=${REMOTE_USER##$HOME/};
+                export REMOTE_USER
                 break 2
             fi
 
