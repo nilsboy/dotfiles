@@ -1672,7 +1672,7 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
         }
     }
 
-    print $dir_label if $depth == 0 && %files && @dirs;
+    print $dir_label if $depth == 0;
 
     $depth--;
 }
