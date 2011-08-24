@@ -123,7 +123,7 @@ alias cdt='cd $REMOTE_HOME/tmp'
 
 # search history for an existing directory containing string and go there
 function cdl() {
-    local dir=$(historysearch -d | grep -i "$@" | head -1)
+    local dir=$(historysearch -d --existing-only -c 1 "$@")
 
     if [[ ! "$dir" ]] ; then
         return 1
@@ -1914,6 +1914,7 @@ use Cwd;
 GetOptions(
     "a|all" => \my $show_all,
     "e|everything" => \my $show_everything,
+    "existing-only" => \my $show_existing_only,
     "d|directories" => \my $show_dirs,
     "r|succsessful-result-only" => \my $show_successful,
     "l|commands-here" => \my $show_local,
@@ -1939,12 +1940,12 @@ while(<F>) {
     my(@all) = $_ =~ /$hist_regex/g;
     my($user, $date, $time, $pid, $dir, $result, $cmd) = @all;
 
-    next if $search && $cmd !~ /$search/i;
     next if $show_successful && $result !~ /[0 ]+/g;
 
     my $r;
 
     if($show_dirs) {
+        next if $show_existing_only && ! -d $dir;
         $r = $dir;
     }
     elsif($show_local) {
@@ -1954,7 +1955,9 @@ while(<F>) {
         $r = $cmd;
     }
 
+    next if $search && $r !~ /$search/i;
     next if exists $shown{$r};
+
     $shown{$r} = 1;
 
     if($show_everything) {
@@ -2253,8 +2256,8 @@ esac
 
 _first_invoke=1
 
-_OLDPWD=$(h d | tail -2 | head -1)
-LAST_SESSION_PWD=$(h d | tail -1)
+_OLDPWD=$(h -d -c 2 | head -1)
+LAST_SESSION_PWD=$(h -d -c 1)
 
 # cd to dir used last before logout
 if [[ $LAST_SESSION_PWD ]] ; then
