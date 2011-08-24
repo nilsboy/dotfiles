@@ -405,15 +405,34 @@ function ga() {
     perl -e 'while(my $l = <STDIN>) { $m=1; foreach(@ARGV) { $m=0 if $l !~ /$_/i }; print $l if $m; }' "$@"
 }
 
-# quick find a file matching a pattern
+# quick find a file matching pattern
 function f() { (
 
-    if [[ ! $@ ]] ; then
-        DIE "usage: f [filename pattern]"
+    local search="$@"
+
+    if [[ ! $search ]] ; then
+        search=.
     fi
 
-    find . -mount \! -regex ".*\/\..*" -iname "*$@*" | grep -i "$@"
+    find . -mount \
+        | perl -MFile::Basename -ne 'print if basename($_) =~ /'$search'/i && $_ !~ /\/\.{1,2}|^\.$/' \
+        | grep -i "$search"
 ) }
+
+# quick find a path matching pattern
+function fa() { (
+
+    local search="$@"
+
+    if [[ ! $search ]] ; then
+        search=.
+    fi
+
+    find . -mount \
+        | perl -ne 'print if /'$search'/i && $_ !~ /\/\.{1,2}|^\.$/' \
+        | grep -i "$search"
+) }
+
 
 # backup a file appending a date
 function bak() {
