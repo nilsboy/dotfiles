@@ -123,7 +123,7 @@ alias cdt='cd $REMOTE_HOME/tmp'
 
 # search history for an existing directory containing string and go there
 function cdl() {
-    local dir=$(historysearch -d --existing-only -c 1 "$@")
+    local dir=$(h -d --existing-only -c 1 "$@")
 
     if [[ ! "$dir" ]] ; then
         return 1
