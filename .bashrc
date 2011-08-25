@@ -160,6 +160,7 @@ alias aptc="sudo apt-get autoremove"
 alias  t="simpletree "
 alias td="t -d"
 alias ts="t -s -c"
+alias diffdir="diff -rq"
 
 # make less more friendly for non-text input files, see lesspipe(1)
 if [[ $(type -p lesspipe ) ]] ; then
