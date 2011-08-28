@@ -1972,7 +1972,7 @@ while(<F>) {
         $r = $cmd if $dir eq $wd;
     }
     else {
-        $r = $cmd;
+        $r = $dir . " " . $cmd;
     }
 
     next if $search && $r !~ /$search/i;
