@@ -123,7 +123,7 @@ alias cdt='cd $REMOTE_HOME/tmp'
 
 # search history for an existing directory containing string and go there
 function cdl() {
-    local dir=$(h -d --existing-only -c 1 "$@")
+    local dir=$(historysearch -d --existing-only -c 1 "$@")
 
     if [[ ! "$dir" ]] ; then
         return 1
@@ -1917,7 +1917,7 @@ function _add_to_history() {
     history -a
 }
 
-alias h="set -f && historysearch"
+alias h="set -f && historysearch -e"
 
 # search in eternal history
 function historysearch() {
@@ -1931,6 +1931,9 @@ no warnings 'uninitialized';
 use Getopt::Long;
 use Cwd;
 
+my $gray      = "\x1b[38;5;250m";
+my $black     = "\x1b[38;5;0m";
+
 GetOptions(
     "a|all" => \my $show_all,
     "e|everything" => \my $show_everything,
@@ -1940,7 +1943,7 @@ GetOptions(
     "l|commands-here" => \my $show_local,
     "c|count=i" => \my $count,
     "seperator=s" => \my $seperator,
-) or die "usage: h [-a] [search term]";
+) or die "Wrong usage.";
 
 my $search = join(" ", @ARGV);
 my $wd = cwd;
@@ -1972,7 +1975,7 @@ while(<F>) {
         $r = $cmd if $dir eq $wd;
     }
     else {
-        $r = $dir . " " . $cmd;
+        $r = $cmd;
     }
 
     next if $search && $r !~ /$search/i;
@@ -1980,11 +1983,9 @@ while(<F>) {
 
     $shown{$r} = 1;
 
-    if($show_everything) {
-        $r = join(" ", @all);
-    }
-
     print $r . $seperator;
+    print $gray . "   (" . join(" ", @all[0..$#all-1]) . ")\n" . $black
+        if $show_everything;
 
     last if !$show_all && keys %shown == $count;
 }
@@ -2276,8 +2277,8 @@ esac
 
 _first_invoke=1
 
-_OLDPWD=$(h -d -c 2 | head -1)
-LAST_SESSION_PWD=$(h -d -c 1)
+_OLDPWD=$(historysearch -d -c 2 | head -1)
+LAST_SESSION_PWD=$(historysearch -d -c 1)
 
 # cd to dir used last before logout
 if [[ $LAST_SESSION_PWD ]] ; then
