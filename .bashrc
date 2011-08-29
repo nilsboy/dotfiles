@@ -660,25 +660,40 @@ function m() {
     fi
 
     (
-        help -m $cmd && return
-        MAN_KEEP_FORMATTING=1 man -a $cmd && return
+        _printifok help help -m $cmd
+        #_printifok man "MAN_KEEP_FORMATTING=1 man -a $cmd"
+        _printifok man man -a $cmd || \
+        _printifok internet _man_internet $cmd
+        _printifok apt-show apt-cache search $cmd
+        _printifok related man -k $cmd
+        _printifok apropos apropos $cmd
 
-        if [[ $(type -p $cmd) ]] ; then
-            $cmd --help 2>&1 \
-                | perl -0777 -pe 'exit 1 if /^$/' && return
-            $cmd -h 2>&1 \
-                | perl -0777 -pe 'exit 1 if /^$/' && return
-        fi
+    ) | less -F +/"$arg"
+}
 
+function _man_internet() {
+    local cmd=$1
+    links -dump http://man.cx/$cmd \
+        | perl -0777 -pe 's/^.*\n(?=\s*NAME\s*$)|\n\s*COMMENTS.*$//smg' \
+        | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/' \
+        && echo
+}
 
-        links -dump http://man.cx/$cmd \
-            | perl -0777 -pe 's/^.*\n(?=\s*NAME\s*$)|\n\s*COMMENTS.*$//smg' \
-            | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/' \
-            && return
+function _printifok() {
+    local msg=$1 ; shift
+    local cmd="$*"
 
-        aptw $cmd
+    local out=$($cmd 2>/dev/null) # || return 1
+    [[ ${out[@]} ]] || return 1
+    line $msg
+    echo "${out[@]}"
+}
 
-    ) 2>/dev/null | less -F +/"$arg"
+function line() {
+    COLUMNS=$COLUMNS perl - $@ <<'EOF'
+        my $msg = " " . join(" ", @ARGV) . " ";
+        print "---", $msg , q{-} x ($ENV{COLUMNS} - 3 - length($msg)), "\n\n";
+EOF
 }
 
 # translate a word
