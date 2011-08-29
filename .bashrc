@@ -621,19 +621,25 @@ EOF
 ### functions for lookups ######################################################
 
 # display notes defined inside the bashrc
+function noteall() {
+    local search=$1
+    ga $search <$REMOTE_BASHRC | grep -v '#'
+    note $search
+}
+
 function note() {
 
     local search=$1
 
     if [[ ! $search ]] ; then
         perl -ne 'print " * $1\n" if /^# NOTES ON (.*)/' \
-            $BASH_SOURCE | sort
+            $REMOTE_BASHRC| sort
         return
     fi
 
     perl -0777 -ne \
-      'foreach(/^(# NOTES ON '$search')/imsg){ s/# //g; print "\n$_" }' \
-        $BASH_SOURCE
+      'foreach(/^(# NOTES ON '$search'.+?\n\n)/imsg){ s/# //g; print "\n$_" }' \
+        $REMOTE_BASHRC
 }
 
 # query wikipedia via dns
