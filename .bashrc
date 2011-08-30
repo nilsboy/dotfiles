@@ -148,6 +148,18 @@ function cdf() {
     cd "$entry"
 }
 
+# search for file from cur dir and edit it with vi
+function vif() {
+
+    local entry=$(f -type f "$@" | head -1)
+
+    if [[ ! "$entry" ]] ; then
+        return 1
+    fi
+
+    command vi "$entry"
+}
+
 alias greppath="compgen -c | grep -i"
 
 alias xargs="xargs -I {}"
