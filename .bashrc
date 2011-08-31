@@ -461,7 +461,8 @@ function unix2dos() {
 }
 
 function csvview() {
-    column -ts\; $1 | less -S
+    # emulate column's -n flag - for older distributions
+    perl -pe 's/(^|;);/$1 ;/g' "$*" | column -ts\; | less -S
 }
 
 ## process management ##########################################################
