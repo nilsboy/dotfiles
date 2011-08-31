@@ -462,7 +462,7 @@ function unix2dos() {
 
 function csvview() {
     # emulate column's -n flag - for older distributions
-    perl -pe 's/(^|;);/$1 ;/g' "$*" | column -ts\; | less -S
+    perl -pe 'if($. == 1) {@h = split(/;/); $i = 1 ; map { $_ = $i; $i++ } @h; print join(" ;", @h) , "\n"} ; s/(^|;);/$1 ;/g' "$@" | column -ts\; | less -S
 }
 
 ## process management ##########################################################
