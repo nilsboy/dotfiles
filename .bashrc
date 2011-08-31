@@ -460,6 +460,10 @@ function unix2dos() {
     perl -i -pe 's/\n/\r\n/' "$@"
 }
 
+function csvview() {
+    column -ts\; $1 | less -S
+}
+
 ## process management ##########################################################
 
 if [[ ! $(type -t pstree) ]] ; then
