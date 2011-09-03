@@ -1577,6 +1577,7 @@ function simpletree() {
 use strict;
 use warnings;
 no warnings 'uninitialized';
+use File::Glob qw(bsd_glob);
 use File::Basename;
 use Getopt::Long;
 use Cwd;
@@ -1634,7 +1635,7 @@ sub listdir {
     my @dirs       = ();
     my %files      = ();
     my $file_count = 0;
-    foreach my $entry(<$dir/*>) {
+    foreach my $entry(bsd_glob("$dir/*")) {
 
         if ( -d $entry ) {
             push( @dirs, $entry);
