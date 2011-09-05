@@ -461,8 +461,207 @@ function unix2dos() {
 }
 
 function csvview() {
-    # emulate column's -n flag - for older distributions
-    perl -pe 'if($. == 1) {@h = split(/;/); $i = 1 ; map { $_ = $i; $i++ } @h; print join(" ;", @h) , "\n"} ; s/(^|;);/$1 ;/g' "$@" | column -ts\; | less -S
+
+    LINES=$LINES perl - $@ <<'EOF' | less -S
+
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+no warnings 'uninitialized';
+use Data::Dumper;
+use Getopt::Long;
+
+my $gray     = "\x1b[38;5;250m";
+my $no_color = "\x1b[38;0m";
+
+GetOptions(
+    "c|count=i" => \my $count,
+) or die "Wrong usage.";
+
+my @patterns = (
+    qr/^$/,              # empty
+    qr/^[\.,\d]+$/,      # number
+    qr/^[\-\.,\d]+$/,    # number also negative
+    qr/^[\w\s]+$/i,      # alphanum
+    qr/[\W]/i,           # contains non word character
+);
+
+my $file = shift @ARGV || die "File?";
+
+my %stats        = (File => $file);
+my %fields       = ();
+my $delimiter    = find_delimiter();
+my $screen_lines = $ENV{LINES} - 1;
+
+my $empty_line_regex = qr/^[$delimiter\s]+$/;
+
+my @header;
+my $header;
+my @column_ids_header;
+my $column_ids_header;
+my @line;
+my $line;
+
+analyze_data();
+
+my $lines_shown = 0;
+
+my $last_line;
+open(F, $file) || die $!;
+while (<F>) {
+
+    chop;
+
+    if ($_ =~ $empty_line_regex) {
+        next;
+    }
+
+    if ($lines_shown % $screen_lines == 0) {
+        print stats() . $column_ids_header . $header . padded_line(\@line, "-");
+        $lines_shown += 4;
+        next;
+    }
+
+    print padded_line([ split($delimiter) ]);
+
+    $lines_shown++;
+    $last_line = $.;
+}
+
+print "\n" x ($screen_lines -
+        ($lines_shown - int($lines_shown / $screen_lines) * $screen_lines));
+
+close(F);
+
+sub find_delimiter {
+
+    my $sample;
+
+    open(F, $file) || die $!;
+    while (<F>) {
+        chop;
+        $sample .= $_;
+        last if $. == 3;
+    }
+    close(F);
+
+    my @special_chars = $sample =~ /(\W)/g;
+    my %special_char_count = ();
+    map { $special_char_count{$_}++ } @special_chars;
+
+    my $delimiter;
+    my $max = 0;
+    foreach my $special_char (keys %special_char_count) {
+        next if $special_char_count{$special_char} < $max;
+        $delimiter = $special_char;
+        $max       = $special_char_count{$special_char};
+    }
+
+    return $delimiter || die "No delimiter found.";
+}
+
+sub calculate_alpha_column_name {
+    my ($num) = @_;
+
+    my $r;
+    while ($num != 0) {
+        $r = chr($num % 26 + 64) . $r if $num % 26;
+        $num = int($num / 26);
+    }
+
+    return $r;
+}
+
+sub analyze_data {
+
+    my $header_line;
+    open(F, $file) || die $!;
+    while (<F>) {
+        chop;
+        $stats{Lines} = $.;
+
+        if ($. == 1) {
+            $header_line = $_;
+            next;
+        }
+
+        if ($_ =~ $empty_line_regex) {
+            $stats{"Empty Lines"}++;
+            next;
+        }
+
+        add_field_lengths([ split($delimiter) ]);
+    }
+    close(F);
+
+    @header = split($delimiter, $header_line);
+    add_field_lengths(\@header, 1);
+
+    create_column_ids_header();
+    add_field_lengths(\@column_ids_header, 1);
+
+    $column_ids_header = padded_line(\@column_ids_header);
+    $header            = padded_line(\@header);
+
+    my $i = -1;
+    foreach my $value (@header) {
+        $i++;
+        $line[$i] = "-" x $fields{$i}{length};
+    }
+    $line = padded_line(\@line);
+
+    foreach my $field (keys %fields) {
+        $stats{"Skipped columns"}++ if exists $fields{$field}{length};
+    }
+}
+
+sub add_field_lengths {
+    my ($line, $ignore_empty) = @_;
+    my $i = -1;
+    foreach my $value (@$line) {
+        $i++;
+        next if $ignore_empty && !$fields{$i}{length};
+        $fields{$i}{length} = length($value)
+            if length($value) > $fields{$i}{length};
+    }
+}
+
+sub padded_line {
+    my ($in, $pad) = @_;
+
+    $pad ||= " ";
+
+    my @out;
+    my $i  = -1;
+    my $i2 = -1;
+    foreach my $value (@$in) {
+        $i++;
+        next if !exists $fields{$i}{length};
+        $i2++;
+        $fields{$i}{name} = $header[$i];
+        $out[$i2] = sprintf('%' . $fields{$i}{length} . 's', $value);
+    }
+    return join(" | ", @out) . "\n";
+}
+
+sub stats {
+    my @r;
+    my $i = -1;
+    map { $i++; $r[$i] = $_ . ": " . $stats{$_} } sort keys %stats;
+    return join(", ", @r) . "\n";
+}
+
+sub create_column_ids_header {
+    my $i = -1;
+    foreach my $value (@header) {
+        $i++;
+        $column_ids_header[$i] =
+            ($i + 1) . " (" . calculate_alpha_column_name($i + 1) . ")";
+    }
+}
+
+EOF
 }
 
 ## process management ##########################################################
