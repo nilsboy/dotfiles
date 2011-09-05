@@ -123,7 +123,7 @@ alias cdt='cd $REMOTE_HOME/tmp'
 
 # search history for an existing directory containing string and go there
 function cdl() {
-    local dir=$(historysearch -d --existing-only -c 1 "$@")
+    local dir=$(historysearch -d --skip-current-dir --existing-only -c 1 "$@")
 
     if [[ ! "$dir" ]] ; then
         return 1
@@ -1977,6 +1977,7 @@ GetOptions(
     "a|all" => \my $show_all,
     "e|everything" => \my $show_everything,
     "existing-only" => \my $show_existing_only,
+    "skip-current-dir" => \my $skip_current,
     "d|directories" => \my $show_dirs,
     "r|succsessful-result-only" => \my $show_successful,
     "l|commands-here" => \my $show_local,
@@ -2003,6 +2004,7 @@ while(<F>) {
     my($user, $date, $time, $pid, $dir, $result, $cmd) = @all;
 
     next if $show_successful && $result !~ /[0 ]+/g;
+    next if $dir eq $wd;
 
     my $r;
 
