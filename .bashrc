@@ -1907,7 +1907,7 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
 
             my $file = $files{$cleaned}{name};
             my $link = $files{$cleaned}{link};
-            $file =~ s/[\d\W_]{2,}/./g;
+            $file =~ s/[\d_]{2,}+/*/g;
             $file =~ s/^\.*//g;
             $file =~ s/\.*$//g;
 
@@ -2515,27 +2515,30 @@ case $(parent) in
     ;;
 esac
 
-_first_invoke=1
+if [[ ! $_first_invoke ]] ; then
 
-_OLDPWD=$(historysearch -d -c 2 | head -1)
-LAST_SESSION_PWD=$(historysearch -d -c 1)
+    _OLDPWD=$(historysearch -d -c 2 | head -1)
+    LAST_SESSION_PWD=$(historysearch -d -c 1)
 
-# cd to dir used last before logout
-if [[ $LAST_SESSION_PWD ]] ; then
+    # cd to dir used last before logout
+    if [[ $LAST_SESSION_PWD ]] ; then
 
     if [[ -d "$LAST_SESSION_PWD" ]] ; then
         cd "$LAST_SESSION_PWD"
     fi
 
-elif [[ -d "$REMOTE_HOME" ]] ; then
+    elif [[ -d "$REMOTE_HOME" ]] ; then
         cdh
+    fi
+
+    OLDPWD=$_OLDPWD
+
 fi
+_first_invoke=1
 
 if [ -r $REMOTE_HOME/.bashrc_local ] ; then
     source $REMOTE_HOME/.bashrc_local
 fi
-
-OLDPWD=$_OLDPWD
 
 true
 
