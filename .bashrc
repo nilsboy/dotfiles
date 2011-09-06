@@ -1,6 +1,6 @@
 ### for all shells #############################################################
 
-if [[ ! $_first_invoke ]] ; then
+if [[ ! $_is_reload ]] ; then
     export PATH=~/bin:~/perl5/bin:$PATH
     export PERL5LIB=~/perl5/lib/perl5:~/perldev/lib:$PERL5LIB
 fi
@@ -20,7 +20,7 @@ fi
 [[ $REMOTE_BASHRC ]] || export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 [[ $REMOTE_HOST   ]] || export REMOTE_HOST=${SSH_CLIENT%% *}
 
-if [[ ! $_first_invoke && $REMOTE_HOME != $HOME ]] ; then
+if [[ ! $_is_reload && $REMOTE_HOME != $HOME ]] ; then
     export PATH=$REMOTE_HOME/bin:$PATH
 fi
 
@@ -2121,10 +2121,7 @@ function _add_to_history() {
     fi
 
     # prevent historizing last command of last session on new shells
-    if [ $_first_invoke != 0 ] ; then
-        _first_invoke=0
-        return
-    fi
+    # if [[ $_is_reload ]] ; then return fi
 
     # remove history position (by splitting)
     local history=$(history 1)
@@ -2203,16 +2200,13 @@ while(<F>) {
     my($user, $date, $time, $pid, $dir, $result, $cmd) = @all;
 
     next if $show_successful && $result !~ /[0 ]+/g;
-    next if $dir eq $wd;
+    next if $dir ne $wd && $show_local;
 
     my $r;
 
     if($show_dirs) {
         next if $show_existing_only && ! -d $dir;
         $r = $dir;
-    }
-    elsif($show_local) {
-        $r = $cmd if $dir eq $wd;
     }
     else {
         $r = $cmd;
@@ -2515,7 +2509,7 @@ case $(parent) in
     ;;
 esac
 
-if [[ ! $_first_invoke ]] ; then
+if [[ ! $_is_reload ]] ; then
 
     _OLDPWD=$(historysearch -d -c 2 | head -1)
     LAST_SESSION_PWD=$(historysearch -d -c 1)
@@ -2534,7 +2528,7 @@ if [[ ! $_first_invoke ]] ; then
     OLDPWD=$_OLDPWD
 
 fi
-_first_invoke=1
+_is_reload=1
 
 if [ -r $REMOTE_HOME/.bashrc_local ] ; then
     source $REMOTE_HOME/.bashrc_local
