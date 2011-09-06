@@ -2158,7 +2158,7 @@ alias h="set -f && historysearch -e"
 function historysearch() {
 
 (
-    HISTFILE_ETERNAL=$HISTFILE_ETERNAL perl - "$@" <<'EOF' | tac
+    HISTFILE_ETERNAL=$HISTFILE_ETERNAL perl - "$@" <<'EOF'
 
 use strict;
 use warnings;
@@ -2166,19 +2166,18 @@ no warnings 'uninitialized';
 use Getopt::Long;
 use Cwd;
 
-my $gray      = "\x1b[38;5;250m";
-my $black     = "\x1b[38;5;0m";
+my $gray        = "\x1b[38;5;250m";
+my $reset_color = "\x1b[38;5;0m";
 
 GetOptions(
     "a|all" => \my $show_all,
     "e|everything" => \my $show_everything,
     "existing-only" => \my $show_existing_only,
     "skip-current-dir" => \my $skip_current,
-    "d|directories" => \my $show_dirs,
+    "d|directories" => \my $show_dirs_only,
     "r|succsessful-result-only" => \my $show_successful,
     "l|commands-here" => \my $show_local,
     "c|count=i" => \my $count,
-    "seperator=s" => \my $seperator,
 ) or die "Wrong usage.";
 
 my $search = join(" ", @ARGV);
@@ -2193,7 +2192,7 @@ open(F, "tac $h |") || die $!;
 
 my %shown = ();
 $count ||= 100;
-$seperator ||= "\n";
+my @to_show = ();
 
 while(<F>) {
     my(@all) = $_ =~ /$hist_regex/g;
@@ -2204,7 +2203,7 @@ while(<F>) {
 
     my $r;
 
-    if($show_dirs) {
+    if($show_dirs_only) {
         next if $show_existing_only && ! -d $dir;
         $r = $dir;
     }
@@ -2217,12 +2216,16 @@ while(<F>) {
 
     $shown{$r} = 1;
 
-    print $r . $seperator;
-    print $gray . "   (" . join(" ", @all[0..$#all-1]) . ")\n" . $black
+    $r .= "\n";
+    $r .= $gray . "   (" . join(" ", @all[0..$#all-1]) . ")\n" . $reset_color
         if $show_everything;
+
+    push(@to_show, $r);
 
     last if !$show_all && keys %shown == $count;
 }
+
+map { print $_ } reverse @to_show;
 
 EOF
 )
