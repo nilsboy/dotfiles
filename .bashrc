@@ -411,9 +411,18 @@ function _gi() { (
     return $exit_code
 }
 
+# or-grep list matching lines
 function go() {
     perl -e 'while(my $l = <STDIN>) { foreach(@ARGV) { if($l =~ /$_/i) { print $l; last; }; } }' "$@"
 }
+
+# or-grep but list matching search strings instead of matching lines
+# only longest matches are returned
+function goo() {
+    perl -e 'while (my $l = <STDIN>) { foreach (sort { length($b) <=> length($a) } @ARGV) { print "$_\n" x $l =~ s/$_//ig; } }' "$@"
+}
+
+# and-grep
 function ga() {
     perl -e 'while(my $l = <STDIN>) { $m=1; foreach(@ARGV) { $m=0 if $l !~ /$_/i }; print $l if $m; }' "$@"
 }
