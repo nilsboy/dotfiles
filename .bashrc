@@ -193,6 +193,12 @@ if [[ $(type -p lesspipe ) ]] ; then
     eval "$(lesspipe)"
 fi
 
+### distri fixes ###############################################################
+
+if [[ $DISTRIBUTION = "suse" ]] ; then
+    unalias crontab
+fi
+
 ### functions ##################################################################
 
 ## helper functions ############################################################
