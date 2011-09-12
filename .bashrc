@@ -40,11 +40,15 @@ HOSTNAME=${HOSTNAME%%.*}
 
 if [[ -e /etc/lsb-release ]] ; then
     . /etc/lsb-release
-    export DISTRIBUTION=${DISTRIB_ID,,}
+    DISTRIBUTION=${DISTRIB_ID,,}
+elif [[ -e /etc/debian_version ]] ; then
+    DISTRIBUTION=debian
 else
     DISTRIBUTION=$(cat /etc/*{version,release} 2>/dev/null \
         | perl -0777 -ne 'print lc $1 if /(debian|suse|redhat)/igm')
 fi
+
+export DISTRIBUTION
 
 ### input config ###############################################################
 
@@ -226,6 +230,7 @@ function showenv() {
     while read v ; do
         SHOW $v ${!v}
     done<<EOF
+        DISTRIBUTION
         REMOTE_USER
         REMOTE_HOME
         REMOTE_HOST
