@@ -36,6 +36,16 @@ export BROWSER=links
 # remove domain from hostname if necessary
 HOSTNAME=${HOSTNAME%%.*}
 
+# set distribution info
+
+if [[ -e /etc/lsb-release ]] ; then
+    . /etc/lsb-release
+    export DISTRIBUTION=${DISTRIB_ID,,}
+else
+    DISTRIBUTION=$(cat /etc/*{version,release} 2>/dev/null \
+        | perl -0777 -ne 'print lc $1 if /(debian|suse|redhat)/igm')
+fi
+
 ### input config ###############################################################
 
 export INPUTRC=$REMOTE_HOME/.inputrc
