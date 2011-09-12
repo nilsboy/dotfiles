@@ -50,6 +50,8 @@ fi
 
 export DISTRIBUTION
 
+export LINES COLUMNS
+
 ### input config ###############################################################
 
 export INPUTRC=$REMOTE_HOME/.inputrc
@@ -492,7 +494,7 @@ function unix2dos() {
 
 function csvview() {
 
-    LINES=$LINES perl - $@ <<'EOF' | less -S
+    perl - $@ <<'EOF' | less -S
 
 #!/usr/bin/perl
 
@@ -936,7 +938,7 @@ function _printifok() {
 }
 
 function line() {
-    COLUMNS=$COLUMNS perl - $@ <<'EOF'
+    perl - $@ <<'EOF'
         my $msg = " " . join(" ", @ARGV) . " ";
         print "---", $msg , q{-} x ($ENV{COLUMNS} - 3 - length($msg)), "\n\n";
 EOF
@@ -1801,7 +1803,7 @@ function normalize_file_names() {
 # tree substitute which groups similar named files
 function simpletree() {
 
-    COLUMNS=$COLUMNS perl - $@ <<'EOF'
+    perl - $@ <<'EOF'
 
 use strict;
 use warnings;
