@@ -1080,7 +1080,9 @@ function bashrc_export_function_to_file() {
         fi
     fi
 
-    echo "$note"                   > $file
+    # bash interactive mode to export LINES and COLUMNS vars
+    echo '#!/bin/bash -i'          > $file
+    echo "$note"                  >> $file
     bashrc_export_function $funct >> $file
 
     chmod +x $file
