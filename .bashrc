@@ -716,8 +716,6 @@ sub set_field_types {
     my $i = -1;
     foreach my $field (@header) {
         $i++;
-        $fields{$i}{type};
-
         foreach my $type (@field_type_order) {
             next if ! exists $fields{$i}{types}{$type};
             $fields{$i}{type} = $type;
