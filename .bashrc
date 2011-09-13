@@ -511,13 +511,15 @@ GetOptions(
     "c|count=i" => \my $count,
 ) or die "Wrong usage.";
 
-my @patterns = (
-    qr/^$/,              # empty
-    qr/^[\.,\d]+$/,      # number
-    qr/^[\-\.,\d]+$/,    # number also negative
-    qr/^[\w\s]+$/i,      # alphanum
-    qr/[\W]/i,           # contains non word character
+my %field_types = (
+    num   => qr/^[\.,\d]+$/,
+    nnum  => qr/^[\-\.,\d]+$/,
+    alph  => qr/^[a-z]+$/i,
+    anum  => qr/^[a-z0-9]+$/i,
+    msc   => qr/./i,
 );
+
+my @field_type_order = qw(num nnum alph anum msc);
 
 my $file = shift @ARGV || die "File?";
 
@@ -526,7 +528,7 @@ my %fields       = ();
 my $delimiter    = find_delimiter();
 my $screen_lines = $ENV{LINES} - 1;
 
-my $empty_line_regex = qr/^[$delimiter\s]+$/;
+my $empty_line_regex = qr/^[$delimiter\s]*$/;
 
 my @header;
 my $header;
@@ -623,15 +625,16 @@ sub analyze_data {
             next;
         }
 
-        add_field_lengths([ split($delimiter) ]);
+        add_field_stats([ split($delimiter) ]);
     }
     close(F);
 
     @header = split($delimiter, $header_line);
-    add_field_lengths(\@header, 1);
+    add_field_stats(\@header, 1);
 
+    set_field_types();
     create_column_ids_header();
-    add_field_lengths(\@column_ids_header, 1);
+    add_field_stats(\@column_ids_header, 1);
 
     $column_ids_header = padded_line(\@column_ids_header);
     $header            = padded_line(\@header);
@@ -648,14 +651,27 @@ sub analyze_data {
     }
 }
 
-sub add_field_lengths {
+sub add_field_stats {
     my ($line, $ignore_empty) = @_;
     my $i = -1;
     foreach my $value (@$line) {
         $i++;
-        next if $ignore_empty && !$fields{$i}{length};
-        $fields{$i}{length} = length($value)
-            if length($value) > $fields{$i}{length};
+        if(! $ignore_empty || $fields{$i}{length} ) {
+            $fields{$i}{length} = length($value)
+                if length($value) > $fields{$i}{length};
+        }
+
+        next if $ignore_empty;
+
+        $fields{$i}{values}{$value}++;
+
+        foreach my $field_type (@field_type_order) {
+            my $regex = $field_types{$field_type};
+            if($value =~ $regex) {
+                $fields{$i}{types}{$field_type} = $value;
+                last;
+            }
+        }
     }
 }
 
@@ -672,7 +688,8 @@ sub padded_line {
         next if !exists $fields{$i}{length};
         $i2++;
         $fields{$i}{name} = $header[$i];
-        $out[$i2] = sprintf('%' . $fields{$i}{length} . 's', $value);
+        my $justify = $fields{$i}{type} eq "num" ? "" : "-";
+        $out[$i2] = sprintf('%' . $justify . $fields{$i}{length} . 's', $value);
     }
     return join(" | ", @out) . "\n";
 }
@@ -689,7 +706,23 @@ sub create_column_ids_header {
     foreach my $value (@header) {
         $i++;
         $column_ids_header[$i] =
-            ($i + 1) . " (" . calculate_alpha_column_name($i + 1) . ")";
+            ($i + 1) . " (" . calculate_alpha_column_name($i + 1) . ") "
+            . $fields{$i}{type}
+            . " " . keys(%{$fields{$i}{values}});
+    }
+}
+
+sub set_field_types {
+    my $i = -1;
+    foreach my $field (@header) {
+        $i++;
+        $fields{$i}{type};
+
+        foreach my $type (@field_type_order) {
+            next if ! exists $fields{$i}{types}{$type};
+            $fields{$i}{type} = $type;
+            last;
+        }
     }
 }
 
