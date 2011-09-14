@@ -2233,6 +2233,13 @@ use Cwd;
 
 my $gray        = "\x1b[38;5;250m";
 my $reset_color = "\x1b[38;5;0m";
+my $red         = "\x1b[38;5;124m";
+
+my $pipe_mode = ! -t STDOUT;
+
+if($pipe_mode) {
+    $gray = $reset_color = $red = "";
+}
 
 GetOptions(
     "a|all" => \my $show_all,
@@ -2263,8 +2270,9 @@ my @to_show = ();
 while(<F>) {
     my(@all) = $_ =~ /$hist_regex/g;
     my($user, $date, $time, $pid, $dir, $result, $cmd) = @all;
+    my $was_successful = $result =~ /[0 ]+/g;
 
-    next if $show_successful && $result !~ /[0 ]+/g;
+    next if $show_successful && ! $was_successful;
     next if $dir ne $wd && $show_local;
 
     my $to_match;
@@ -2278,6 +2286,7 @@ while(<F>) {
     else {
         $to_match = $cmd;
         $show = $cmd;
+        $show = $red . $show . $reset_color if ! $was_successful;
     }
 
     if($search_dirs) {
@@ -2323,9 +2332,6 @@ function _set_colors() {
     NO_COLOR2="\033[0m"
 
     BLACK="\[\033[0;30m\]"
-
-    RED="\[\033[1;31m\]"
-    RED2="\033[1;31m"
 
     RED="\[\033[0;31m\]"
     RED2="\033[0;31m"
