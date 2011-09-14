@@ -2217,7 +2217,7 @@ function _add_to_history() {
     history -a
 }
 
-alias h="set -f && historysearch -e"
+alias h="set -f && historysearch -e -s"
 
 # search in eternal history
 function historysearch() {
@@ -2240,6 +2240,7 @@ GetOptions(
     "existing-only" => \my $show_existing_only,
     "skip-current-dir" => \my $skip_current,
     "d|directories" => \my $show_dirs_only,
+    "s|search-directories" => \my $search_dirs,
     "r|succsessful-result-only" => \my $show_successful,
     "l|commands-here" => \my $show_local,
     "c|count=i" => \my $count,
@@ -2266,26 +2267,33 @@ while(<F>) {
     next if $show_successful && $result !~ /[0 ]+/g;
     next if $dir ne $wd && $show_local;
 
-    my $r;
+    my $to_match;
+    my $show;
 
     if($show_dirs_only) {
         next if $show_existing_only && ! -d $dir;
-        $r = $dir;
+        $to_match = $dir;
+        $show = $dir;
     }
     else {
-        $r = $cmd;
+        $to_match = $cmd;
+        $show = $cmd;
     }
 
-    next if $search && $r !~ /$search/i;
-    next if exists $shown{$r};
+    if($search_dirs) {
+        $to_match .= " $dir";
+    }
 
-    $shown{$r} = 1;
+    next if $search && $to_match !~ /$search/i;
+    next if exists $shown{$to_match};
 
-    $r .= "\n";
-    $r .= $gray . "   (" . join(" ", @all[0..$#all-1]) . ")\n" . $reset_color
+    $shown{$to_match} = 1;
+
+    $show .= "\n";
+    $show .= $gray . "   (" . join(" ", @all[0..$#all-1]) . ")\n" . $reset_color
         if $show_everything;
 
-    push(@to_show, $r);
+    push(@to_show, $show);
 
     last if !$show_all && keys %shown == $count;
 }
@@ -2579,8 +2587,8 @@ esac
 
 if [[ ! $_is_reload ]] ; then
 
-    _OLDPWD=$(historysearch -d -c 2 | head -1)
-    LAST_SESSION_PWD=$(historysearch -d -c 1)
+    _OLDPWD=$(historysearch -d -c 2 --existing-only | head -1)
+    LAST_SESSION_PWD=$(historysearch -d -c 1 --existing-only)
 
     # cd to dir used last before logout
     if [[ $LAST_SESSION_PWD ]] ; then
