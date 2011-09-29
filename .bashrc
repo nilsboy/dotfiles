@@ -1705,23 +1705,26 @@ use File::Basename;
 use Getopt::Long;
 Getopt::Long::Configure('bundling');
 
-my ($op, $include_directories, $dry, $normalize);
-$dry = 1;
+my $dry = 1;
 
 GetOptions(
     'x|execute' => sub { $dry = 0 },
-    'd|include-directories' => \$include_directories,
-    'n|normalize'           => \$normalize,
-    'e|execute-perl=s'      => \$op,
+    'd|include-directories' => \my $include_directories,
+    'n|normalize'           => \my $normalize,
+    'e|execute-perl=s'      => \my $op,
+    'l|list-from-file=s'    => \my $list_file,
+    'S|dont-split-off-dir'  => \my $dont_split_off_dir,
 );
 
-if (!@ARGV) {
-    @ARGV = <STDIN>;
-    chop(@ARGV);
+if($list_file) {
+    open(F, $list_file) || die $!;
+    @ARGV = <F>;
+    close(F);
+    map { chop } @ARGV;
 }
 
 if (!@ARGV) {
-    die "Usage: xmv [-x] [-d] [-n] [-e perlexpr] [filenames]\n";
+    die "Usage: xmv [-x] [-d] [-n] [-l file] [-S] [-e perlexpr] [filenames]\n";
 }
 
 my %will  = ();
@@ -1736,6 +1739,11 @@ for (@ARGV) {
     my $abs = $_;
     my $dir = dirname($_);
     my $file = basename($_);
+
+    if($dont_split_off_dir) {
+        $dir = "";
+        $file = $_;
+    }
 
     $dir = "" if $dir eq ".";
     $dir .= "/" if $dir;
