@@ -2261,7 +2261,7 @@ GetOptions(
     "c|count=i" => \my $count,
 ) or die "Wrong usage.";
 
-my $search = join(" ", @ARGV);
+my @search = @ARGV;
 my $wd = cwd;
 
 # user 2011-08-20 21:02:47 19202 "dir" "0 1" cmd with options ...
@@ -2275,7 +2275,7 @@ my %shown = ();
 $count ||= 100;
 my @to_show = ();
 
-while(<F>) {
+ENTRY: while(<F>) {
     my(@all) = $_ =~ /$hist_regex/g;
     my($user, $date, $time, $pid, $dir, $result, $cmd) = @all;
     my $was_successful = $result =~ /[0 ]+/g;
@@ -2301,7 +2301,11 @@ while(<F>) {
         $to_match .= " $dir";
     }
 
-    next if $search && $to_match !~ /$search/i;
+    if(@search) {
+        foreach my $search (@search) {
+            next ENTRY if $to_match !~ /$search/i;
+        }
+    }
     next if exists $shown{$to_match};
 
     $shown{$to_match} = 1;
