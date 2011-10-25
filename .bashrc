@@ -549,7 +549,7 @@ while (<F>) {
 
     chop;
 
-    if ($_ =~ $empty_line_regex) {
+    if ($_ =~ $empty_line_regex || $_ =~ /^#/) {
         next;
     }
 
@@ -575,10 +575,13 @@ sub find_delimiter {
     my $sample;
 
     open(F, $file) || die $!;
+    my $line = 0;
     while (<F>) {
+        next if /^#/;
         chop;
+        $line++;
         $sample .= $_;
-        last if $. == 3;
+        last if $line == 3;
     }
     close(F);
 
@@ -594,6 +597,7 @@ sub find_delimiter {
         $max       = $special_char_count{$special_char};
     }
 
+    $stats{delimiter} = $delimiter;
     return $delimiter || die "No delimiter found.";
 }
 
