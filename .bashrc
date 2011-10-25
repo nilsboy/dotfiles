@@ -137,6 +137,8 @@ alias lc='ls -rtlhc'
 alias cdh='cd $REMOTE_HOME'
 alias cdt='cd $REMOTE_HOME/tmp'
 
+alias lsop='netstat -tapn'
+
 # search history for an existing directory containing string and go there
 function cdl() {
     local dir=$(historysearch -d --skip-current-dir --existing-only -c 1 "$@")
@@ -2088,8 +2090,6 @@ EOF
 # * disown - remove jobs from current shell
 
 # NOTES ON networking
-# * list all open ports and their associated apps: netstat -tapn
-# * netstat -tulpn | grep 25
 # * fuser
 # * lsof -i -n
 
