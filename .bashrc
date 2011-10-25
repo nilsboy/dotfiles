@@ -1086,6 +1086,7 @@ function bashrc_export_function() {
 
     local funct=${1?specify function name}
 
+    echo "export LINES COLUMNS"
     echo -n "# "
     type $funct
     echo
