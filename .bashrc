@@ -2198,9 +2198,6 @@ function _add_to_history() {
         return
     fi
 
-    # prevent historizing last command of last session on new shells
-    # if [[ $_is_reload ]] ; then return fi
-
     # remove history position (by splitting)
     local history=$(history 1)
 
@@ -2209,7 +2206,6 @@ function _add_to_history() {
     read -r pos cmd <<< $history
 
     if [[ $cmd == "rm "* ]] ; then
-        history -d $pos
         cmd="# $cmd"
         history -s "$cmd"
     fi
