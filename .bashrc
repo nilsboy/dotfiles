@@ -1361,6 +1361,26 @@ function sslstrip() { (
     xtitle "sslstrip $cmd" && $cmd
 ) }
 
+# scp the same file from a remote host
+function pscp() {(
+    local file=${1?specify filename}
+    local host=${2?specify host}
+
+    if [[ -e $file ]] ; then
+        file=$(abs $file)
+        scp="scp $file $host:$file"
+        INFO "Putting file $file"
+    else
+        tmp=$file
+        file=$(abs $host)
+        host=$tmp
+        scp="scp $host:$file $file"
+        INFO "Getting file $file"
+    fi
+
+    command $scp
+)}
+
 function _ssh_completion() {
     perl -ne 'print "$1 " if /^Host (.+)$/' $REMOTE_HOME/.ssh/config
 }
