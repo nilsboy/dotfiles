@@ -1361,7 +1361,7 @@ function sslstrip() { (
     xtitle "sslstrip $cmd" && $cmd
 ) }
 
-# scp the same file from a remote host
+# scp the same file from or to a remote host
 function pscp() {(
     local file=${1?specify filename}
     local host=${2?specify host}
