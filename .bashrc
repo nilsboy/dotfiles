@@ -134,13 +134,18 @@ alias  l='ls -lh'
 alias lr='ls -rtlh'
 alias lc='ls -rtlhc'
 
-alias cdh='cd $REMOTE_HOME'
 alias cdt='cd $REMOTE_HOME/tmp'
 
 alias lsop='netstat -tapn'
 
 # search history for an existing directory containing string and go there
-function cdl() {
+function cdh() {
+
+    if ! [[ $@ ]] ; then
+        cd $REMOTE_HOME
+        return
+    fi
+
     local dir=$(historysearch -d --skip-current-dir --existing-only -c 1 "$@")
 
     if [[ ! "$dir" ]] ; then
