@@ -155,6 +155,13 @@ function cdh() {
     cd "$dir"
 }
 
+# search history for an existing file an open it in vi
+function vih() {(
+    set -e
+    local file=$(historysearch --file -c 1 "$@")
+    command vi "$file"
+)}
+
 # search for file or dir in cur dir and go there
 function cdf() {
 
@@ -2259,6 +2266,7 @@ GetOptions(
     "existing-only" => \my $show_existing_only,
     "skip-current-dir" => \my $skip_current,
     "d|directories" => \my $show_dirs_only,
+    "files" => \my $find_files,
     "s|search-directories" => \my $search_dirs,
     "r|succsessful-result-only" => \my $show_successful,
     "l|commands-here" => \my $show_local,
@@ -2307,9 +2315,30 @@ ENTRY: while(<F>) {
 
     if(@search) {
         foreach my $search (@search) {
+
             next ENTRY if $to_match !~ /$search/i;
+
+            my $found;
+            if($find_files) {
+                foreach(split(" ", $cmd)) {
+                    if(/^\//) {
+                    } elsif(/^~/) {
+                        s/^~/$ENV{HOME}/g;
+                    } else {
+                        $_ = "$dir/$_";
+                    }
+                    next if $_ !~ /$search/i;
+                    next if ! -f $_;
+                    $found = $_;
+                    last;
+                }
+                next ENTRY if ! $found;
+                $to_match = $found;
+                $show = $found;
+            }
         }
     }
+
     next if exists $shown{$to_match};
 
     $shown{$to_match} = 1;
