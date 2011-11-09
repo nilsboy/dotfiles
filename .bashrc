@@ -396,16 +396,24 @@ function abs() {
 
         use strict;
         use warnings;
-        use Cwd 'abs_path';
+        use Cwd;
+
+        my $cwd = $ENV{PWD};
+        my @cwd = split("/", $cwd);
 
         my $file = $ARGV[0] || ".";
 
-        $file = abs_path($file);
+        if($file !~ /^\//) {
+            while($file =~ s#^\.\./##g) {
+                pop(@cwd);
+            }
+
+            $file = join("/", @cwd) . "/" . $file;
+        }
 
         $file .= "/" if -d $file;
-        $file =~ s/(["`\\\$ ])/\\$1/g;
 
-        print "$file\n";
+        print $file . "\n";
 EOF
 
 }
@@ -1361,24 +1369,38 @@ function sslstrip() { (
     xtitle "sslstrip $cmd" && $cmd
 ) }
 
-# scp the same file from or to a remote host
+function sdiff() {(
+    _pscp 1 $1 $2
+)}
+
 function pscp() {(
-    local file=${1?specify filename}
-    local host=${2?specify host}
+    _pscp 0 $1 $2
+)}
+
+# scp the same file from or to a remote host
+function _pscp() {(
+    local diff=$1
+    local file=${2?specify filename}
+    local host=${3?specify host}
 
     if [[ -e $file ]] ; then
         file=$(abs $file)
-        scp="scp $file $host:$file"
-        INFO "Putting file $file"
+        rel_file=$(echo $file | perl -pe 's/$ENV{HOME}\///g');
+        scp="scp -q $file $host:$rel_file"
     else
         tmp=$file
         file=$(abs $host)
+        rel_file=$(echo $file | perl -pe 's/$ENV{HOME}\///g');
         host=$tmp
-        scp="scp $host:$file $file"
-        INFO "Getting file $file"
+        scp="scp -q $host:$rel_file $file"
     fi
 
-    command $scp
+
+    if [[ $diff = 1 ]] ; then
+        ssh -q $host cat $rel_file | diff $file -
+    else
+        command $scp
+    fi
 )}
 
 function _ssh_completion() {
