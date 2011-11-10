@@ -1183,7 +1183,7 @@ function setup_remote_multiuser_account() {
 }
 
 # load user bashrc on a multi user account identifying a user via ssh key
-# expected dir structure: ~/your_username/.ssh/authorized_keys
+# expected dir structure: ~/users/your_username/.ssh/authorized_keys
 function bashrc_setup_multiuser_environment() {
 
     [[ $SSH_CONNECTION ]] || return
@@ -1193,7 +1193,7 @@ function bashrc_setup_multiuser_environment() {
     type -p ssh-add 1>/dev/null || return
 
     shopt -s nullglob
-    auth_files=(~/*/.ssh/authorized_keys)
+    auth_files=(~/users/*/.ssh/authorized_keys)
     shopt -u nullglob
 
     [[ $auth_files ]] || return
@@ -1208,7 +1208,7 @@ function bashrc_setup_multiuser_environment() {
 
             if grep -q "${agent_key}" $auth_file ; then
                 REMOTE_USER=${auth_file%%/.ssh/authorized_keys};
-                REMOTE_USER=${REMOTE_USER##$HOME/};
+                REMOTE_USER=${REMOTE_USER##$HOME/users/};
                 export REMOTE_USER
                 break 2
             fi
@@ -1219,7 +1219,7 @@ function bashrc_setup_multiuser_environment() {
 
     [[ $REMOTE_USER ]] || return
 
-    export REMOTE_HOME="$HOME/$REMOTE_USER"
+    export REMOTE_HOME="$HOME/users/$REMOTE_USER"
     export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 
     if [[ -e $REMOTE_BASHRC ]] ; then
