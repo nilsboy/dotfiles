@@ -121,8 +121,7 @@ fi
 export EDITOR="DISPLAY= vi -i $REMOTE_HOME/.viminfo -u $REMOTE_HOME/.vimrc"
 alias vi=$EDITOR
 
-# edit shell commands in vi with Ctrl-x Ctrl-e
-export VISUAL=$EDITOR
+export VISUAL=vi
 
 alias cp="cp -i"
 alias mv="mv -i"
@@ -2163,6 +2162,7 @@ EOF
 # * join files horizontally: paste
 # * truncate a file without removing its inode: > file
 # * join csv files: join
+# * edit shell commands in vi with Ctrl-x Ctrl-e
 
 # NOTES ON sql / mysql
 # * INSERT
