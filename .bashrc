@@ -971,7 +971,6 @@ function m() {
         _printifok internet _man_internet $cmd
         _printifok apt-show apt-cache search $cmd
         _printifok related man -k $cmd
-        _printifok apropos apropos $cmd
 
     ) | less -F +/"$arg"
 }
