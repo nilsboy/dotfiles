@@ -767,8 +767,8 @@ function p() {
         args=" +/$@"
     fi
 
-    pstree -aphl \
-        | perl -ne '$x = "# xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
+    pstree -apl \
+        | perl -ne '$x = "xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
         | less -R $args
 }
 
