@@ -1162,14 +1162,15 @@ EOF
 function setup_remote_multiuser_account() {
 
     local remote_user=$REMOTE_USER
+    local remote_home=users/$REMOTE_USER
     local server=${1?specify server}
 
-    ssh $server "test -d $remote_user/.ssh || mkdir -p $remote_user/.ssh"
+    ssh $server "mkdir -p $remote_home/.ssh"
 
-    ssh-add -L | ssh $server "cat > $remote_user/.ssh/authorized_keys"
-    scp $REMOTE_BASHRC $server:$remote_user/
-    scp $REMOTE_HOME/.vimrc $server:$remote_user/
-    scp $REMOTE_HOME/.screenrc $server:$remote_user/
+    ssh-add -L | ssh $server "cat > $remote_home/.ssh/authorized_keys"
+    scp $REMOTE_BASHRC $server:$remote_home/
+    scp $REMOTE_HOME/.vimrc $server:$remote_home/
+    scp $REMOTE_HOME/.screenrc $server:$remote_home/
 
     local funct=bashrc_setup_multiuser_environment
 
