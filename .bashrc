@@ -125,7 +125,7 @@ export VISUAL=vi
 
 alias cp="cp -i"
 alias mv="mv -i"
-alias less="less -in"
+export LESS="-j.5 -inFRgm"
 alias crontab="crontab -i"
 
 alias ls='ls --color=auto --time-style=+"%F %H:%M" '
@@ -958,20 +958,19 @@ function m() {
     local arg=$2
 
     if [[ $arg =~ ^- ]] ; then
-       arg="   "$arg
+       arg=" {3,}"$arg
     elif [[ ! $arg ]] ; then
-        arg='^$'
+        arg='(^[A-Z]+[A-Z ]+)|---'
     fi
 
     (
         _printifok help help -m $cmd
-        #_printifok man "MAN_KEEP_FORMATTING=1 man -a $cmd"
         _printifok man man -a $cmd || \
         _printifok internet _man_internet $cmd
-        _printifok apt-show apt-cache search $cmd
+        _printifok apt-search apt-cache search $cmd
         _printifok related man -k $cmd
 
-    ) | less -F +/"$arg"
+    ) | less +/"$arg"
 }
 
 function _man_internet() {
@@ -986,10 +985,11 @@ function _printifok() {
     local msg=$1 ; shift
     local cmd="$*"
 
-    local out=$($cmd 2>/dev/null) # || return 1
+    local out=$(MANWIDTH=80 MAN_KEEP_FORMATTING=1 $cmd 2>/dev/null)
     [[ ${out[@]} ]] || return 1
     line $msg
     echo "${out[@]}"
+    echo
 }
 
 function line() {
@@ -1457,7 +1457,7 @@ function mysql() {
     fi
 
     xtitle "mysql@$h" && MYSQL_PS1="\\u@$h:\\d db> " \
-        command mysql --show-warnings --pager="less -niSFX" "$@"
+        command mysql --show-warnings --pager="less -S" "$@"
 }
 
 ### perl #######################################################################
