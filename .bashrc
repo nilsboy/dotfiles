@@ -125,7 +125,7 @@ export VISUAL=vi
 
 alias cp="cp -i"
 alias mv="mv -i"
-export LESS="-j.5 -inFRgm"
+export LESS="-j.5 -inRg"
 alias crontab="crontab -i"
 
 alias ls='ls --color=auto --time-style=+"%F %H:%M" '
