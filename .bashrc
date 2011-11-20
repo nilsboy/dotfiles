@@ -1493,6 +1493,12 @@ function perlmoduleversion() {
     perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' "$@"
 }
 
+function cpanm_reinstall_local_modules() {(
+    set -e
+    cpanm -v App::cpanoutdated
+    cpan-outdated | cpanm -v --reinstall
+)}
+
 # find a lib via PERL5LIB
 function pmpath() {
 
