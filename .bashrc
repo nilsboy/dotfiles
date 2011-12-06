@@ -769,7 +769,7 @@ function p() {
 
     pstree -apl \
         | perl -ne '$x = "xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
-        | less -R $args
+        | less -SR $args
 }
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
