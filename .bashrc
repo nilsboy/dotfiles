@@ -1495,8 +1495,8 @@ function perlmoduleversion() {
 
 function cpanm_reinstall_local_modules() {(
     set -e
-    cpanm -v App::cpanoutdated
-    cpan-outdated | cpanm -v --reinstall
+    cpanm -nq App::cpanoutdated
+    cpan-outdated | cpanm -nq --reinstall
 )}
 
 # find a lib via PERL5LIB
