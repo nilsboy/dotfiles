@@ -2227,6 +2227,11 @@ EOF
 # * sudo update-rc.d vncserver defaults 
 # * sudo update-rc.d -f vncserver remove
 
+# NOTES ON encryption
+# * fsck encrypted volume
+#    - sudo cryptsetup luksOpen /dev/hda5 mydisk
+#    - fsck /dev/mapper/mydisk
+
 ### history ####################################################################
 
 # ignore commands  for history that start  with a space
