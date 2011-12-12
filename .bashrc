@@ -2149,7 +2149,8 @@ EOF
 #       grep -i "dot \-Tsvg" |\ 
 #       perl -ane '($h,$m,$s) = split /:/,$F[13];
 #          if ($m > 30) { print "killing: " . $_; kill(9, $F[3]) };'
-# * disown - remove jobs from current shell
+# * disown, (cmd &) - keep jobs running after closing shell
+# * continue a stoped disowned job: sudo kill -SIGCONT $PID
 
 # NOTES ON networking
 # * fuser
