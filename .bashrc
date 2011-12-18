@@ -1913,6 +1913,7 @@ function simpletree() {
 use strict;
 use warnings;
 no warnings 'uninitialized';
+binmode STDOUT, ":utf8";
 use File::Glob qw(bsd_glob);
 use File::Basename;
 use Getopt::Long;
@@ -1922,14 +1923,21 @@ GetOptions(
     "d|directories-only" => \my $dirs_only,
     "s|summary"          => \my $summary_only,
     "c|sort-by-count"    => \my $sort_by_count,
-) or die "usage: simpletree [-d] [-s] [-c]";
+    "l|list-counts"      => \my $list_counts,
+) or die "Usage: simpletree [-d] [-s] [-c]";
+
+my $blue     = "\x1b[34;5;250m";
+my $green    = "\x1b[32;5;250m";
+my $gray     = "\x1b[37;5;250m";
+my $no_color = "\x1b[38;0m";
 
 my $depth      = -1;
 my $max        = $ENV{COLUMNS};
 my ($root_dev) = stat ".";
 my $mounted    = 0;
 my $dirlinks   = 0;
-my $root_dir   = getcwd;
+my $root_dir   = $ARGV[0] || getcwd;
+my $prefix;
 
 listdir($root_dir);
 
@@ -1938,18 +1946,41 @@ print "==> Skipped $mounted mounted directories.\n"
 print "==> Skipped $dirlinks linked directories.\n"
     if $dirlinks;
 
+sub inc_prefix {
+    my ($has_next) = @_;
+
+    return if $depth == -1;
+
+    if ($has_next) {
+        $prefix .= "\x{2502}";
+    }
+    else {
+        $prefix .= " ";
+    }
+
+    $prefix .= "   ";
+}
+
+sub prefix {
+    my ( $is_dir, $has_next ) = @_;
+    return if $depth == -1;
+    my $add_prefix .= $has_next ? "\x{251c}" : "\x{2514}";
+    return $prefix . $add_prefix . "\x{2500}\x{2500} ";
+}
+
+sub dec_prefix {
+    $prefix = substr( $prefix, 0, length($prefix) - 4 );
+}
+
 sub listdir {
-    my ($dir) = @_;
+    my ( $dir, $has_next ) = @_;
 
-    $depth++;
-
-    my $prefix     = "   " x ($depth);
     my $normal_dir = 0;
     my ($dev)      = stat $dir;
-    my $dir_label  = $prefix . "[" . basename($dir) . "]";
+    my $label      = $depth == -1 && ! $ARGV[0] ? "." : basename($dir);
 
     if ( -l $dir ) {
-        $dir_label .= " -> " . readlink $dir;
+        $label .= " -> " . readlink $dir;
         $dirlinks++;
     }
     elsif ( $dev != $root_dev ) {
@@ -1960,21 +1991,18 @@ sub listdir {
         $normal_dir = 1;
     }
 
-    $dir_label = shorten($dir_label);
-
     if ( !$normal_dir ) {
-        print $dir_label . "\n";
-        $depth--;
+        print $label . "\n";
         return;
     }
 
     my @dirs       = ();
     my %files      = ();
     my $file_count = 0;
-    foreach my $entry(bsd_glob("$dir/*")) {
+    foreach my $entry ( bsd_glob("$dir/*") ) {
 
         if ( -d $entry ) {
-            push( @dirs, $entry);
+            push( @dirs, $entry );
             next;
         }
 
@@ -1982,14 +2010,15 @@ sub listdir {
 
         next if $dirs_only;
 
-        my $file = basename($entry);
+        my $file    = basename($entry);
         my $cleaned = $file;
         my $link;
 
-        if ( -l $entry) {
+        if ( -l $entry ) {
             $link = readlink $entry;
             $cleaned .= " -> $link";
-        } else {
+        }
+        else {
             $cleaned =~ s/[\d\W_]+//g;
             $cleaned =~ s/\.[^\.]*$//g;
         }
@@ -2004,21 +2033,33 @@ sub listdir {
         $files{$cleaned}{link} = $link if $link;
     }
 
-    $dir_label .= " (" . $file_count . ")" if $file_count;
-    $dir_label .= "\n";
-    print $dir_label;
+    if ($list_counts) {
+        $label .= " $gray" . @dirs . "/" . $file_count . " $no_color"
+            if $file_count || @dirs;
+    }
+    $label .= "\n";
+    print prefix( 1, $has_next ) . $blue . $label . $no_color;
 
-    foreach my $lower_dir (@dirs) {
-        listdir($lower_dir);
+    inc_prefix($has_next);
+
+    $depth++;
+    {
+        my $dir_entry_number = 0;
+        my $dir_entry_count  = @dirs;
+        foreach my $lower_dir (@dirs) {
+
+            $dir_entry_number++;
+
+            my $has_next = $dir_entry_number != $dir_entry_count;
+            listdir( $lower_dir, %files || $has_next );
+        }
     }
 
     if ($dirs_only) {
-        print $dir_label if $depth == 0;
+        dec_prefix();
         $depth--;
         return;
     }
-
-    $prefix .= "   ";
 
     my %file_counts = ();
     foreach my $file ( sort keys %files ) {
@@ -2032,14 +2073,18 @@ sub listdir {
 
 DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
 
+        my $entry_number = 0;
+        my $entry_count  = keys %{ $file_counts{$count_order} };
         foreach my $cleaned ( sort keys %{ $file_counts{$count_order} } ) {
+
+            $entry_number++;
 
             my $count = $count_order;
             $count = $files{$cleaned}{count} if !$sort_by_count;
 
             my $count_label;
             if ( $count > 1 ) {
-                $count_label = " ($count)" if $count > 1;
+                $count_label = "$count*" if $count > 1;
             }
 
             my $file = $files{$cleaned}{name};
@@ -2048,9 +2093,14 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
             $file =~ s/^\.*//g;
             $file =~ s/\.*$//g;
 
+            $file = "{$file}" if $count > 1;
             $file .= " -> $link" if $link;
 
-            print shorten( $prefix . $file . $count_label ) . "\n";
+            print prefix( 0, $entry_number != $entry_count ) 
+                . $green
+                . $count_label
+                . $file
+                . $no_color . "\n";
 
             $shown_files++;
 
@@ -2059,7 +2109,7 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
                 next if keys %files == 4;
 
                 if ( keys %files > 3 ) {
-                    print $prefix . "...\n";
+                    print prefix . "...\n";
                 }
 
                 last DIR;
@@ -2067,20 +2117,8 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
         }
     }
 
-    print $dir_label if $depth == 0;
-
+    dec_prefix();
     $depth--;
-}
-
-sub shorten {
-    my ($s) = @_;
-
-    return $s if length($s) <= $max;
-
-    my $left = substr( $s, 0, $max - 4 - 3 );
-    my $right = substr( $s, length($s) - 4, length($s) );
-
-    return $left . "..." . $right;
 }
 
 EOF
