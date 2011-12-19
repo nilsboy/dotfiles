@@ -1923,6 +1923,7 @@ GetOptions(
     "s|summary"          => \my $summary_only,
     "c|sort-by-count"    => \my $sort_by_count,
     "l|list-counts"      => \my $list_counts,
+    "t|show-dot-files"   => \my $show_dot_files,
 ) or die "Usage: simpletree [-d] [-s] [-c]";
 
 my $blue     = "\x1b[34;5;250m";
@@ -2002,7 +2003,9 @@ sub listdir {
     opendir(DIR, "$dir") || die $!;
     while(my $entry = readdir(DIR) ) {
 
-        next if $entry =~ /^\./;
+        next if $entry =~ /^\.{1,2}$/;
+        next if ! $show_dot_files && $entry =~ /^\./;
+
         $entry = "$dir/$entry";
 
         if ( -d $entry ) {
