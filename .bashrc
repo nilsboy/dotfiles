@@ -1914,7 +1914,6 @@ use strict;
 use warnings;
 no warnings 'uninitialized';
 binmode STDOUT, ":utf8";
-use File::Glob qw(bsd_glob);
 use File::Basename;
 use Getopt::Long;
 use Cwd;
@@ -2000,7 +1999,10 @@ sub listdir {
     my @dirs       = ();
     my %files      = ();
     my $file_count = 0;
-    foreach my $entry ( bsd_glob("$dir/*") ) {
+    opendir(DIR, "$dir") || die $!;
+    while(my $entry = readdir(DIR) ) {
+
+        next if $entry =~ /^\./;
 
         if ( -d $entry ) {
             push( @dirs, $entry );
@@ -2033,13 +2035,13 @@ sub listdir {
         $files{$cleaned}{name} = $file;
         $files{$cleaned}{link} = $link if $link;
     }
+    closedir(DIR) || die $!;
 
     if ($list_counts) {
-        $label .= " $gray" . @dirs . "/" . $file_count . " $no_color"
+        $label .= " $gray" . @dirs . "/" . $file_count
             if $file_count || @dirs;
     }
-    $label .= "\n";
-    print prefix( 1, $has_next ) . $blue . $label . $no_color;
+    print prefix( 1, $has_next ) . $blue . $label . $no_color . "\n";
 
     inc_prefix($has_next);
 
