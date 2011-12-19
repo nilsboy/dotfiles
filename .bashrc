@@ -2003,6 +2003,7 @@ sub listdir {
     while(my $entry = readdir(DIR) ) {
 
         next if $entry =~ /^\./;
+        $entry = "$dir/$entry";
 
         if ( -d $entry ) {
             push( @dirs, $entry );
