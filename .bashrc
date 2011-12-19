@@ -2096,9 +2096,12 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
 
             my $file = $files{$cleaned}{name};
             my $link = $files{$cleaned}{link};
-            $file =~ s/[\d_]{2,}+/*/g;
-            $file =~ s/^\.*//g;
-            $file =~ s/\.*$//g;
+
+            if($count > 1) {
+                $file =~ s/[\d_]{2,}+/*/g;
+                $file =~ s/^\.*//g;
+                $file =~ s/\.*$//g;
+            }
 
             $file = "{$file}" if $count > 1;
             $file .= " -> $link" if $link;
