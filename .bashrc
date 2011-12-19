@@ -1928,6 +1928,7 @@ GetOptions(
 
 my $blue     = "\x1b[34;5;250m";
 my $green    = "\x1b[32;5;250m";
+my $red      = "\x1b[31;5;250m";
 my $gray     = "\x1b[37;5;250m";
 my $no_color = "\x1b[38;0m";
 
@@ -1941,9 +1942,9 @@ my $prefix;
 
 listdir($root_dir);
 
-print "==> Skipped $mounted mounted directories.\n"
+print $red . "==> Skipped $mounted mounted directories.\n" . $no_color
     if $mounted;
-print "==> Skipped $dirlinks linked directories.\n"
+print $red . "==> Skipped $dirlinks linked directories.\n" . $no_color
     if $dirlinks;
 
 sub inc_prefix {
@@ -1980,11 +1981,11 @@ sub listdir {
     my $label      = $depth == -1 && ! $ARGV[0] ? "." : basename($dir);
 
     if ( -l $dir ) {
-        $label .= " -> " . readlink $dir;
+        $label .= $red . " -> " . readlink($dir);
         $dirlinks++;
     }
     elsif ( $dev != $root_dev ) {
-        $dir .= " MOUNTED";
+        $dir .= $red . " MOUNTED";
         $mounted++;
     }
     else {
@@ -1992,7 +1993,7 @@ sub listdir {
     }
 
     if ( !$normal_dir ) {
-        print $label . "\n";
+        print prefix(1, $has_next) . $blue . $label . $no_color . "\n";
         return;
     }
 
@@ -2015,7 +2016,7 @@ sub listdir {
         my $link;
 
         if ( -l $entry ) {
-            $link = readlink $entry;
+            $link = $red . readlink($entry);
             $cleaned .= " -> $link";
         }
         else {
