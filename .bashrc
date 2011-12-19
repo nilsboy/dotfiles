@@ -2022,8 +2022,8 @@ sub listdir {
         my $link;
 
         if ( -l $entry ) {
-            $link = $red . readlink($entry);
-            $cleaned .= " -> $link";
+            $link = readlink($entry);
+            $cleaned .= $red . " -> $link";
         }
         else {
             $cleaned =~ s/[\d\W_]+//g;
@@ -2104,7 +2104,7 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
             }
 
             $file = "{$file}" if $count > 1;
-            $file .= " -> $link" if $link;
+            $file .= $red . " -> $link" if $link;
 
             print prefix( 0, $entry_number != $entry_count ) 
                 . $green
