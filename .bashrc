@@ -200,7 +200,7 @@ alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 alias  t="simpletree "
 alias td="t -d"
-alias ts="t -s -c"
+alias ts="t -sc"
 alias diffdir="diff -rq"
 
 # make less more friendly for non-text input files, see lesspipe(1)
@@ -1915,16 +1915,18 @@ use warnings;
 no warnings 'uninitialized';
 binmode STDOUT, ":utf8";
 use File::Basename;
-use Getopt::Long;
 use Cwd;
 
-GetOptions(
+use Getopt::Long;
+Getopt::Long::Configure("bundling");
+my $opts = {
     "d|directories-only" => \my $dirs_only,
     "s|summary"          => \my $summary_only,
     "c|sort-by-count"    => \my $sort_by_count,
     "l|list-counts"      => \my $list_counts,
-    "t|show-dot-files"   => \my $show_dot_files,
-) or die "Usage: simpletree [-d] [-s] [-c]";
+    "a|show-dot-files"   => \my $show_dot_files,
+};
+GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
 
 my $blue     = "\x1b[34;5;250m";
 my $green    = "\x1b[32;5;250m";
