@@ -2000,6 +2000,8 @@ sub listdir {
     my @dirs       = ();
     my %files      = ();
     my $file_count = 0;
+
+    my @entries;
     opendir(DIR, "$dir") || die $!;
     while(my $entry = readdir(DIR) ) {
 
@@ -2007,6 +2009,11 @@ sub listdir {
         next if ! $show_dot_files && $entry =~ /^\./;
 
         $entry = "$dir/$entry";
+        push(@entries, $entry);
+    }
+    closedir(DIR) || die $!;
+
+    foreach my $entry (sort @entries) {
 
         if ( -d $entry ) {
             push( @dirs, $entry );
@@ -2026,8 +2033,7 @@ sub listdir {
             $cleaned .= $red . " -> $link";
         }
         else {
-            $cleaned =~ s/[\d\W_]+//g;
-            $cleaned =~ s/\.[^\.]*$//g;
+            $cleaned =~ s/[\d\W]+//g;
         }
 
         $files{$cleaned}{count}++;
@@ -2039,7 +2045,6 @@ sub listdir {
         $files{$cleaned}{name} = $file;
         $files{$cleaned}{link} = $link if $link;
     }
-    closedir(DIR) || die $!;
 
     if ($list_counts) {
         $label .= " $gray" . @dirs . "/" . $file_count
@@ -2098,19 +2103,19 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
             my $link = $files{$cleaned}{link};
 
             if($count > 1) {
-                $file =~ s/[\d_]{2,}+/*/g;
-                $file =~ s/^\.*//g;
-                $file =~ s/\.*$//g;
+                $file =~ s/[\d\W]+/$red*$green/g;
             }
 
-            $file = "{$file}" if $count > 1;
+            $file = $red . "{" . $green . $file . $red . "}"
+                . $green if $count > 1;
             $file .= $red . " -> $link" if $link;
 
             print prefix( 0, $entry_number != $entry_count ) 
-                . $green
+                . $red
                 . $count_label
+                . $green
                 . $file
-                . $no_color . "\n";
+                . $no_color . " \n";
 
             $shown_files++;
 
