@@ -1932,7 +1932,7 @@ my $blue     = "\x1b[34;5;250m";
 my $green    = "\x1b[32;5;250m";
 my $red      = "\x1b[31;5;250m";
 my $gray     = "\x1b[37;5;250m";
-my $no_color = "\x1b[38;0m";
+my $no_color = "\x1b[33;0m";
 
 my $depth      = -1;
 my $max        = $ENV{COLUMNS};
@@ -2049,7 +2049,7 @@ sub listdir {
     }
 
     if ($list_counts) {
-        $label .= " $gray" . @dirs . "/" . $file_count
+        $label .= " $gray" . @dirs . "/" . $file_count . $no_color
             if $file_count || @dirs;
     }
     print prefix( 1, $has_next ) . $blue . $label . $no_color . "\n";
@@ -2098,7 +2098,7 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
 
             my $count_label;
             if ( $count > 1 ) {
-                $count_label = "$count*" if $count > 1;
+                $count_label = $gray . "$count*" . $no_color if $count > 1;
             }
 
             my $file = $files{$cleaned}{name};
@@ -2108,16 +2108,16 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
                 $file =~ s/[\d\W_\s]+/$red*$green/g;
             }
 
-            $file = $red . "{" . $green . $file . $red . "}"
-                . $green if $count > 1;
-            $file .= $red . " -> $link" if $link;
+            $file = $green . $file . $no_color;
+
+            $file = $red . "{" . $file . $red . "}" . $no_color
+                if $count > 1;
+            $file .= $red . " -> $link" . $no_color if $link;
 
             print prefix( 0, $entry_number != $entry_count ) 
-                . $red
                 . $count_label
-                . $green
                 . $file
-                . $no_color . " \n";
+                . " \n";
 
             $shown_files++;
 
