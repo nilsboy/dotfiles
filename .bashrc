@@ -2035,7 +2035,7 @@ sub listdir {
             $cleaned .= $red . " -> $link";
         }
         else {
-            $cleaned =~ s/[\d\W]+//g;
+            $cleaned =~ s/[\d\W_\s]+//g;
         }
 
         $files{$cleaned}{count}++;
@@ -2105,7 +2105,7 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
             my $link = $files{$cleaned}{link};
 
             if($count > 1) {
-                $file =~ s/[\d\W]+/$red*$green/g;
+                $file =~ s/[\d\W_\s]+/$red*$green/g;
             }
 
             $file = $red . "{" . $green . $file . $red . "}"
