@@ -2411,6 +2411,7 @@ ENTRY: while(<F>) {
         next if $show_existing_only && ! -d $dir;
         $to_match = $dir;
         $show = $dir;
+        $show_everything = 0;
     }
     else {
         $to_match = $cmd;
