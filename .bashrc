@@ -1987,7 +1987,7 @@ sub listdir {
         $dirlinks++;
     }
     elsif ( $dev != $root_dev ) {
-        $dir .= $red . " MOUNTED";
+        $label .= $red . " MOUNTED" . $no_color;
         $mounted++;
     }
     else {
