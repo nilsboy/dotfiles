@@ -524,9 +524,11 @@ use warnings;
 no warnings 'uninitialized';
 use Data::Dumper;
 use Getopt::Long;
+use Encode;
 
 my $gray     = "\x1b[38;5;250m";
 my $no_color = "\x1b[38;0m";
+my $red      = "\x1b[38;5;124m";
 
 GetOptions(
     "c|count=i" => \my $count,
@@ -564,9 +566,17 @@ my $lines_shown = 0;
 
 my $last_line;
 open(F, $file) || die $!;
+binmode STDOUT, ":utf8";
 while (<F>) {
 
+    s/\r//g; # dos2unix
     chop;
+
+    # convert latin to utf8 if necessary
+    if(/[\xc0\xc1\xc4-\xff]/) {
+        $stats{encoding} = $red . "latin1" . $no_color;
+        $_ = decode( "iso-8859-15", $_);
+    }
 
     if ($_ =~ $empty_line_regex || $_ =~ /^#/) {
         next;
@@ -636,8 +646,13 @@ sub analyze_data {
 
     my $header_line;
     open(F, $file) || die $!;
+
     while (<F>) {
+
+        $stats{format} = $red ."dos" . $no_color if /\r/;
+        s/\r//g; # dos2unix
         chop;
+
         $stats{Lines} = $.;
 
         if ($. == 1) {
@@ -653,6 +668,7 @@ sub analyze_data {
         add_field_stats([ split($delimiter) ]);
     }
     close(F);
+
 
     @header = split($delimiter, $header_line);
     add_field_stats(\@header, 1);
