@@ -526,13 +526,10 @@ use Data::Dumper;
 use Getopt::Long;
 use Encode;
 
-my $gray     = "\x1b[38;5;250m";
-my $no_color = "\x1b[38;0m";
-my $red      = "\x1b[38;5;124m";
-
-GetOptions(
+my $opts = {
     "c|count=i" => \my $count,
-) or die "Wrong usage.";
+};
+GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
 
 my %field_types = (
     num   => qr/^[\.,\d]+[%gmt]{0,1}$/i,
@@ -540,9 +537,11 @@ my %field_types = (
     alph  => qr/^[a-z]+$/i,
     anum  => qr/^[a-z0-9]+$/i,
     msc   => qr/./i,
+    blank => qr/^[\s]*$/,
+    empty => qr/^$/,
 );
 
-my @field_type_order = qw(num nnum alph anum msc);
+my @field_type_order = qw(num nnum alph anum blank empty msc);
 
 my $file = shift @ARGV || die "File?";
 
@@ -569,12 +568,11 @@ open(F, $file) || die $!;
 binmode STDOUT, ":utf8";
 while (<F>) {
 
-    s/\r//g; # dos2unix
-    chop;
+    s/[\r\n]//g;
 
     # convert latin to utf8 if necessary
     if(/[\xc0\xc1\xc4-\xff]/) {
-        $stats{encoding} = $red . "latin1" . $no_color;
+        $stats{encoding} = "latin1";
         $_ = decode( "iso-8859-15", $_);
     }
 
@@ -607,7 +605,7 @@ sub find_delimiter {
     my $line = 0;
     while (<F>) {
         next if /^#/;
-        chop;
+        s/[\r\n]//g;
         $line++;
         $sample .= $_;
         last if $line == 3;
@@ -649,9 +647,8 @@ sub analyze_data {
 
     while (<F>) {
 
-        $stats{format} = $red ."dos" . $no_color if /\r/;
-        s/\r//g; # dos2unix
-        chop;
+        $stats{format} = "dos" if /\r/;
+        s/[\r\n]//g;
 
         $stats{Lines} = $.;
 
@@ -688,7 +685,16 @@ sub analyze_data {
     $line = padded_line(\@line);
 
     foreach my $field (keys %fields) {
-        $stats{"Skipped columns"}++ if exists $fields{$field}{length};
+
+        if($fields{$field}{type} eq "blank") {
+            $stats{"Blank columns"}++;
+            next;
+        }
+
+        if($fields{$field}{type} eq "empty") {
+            $stats{"Empty columns"}++;
+            next;
+        }
     }
 }
 
@@ -722,11 +728,10 @@ sub padded_line {
     $pad ||= " ";
 
     my @out;
-    my $i  = -1;
     my $i2 = -1;
-    foreach my $value (@$in) {
-        $i++;
-        next if !exists $fields{$i}{length};
+    foreach my $i (sort { $a <=> $b } keys %fields) {
+        my $value = $in->[$i];
+        next if $fields{$i}{type} =~ /empty|blank/;
         $i2++;
         $fields{$i}{name} = $header[$i];
         my $justify = $fields{$i}{type} eq "num" ? "" : "-";
@@ -736,10 +741,13 @@ sub padded_line {
 }
 
 sub stats {
+    my $s = "File: " . $stats{File};
+    local $stats{File};
+    delete $stats{File};
     my @r;
     my $i = -1;
     map { $i++; $r[$i] = $_ . ": " . $stats{$_} } sort keys %stats;
-    return join(", ", @r) . "\n";
+    return $s . ", " . join(", ", @r) . "\n";
 }
 
 sub create_column_ids_header {
@@ -1789,14 +1797,15 @@ Getopt::Long::Configure('bundling');
 
 my $dry = 1;
 
-GetOptions(
+my $opts = {
     'x|execute' => sub { $dry = 0 },
     'd|include-directories' => \my $include_directories,
     'n|normalize'           => \my $normalize,
     'e|execute-perl=s'      => \my $op,
     'l|list-from-file=s'    => \my $list_file,
     'S|dont-split-off-dir'  => \my $dont_split_off_dir,
-);
+};
+GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
 
 if($list_file) {
     open(F, $list_file) || die $!;
@@ -2385,7 +2394,7 @@ if($pipe_mode) {
     $gray = $reset_color = $red = "";
 }
 
-GetOptions(
+my $opts = {
     "a|all" => \my $show_all,
     "e|everything" => \my $show_everything,
     "existing-only" => \my $show_existing_only,
@@ -2396,7 +2405,8 @@ GetOptions(
     "r|succsessful-result-only" => \my $show_successful,
     "l|commands-here" => \my $show_local,
     "c|count=i" => \my $count,
-) or die "Wrong usage.";
+};
+GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
 
 my @search = @ARGV;
 my $wd = cwd;
