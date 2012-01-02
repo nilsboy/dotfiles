@@ -481,7 +481,7 @@ function f() { (
     fi
 
     find . -mount \
-        | perl -MFile::Basename -ne 'print if basename($_) =~ /'$search'/i && $_ !~ /\/\.{1,2}|^\.$/' \
+        | perl -MFile::Basename -ne 'print if m#'$search'(?!\/)#i' \
         | grep -i "$search"
 ) }
 
