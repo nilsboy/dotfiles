@@ -535,7 +535,7 @@ GetOptions(
 ) or die "Wrong usage.";
 
 my %field_types = (
-    num   => qr/^[\.,\d]+$/,
+    num   => qr/^[\.,\d]+[%gmt]{0,1}$/i,
     nnum  => qr/^[\-\.,\d]+$/,
     alph  => qr/^[a-z]+$/i,
     anum  => qr/^[a-z0-9]+$/i,
