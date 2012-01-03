@@ -309,52 +309,6 @@ function timestamp2date() {
     'print strftime("%F %T", localtime(substr("'$timestamp'", 0, 10))) . "\n"'
 }
 
-# create a file from a template
-function filltemplate {
-
-    perl - $@ <<'EOF'
-
-        use strict;
-        use warnings;
-        use File::Copy;
-
-        die "Usage: filltemplate" .
-            " file_to_create_from_template field1=value1 field2=value2 ...\n"
-            if @ARGV < 2;
-
-        my ($file, @tuples) = @ARGV;
-        my $template = $file. ".template";
-
-        die "Template not found: $template" if !-e $template;
-        die "Specify mappings." if !@tuples;
-
-        $/ = undef;
-
-        open(my $templatef, "<", $template) || die $!;
-        my $data = <$templatef>;
-        close($templatef);
-
-        for my $tuple (@tuples) {
-
-            my ($name, $value) = $tuple =~ /^(.+?)=(.+)$/;
-
-            $name = "TEMPL_" . uc($name);
-
-            die "No such field: $name\n" if $data !~ /$name/;
-
-            $data =~ s/$name/$value/igm;
-        }
-
-        my $temp = "/tmp/$file.$$"; 
-        open(my $tempf, ">", $temp) || die $!;
-        print $tempf $data;
-        close($tempf);
-
-        move($temp, $file) || die $!;
-EOF
-
-}
-
 ## shell helper functions ######################################################
 
 # clear screen also create distance to last command for easy viewing
@@ -513,269 +467,6 @@ function unix2dos() {
     perl -i -pe 's/\n/\r\n/' "$@"
 }
 
-function csvview() {
-
-    perl - $@ <<'EOF' | less -S
-
-#!/usr/bin/perl
-
-use strict;
-use warnings;
-no warnings 'uninitialized';
-use Data::Dumper;
-use Getopt::Long;
-use Encode;
-
-my $opts = {
-    "c|count=i" => \my $count,
-};
-GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
-
-my %field_types = (
-    num   => qr/^[\.,\d]+[%gmt]{0,1}$/i,
-    nnum  => qr/^[\-\.,\d]+$/,
-    alph  => qr/^[a-z]+$/i,
-    anum  => qr/^[a-z0-9]+$/i,
-    msc   => qr/./i,
-    blank => qr/^[\s]*$/,
-    empty => qr/^$/,
-);
-
-my @field_type_order = qw(num nnum alph anum blank empty msc);
-
-my $file = shift @ARGV || die "File?";
-
-my %stats        = (File => $file);
-my %fields       = ();
-my $delimiter    = find_delimiter();
-my $screen_lines = $ENV{LINES} - 1;
-
-my $empty_line_regex = qr/^[$delimiter\s]*$/;
-
-my @header;
-my $header;
-my @column_ids_header;
-my $column_ids_header;
-my @line;
-my $line;
-
-analyze_data();
-
-my $lines_shown = 0;
-
-my $last_line;
-open(F, $file) || die $!;
-binmode STDOUT, ":utf8";
-while (<F>) {
-
-    s/[\r\n]//g;
-
-    # convert latin to utf8 if necessary
-    if(/[\xc0\xc1\xc4-\xff]/) {
-        $stats{encoding} = "latin1";
-        $_ = decode( "iso-8859-15", $_);
-    }
-
-    if ($_ =~ $empty_line_regex || $_ =~ /^#/) {
-        next;
-    }
-
-    if ($lines_shown % $screen_lines == 0) {
-        print stats() . $column_ids_header . $header . padded_line(\@line, "-");
-        $lines_shown += 4;
-        next;
-    }
-
-    print padded_line([ split($delimiter) ]);
-
-    $lines_shown++;
-    $last_line = $.;
-}
-
-print "\n" x ($screen_lines -
-        ($lines_shown - int($lines_shown / $screen_lines) * $screen_lines));
-
-close(F);
-
-sub find_delimiter {
-
-    my $sample;
-
-    open(F, $file) || die $!;
-    my $line = 0;
-    while (<F>) {
-        next if /^#/;
-        s/[\r\n]//g;
-        $line++;
-        $sample .= $_;
-        last if $line == 3;
-    }
-    close(F);
-
-    my @special_chars = $sample =~ /(\W)/g;
-    my %special_char_count = ();
-    map { $special_char_count{$_}++ } @special_chars;
-
-    my $delimiter;
-    my $max = 0;
-    foreach my $special_char (keys %special_char_count) {
-        next if $special_char_count{$special_char} < $max;
-        $delimiter = $special_char;
-        $max       = $special_char_count{$special_char};
-    }
-
-    $stats{delimiter} = $delimiter;
-    return $delimiter || die "No delimiter found.";
-}
-
-sub calculate_alpha_column_name {
-    my ($num) = @_;
-
-    my $r;
-    while ($num != 0) {
-        $r = chr($num % 26 + 64) . $r if $num % 26;
-        $num = int($num / 26);
-    }
-
-    return $r;
-}
-
-sub analyze_data {
-
-    my $header_line;
-    open(F, $file) || die $!;
-
-    while (<F>) {
-
-        $stats{format} = "dos" if /\r/;
-        s/[\r\n]//g;
-
-        $stats{Lines} = $.;
-
-        if ($. == 1) {
-            $header_line = $_;
-            next;
-        }
-
-        if ($_ =~ $empty_line_regex) {
-            $stats{"Empty Lines"}++;
-            next;
-        }
-
-        add_field_stats([ split($delimiter) ]);
-    }
-    close(F);
-
-
-    @header = split($delimiter, $header_line);
-    add_field_stats(\@header, 1);
-
-    set_field_types();
-    create_column_ids_header();
-    add_field_stats(\@column_ids_header, 1);
-
-    $column_ids_header = padded_line(\@column_ids_header);
-    $header            = padded_line(\@header);
-
-    my $i = -1;
-    foreach my $value (@header) {
-        $i++;
-        $line[$i] = "-" x $fields{$i}{length};
-    }
-    $line = padded_line(\@line);
-
-    foreach my $field (keys %fields) {
-
-        if($fields{$field}{type} eq "blank") {
-            $stats{"Blank columns"}++;
-            next;
-        }
-
-        if($fields{$field}{type} eq "empty") {
-            $stats{"Empty columns"}++;
-            next;
-        }
-    }
-}
-
-sub add_field_stats {
-    my ($line, $ignore_empty) = @_;
-    my $i = -1;
-    foreach my $value (@$line) {
-        $i++;
-        if(! $ignore_empty || $fields{$i}{length} ) {
-            $fields{$i}{length} = length($value)
-                if length($value) > $fields{$i}{length};
-        }
-
-        next if $ignore_empty;
-
-        $fields{$i}{values}{$value}++;
-
-        foreach my $field_type (@field_type_order) {
-            my $regex = $field_types{$field_type};
-            if($value =~ $regex) {
-                $fields{$i}{types}{$field_type} = $value;
-                last;
-            }
-        }
-    }
-}
-
-sub padded_line {
-    my ($in, $pad) = @_;
-
-    $pad ||= " ";
-
-    my @out;
-    my $i2 = -1;
-    foreach my $i (sort { $a <=> $b } keys %fields) {
-        my $value = $in->[$i];
-        next if $fields{$i}{type} =~ /empty|blank/;
-        $i2++;
-        $fields{$i}{name} = $header[$i];
-        my $justify = $fields{$i}{type} eq "num" ? "" : "-";
-        $out[$i2] = sprintf('%' . $justify . $fields{$i}{length} . 's', $value);
-    }
-    return join(" | ", @out) . "\n";
-}
-
-sub stats {
-    my $s = "File: " . $stats{File};
-    local $stats{File};
-    delete $stats{File};
-    my @r;
-    my $i = -1;
-    map { $i++; $r[$i] = $_ . ": " . $stats{$_} } sort keys %stats;
-    return $s . ", " . join(", ", @r) . "\n";
-}
-
-sub create_column_ids_header {
-    my $i = -1;
-    foreach my $value (@header) {
-        $i++;
-        $column_ids_header[$i] =
-            ($i + 1) . " (" . calculate_alpha_column_name($i + 1) . ") "
-            . $fields{$i}{type}
-            . " " . keys(%{$fields{$i}{values}});
-    }
-}
-
-sub set_field_types {
-    my $i = -1;
-    foreach my $field (@header) {
-        $i++;
-        foreach my $type (@field_type_order) {
-            next if ! exists $fields{$i}{types}{$type};
-            $fields{$i}{type} = $type;
-            last;
-        }
-    }
-}
-
-EOF
-}
-
 ## process management ##########################################################
 
 if [[ ! $(type -t pstree) ]] ; then
@@ -797,154 +488,6 @@ function p() {
 }
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
-
-# cleaned up jobs replacement
-function j() {
-
-export _bashrc_jobs=$(jobs)
-export _bashrc_columns=$COLUMNS
-
-perl <<'EOF'
-
-use strict;
-use warnings;
-no warnings 'uninitialized';
-
-my $black     = "\x1b[38;5;0m";
-my $gray      = "\x1b[38;5;250m";
-my $dark_gray = "\x1b[38;5;244m";
-my $red       = "\x1b[38;5;124m";
-
-my %cmds      = ();
-my %last_args = ();
-
-foreach ( split( "\n", $ENV{_bashrc_jobs} ) ) {
-
-    my ( $jid, $state, $cmd ) = /^(\[\d+\][+-]*)\s+(\S+)\s+(.+)\s*$/;
-
-    next if !$jid;
-
-    $jid =~ s/[\[\]]//g;
-    $jid = " $jid" if $jid !~ /\d\d/g;
-    my ($wd) = $cmd =~ /\s+\(wd\:\ (.+)\)\s*$/;
-    $cmd =~ s/\s+\(wd\:\ (.+)\)\s*$//g;
-
-    $cmd =~ s/^(\w+=\w*\s+)*//g;
-
-    my $args = $cmd;
-
-    ($cmd) = $cmd =~ /^\s*([^\s]+)/;
-
-    my ($last_arg) = $args;
-    $last_arg =~ s/(\||\().*$//g;
-    $last_arg =~ s/\w*>.*$//g;
-    $last_arg =~ s/[\s&]*$//g;
-    ($last_arg) = $last_arg =~ /[\s]*([^\s]+|$)$/;
-    my $full_last_arg = $last_arg;
-    $last_arg =~ s/.*\///g;
-
-    if ( $args eq $cmd ) {
-        $args = "";
-    }
-
-    if ( $last_arg eq $cmd ) {
-        $last_arg = "";
-    }
-
-    if ( $cmd eq "(" ) {
-        $cmd .= ")";
-    }
-    else {
-        $args = "";
-    }
-
-    my $max = $ENV{_bashrc_columns} - length($cmd) - length($last_arg) - 5 - 1;
-    my $length = length($args);
-
-    if ( $length > $max ) {
-        my $leave = $max / 2;
-        $args
-            = substr( $args, 0, $leave - 1 )
-            . "$red*$gray"
-            . substr( $args, $length - $leave + 1, $leave );
-    }
-
-    push( @{ $last_args{$last_arg} }, $jid ) if $last_arg;
-    $cmds{$jid} = [ $cmd, $last_arg, $args, $full_last_arg, $state ];
-}
-
-# lengthen args that are the same until they are not
-foreach my $jid ( keys %last_args ) {
-
-    next if @{ $last_args{$jid} } == 1;
-
-    my %diff       = ();
-    my $length     = 0;
-    my $max_length = 0;
-
-    while (1) {
-
-        %diff = ();
-        $length++;
-
-        foreach my $same_jid ( @{ $last_args{$jid} } ) {
-
-            my $arg = $cmds{$same_jid}[3];
-
-            $max_length = length($arg) if length($arg) > $max_length;
-
-            if ( length($arg) <= $length ) {
-                $diff{$arg} = $same_jid;
-                next;
-            }
-
-            $arg = substr( $arg, length($arg) - $length, length($arg) );
-
-            $diff{$arg} = $same_jid;
-        }
-
-        last if keys(%diff) == @{ $last_args{$jid} };
-        last if $length == $max_length;
-    }
-
-    my $final_length = 0;
-
-    # add everything after the first slash
-    foreach my $arg ( keys %diff ) {
-
-        my $jid = $diff{$arg};
-
-        my $org_arg = $cmds{$jid}[3];
-
-        ($arg) = $org_arg =~ /.*\/(.+$arg)$/;
-
-        $arg =~ s#/.+/#/\*/#g;
-
-        $final_length = length($arg) if length($arg) > $final_length;
-
-        $cmds{$jid}[1] = $arg;
-    }
-
-    # prefix with space to same length
-    foreach my $jid ( values %diff ) {
-        my $arg = $cmds{$jid}[1];
-        $cmds{$jid}[1] = sprintf( "%${final_length}s", $arg );
-    }
-}
-
-foreach my $jid ( sort keys %cmds ) {
-
-    my ( $cmd, $last_arg, $args, $full_last_arg, $state ) = @{ $cmds{$jid} };
-
-    my $fg = $black;
-    $fg = $red if $state =~ /running/i;
-
-    print $fg;
-    printf( "%-3s %s %s %s\n",
-        $jid, $cmd, $last_arg, $gray . $args . $black );
-}
-EOF
-}
 
 ### functions for lookups ######################################################
 
@@ -988,6 +531,7 @@ function m() {
     fi
 
     (
+        _printifok perldoc perldoc -f $cmd
         _printifok help help -m $cmd
         _printifok man man -a $cmd || \
         _printifok internet _man_internet $cmd
@@ -1779,393 +1323,6 @@ function unjar() { (
     done
 ) }
 
-### xmv ########################################################################
-
-# rename files by perl expression protecting from duplicate resulting file names
-function xmv() {
-
-    local IFS=$'\n'
-
-    perl - $@ <<'EOF'
-
-use strict;
-use warnings FATAL => 'all';
-use File::Basename;
-
-use Getopt::Long;
-Getopt::Long::Configure('bundling');
-
-my $dry = 1;
-
-my $opts = {
-    'x|execute' => sub { $dry = 0 },
-    'd|include-directories' => \my $include_directories,
-    'n|normalize'           => \my $normalize,
-    'e|execute-perl=s'      => \my $op,
-    'l|list-from-file=s'    => \my $list_file,
-    'S|dont-split-off-dir'  => \my $dont_split_off_dir,
-};
-GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
-
-if($list_file) {
-    open(F, $list_file) || die $!;
-    @ARGV = <F>;
-    close(F);
-    map { chop } @ARGV;
-}
-
-if (!@ARGV) {
-    die "Usage: xmv [-x] [-d] [-n] [-l file] [-S] [-e perlexpr] [filenames]\n";
-}
-
-my %will  = ();
-my %was   = ();
-my $abort = 0;
-my $COUNT = 0;
-
-for (@ARGV) {
-
-    next if /^\.{1,2}$/;
-
-    my $abs = $_;
-    my $dir = dirname($_);
-    my $file = basename($_);
-
-    if($dont_split_off_dir) {
-        $dir = "";
-        $file = $_;
-    }
-
-    $dir = "" if $dir eq ".";
-    $dir .= "/" if $dir;
-
-    $abs = $dir . $file;
-    my $was = $file;
-    $_ = $file;
-
-    $_ = normalize($abs) if $normalize;
-
-    # vars to use in perlexpr
-    $COUNT++;
-    $COUNT = sprintf("%0". length(scalar(@ARGV)) ."d", $COUNT);
-
-    if ($op) {
-        eval $op;
-        die $@ if $@;
-    }
-
-    my $will = $dir . $_;
-
-    if (!-e $abs) {
-        warn "no such file: '$was'";
-        $abort = 1;
-        next;
-    }
-
-    if (-d $abs && !$include_directories) {
-        next;
-    }
-
-    my $other = $will{$will} if exists $will{$will};
-    if ($other) {
-        warn "name '$will' for '$abs' already taken by '$other'.";
-        $abort = 1;
-        next;
-    }
-
-    next if $will eq $abs;
-
-    if (-e $will) {
-        warn "file '$will' already exists.";
-        $abort = 1;
-        next;
-    }
-
-    $will{$will} = $abs;
-    $was{$abs}   = $will;
-}
-
-exit 1 if $abort;
-
-foreach my $was (sort keys %was) {
-
-    my $will = $was{$was};
-
-    print "moving '$was' -> '$will'\n";
-
-    next if $dry;
-
-    system("mv", $was, $will) && die $!;
-}
-
-sub normalize {
-    my ($abs) = @_;
-
-    my $file = basename($abs);
-    my $ext  = "";
-
-    if (!-d $abs && $file =~ /^(.+)(\..+?)$/) {
-        ($file, $ext) = ($1, $2);
-    }
-
-    $_ = $file;
-
-    s/www\.[^\.]+\.[[:alnum:]]+//g;
-    s/'//g;
-    s/[^\w\.]+/_/g;
-    s/[\._]+/_/g;
-    s/^[\._]+//g;
-    s/[\._]+$//g;
-
-    $_ ||= "_empty_file_name";
-
-    return $_ . lc($ext);
-}
-EOF
-}
-
-function normalize_file_names() {
-    xmv -ndx "$@"
-}
-
-### simpletree() ###############################################################
-
-# tree substitute which groups similar named files
-function simpletree() {
-
-    perl - $@ <<'EOF'
-
-use strict;
-use warnings;
-no warnings 'uninitialized';
-binmode STDOUT, ":utf8";
-use File::Basename;
-use Cwd;
-
-use Getopt::Long;
-Getopt::Long::Configure("bundling");
-my $opts = {
-    "d|directories-only" => \my $dirs_only,
-    "s|summary"          => \my $summary_only,
-    "c|sort-by-count"    => \my $sort_by_count,
-    "l|list-counts"      => \my $list_counts,
-    "a|show-dot-files"   => \my $show_dot_files,
-};
-GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
-
-my $blue     = "\x1b[34;5;250m";
-my $green    = "\x1b[32;5;250m";
-my $red      = "\x1b[31;5;250m";
-my $gray     = "\x1b[37;5;250m";
-my $no_color = "\x1b[33;0m";
-
-my $depth      = -1;
-my $max        = $ENV{COLUMNS};
-my ($root_dev) = stat ".";
-my $mounted    = 0;
-my $dirlinks   = 0;
-my $root_dir   = $ARGV[0] || getcwd;
-my $prefix;
-
-listdir($root_dir);
-
-print $red . "==> Skipped $mounted mounted directories.\n" . $no_color
-    if $mounted;
-print $red . "==> Skipped $dirlinks linked directories.\n" . $no_color
-    if $dirlinks;
-
-sub inc_prefix {
-    my ($has_next) = @_;
-
-    return if $depth == -1;
-
-    if ($has_next) {
-        $prefix .= "\x{2502}";
-    }
-    else {
-        $prefix .= " ";
-    }
-
-    $prefix .= "   ";
-}
-
-sub prefix {
-    my ( $is_dir, $has_next ) = @_;
-    return if $depth == -1;
-    my $add_prefix .= $has_next ? "\x{251c}" : "\x{2514}";
-    return $prefix . $add_prefix . "\x{2500}\x{2500} ";
-}
-
-sub dec_prefix {
-    $prefix = substr( $prefix, 0, length($prefix) - 4 );
-}
-
-sub listdir {
-    my ( $dir, $has_next ) = @_;
-
-    my $normal_dir = 0;
-    my ($dev)      = stat $dir;
-    my $label      = $depth == -1 && ! $ARGV[0] ? "." : basename($dir);
-
-    if ( -l $dir ) {
-        $label .= $red . " -> " . readlink($dir);
-        $dirlinks++;
-    }
-    elsif ( $dev != $root_dev ) {
-        $label .= $red . " MOUNTED" . $no_color;
-        $mounted++;
-    }
-    else {
-        $normal_dir = 1;
-    }
-
-    if ( !$normal_dir ) {
-        print prefix(1, $has_next) . $blue . $label . $no_color . "\n";
-        return;
-    }
-
-    my @dirs       = ();
-    my %files      = ();
-    my $file_count = 0;
-
-    my @entries;
-    opendir(DIR, "$dir") || die $!;
-    while(my $entry = readdir(DIR) ) {
-
-        next if $entry =~ /^\.{1,2}$/;
-        next if ! $show_dot_files && $entry =~ /^\./;
-
-        $entry = "$dir/$entry";
-        push(@entries, $entry);
-    }
-    closedir(DIR) || die $!;
-
-    foreach my $entry (sort @entries) {
-
-        if ( -d $entry ) {
-            push( @dirs, $entry );
-            next;
-        }
-
-        $file_count++;
-
-        next if $dirs_only;
-
-        my $file    = basename($entry);
-        my $cleaned = $file;
-        my $link;
-
-        if ( -l $entry ) {
-            $link = readlink($entry);
-            $cleaned .= $red . " -> $link";
-        }
-        else {
-            $cleaned =~ s/[\d\W_\s]+//g;
-        }
-
-        $files{$cleaned}{count}++;
-        if ( exists $files{$cleaned}{name} ) {
-            if ( length $entry > length $files{$cleaned}{name} ) {
-                next;
-            }
-        }
-        $files{$cleaned}{name} = $file;
-        $files{$cleaned}{link} = $link if $link;
-    }
-
-    if ($list_counts) {
-        $label .= " $gray" . @dirs . "/" . $file_count . $no_color
-            if $file_count || @dirs;
-    }
-    print prefix( 1, $has_next ) . $blue . $label . $no_color . "\n";
-
-    inc_prefix($has_next);
-
-    $depth++;
-    {
-        my $dir_entry_number = 0;
-        my $dir_entry_count  = @dirs;
-        foreach my $lower_dir (@dirs) {
-
-            $dir_entry_number++;
-
-            my $has_next = $dir_entry_number != $dir_entry_count;
-            listdir( $lower_dir, %files || $has_next );
-        }
-    }
-
-    if ($dirs_only) {
-        dec_prefix();
-        $depth--;
-        return;
-    }
-
-    my %file_counts = ();
-    foreach my $file ( sort keys %files ) {
-        my $count = $files{$file}{count};
-        $count = 1 if !$sort_by_count;
-        my $example_file = $files{$file}{name};
-        $file_counts{$count}{$file} = $example_file;
-    }
-
-    my $shown_files = 0;
-
-DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
-
-        my $entry_number = 0;
-        my $entry_count  = keys %{ $file_counts{$count_order} };
-        foreach my $cleaned ( sort keys %{ $file_counts{$count_order} } ) {
-
-            $entry_number++;
-
-            my $count = $count_order;
-            $count = $files{$cleaned}{count} if !$sort_by_count;
-
-            my $count_label;
-            if ( $count > 1 ) {
-                $count_label = $gray . "$count*" . $no_color if $count > 1;
-            }
-
-            my $file = $files{$cleaned}{name};
-            my $link = $files{$cleaned}{link};
-
-            if($count > 1) {
-                $file =~ s/[\d\W_\s]+/$red*$green/g;
-            }
-
-            $file = $green . $file . $no_color;
-
-            $file = $red . "{" . $file . $red . "}" . $no_color
-                if $count > 1;
-            $file .= $red . " -> $link" . $no_color if $link;
-
-            print prefix( 0, $entry_number != $entry_count ) 
-                . $count_label
-                . $file
-                . " \n";
-
-            $shown_files++;
-
-            if ( $shown_files == 3 && $summary_only ) {
-
-                next if keys %files == 4;
-
-                if ( keys %files > 3 ) {
-                    print prefix . "...\n";
-                }
-
-                last DIR;
-            }
-        }
-    }
-
-    dec_prefix();
-    $depth--;
-}
-
-EOF
-}
-
 ### NOTES ######################################################################
 
 # NOTES ON apt
@@ -2780,16 +1937,15 @@ if [[ ! $_is_reload ]] ; then
     # cd to dir used last before logout
     if [[ $LAST_SESSION_PWD ]] ; then
 
-    if [[ -d "$LAST_SESSION_PWD" ]] ; then
-        cd "$LAST_SESSION_PWD"
-    fi
+        if [[ -d "$LAST_SESSION_PWD" ]] ; then
+            cd "$LAST_SESSION_PWD"
+        fi
 
     elif [[ -d "$REMOTE_HOME" ]] ; then
         cdh
     fi
 
     OLDPWD=$_OLDPWD
-
 fi
 _is_reload=1
 
@@ -2797,6 +1953,849 @@ if [ -r $REMOTE_HOME/.bashrc_local ] ; then
     source $REMOTE_HOME/.bashrc_local
 fi
 
-true
+### perl functions #############################################################
+
+# run a perl app located at the end of this file
+function _run_perl_app() {(
+    local function=${1?Specify function}
+    shift
+
+    code=$(perl -0777 -ne \
+        'print $1 if /(^### function '$function'\(\).*?)### /igsm' \
+        $REMOTE_BASHRC
+    )
+
+    if ! [[ $code ]] ; then
+        DIE "Function not found: $function"
+    fi
+
+    code="no warnings qw{uninitialized}; use Data::Dumper; $code"
+
+    export code
+    perl -we 'eval $ENV{code}; die $@ if $@;' -- "$@"
+)}
+
+# setup aliases for all the perl apps at the end of this file
+function _setup_perl_apps() {
+
+    while read funct ; do
+        alias $funct="_run_perl_app $funct"
+    done<<EOF
+        $(perl -ne 'foreach (/^### function (.+?)\(/) {print "$_\n" }' $REMOTE_BASHRC)
+EOF
+}
+
+_setup_perl_apps
+
+alias normalizefilenames="xmv -ndx"
+
+unalias csvview
+function csvview() {
+    _run_perl_app csvview "$@" | less -S
+}
+
+function j() {
+    export _bashrc_jobs=$(jobs)
+    export _bashrc_columns=$COLUMNS
+    _run_perl_app _display_jobs
+}
+
+# bashrc ends here
+return 0
+
+### function csvview() #########################################################
+
+use Getopt::Long;
+use Encode;
+
+my $opts = {
+    "c|count=i" => \my $count,
+};
+GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
+
+my %field_types = (
+    num   => qr/^[\.,\d]+[%gmt]{0,1}$/i,
+    nnum  => qr/^[\-\.,\d]+$/,
+    alph  => qr/^[a-z]+$/i,
+    anum  => qr/^[a-z0-9]+$/i,
+    msc   => qr/./i,
+    blank => qr/^[\s]*$/,
+    empty => qr/^$/,
+);
+
+my @field_type_order = qw(num nnum alph anum blank empty msc);
+
+my $file = shift @ARGV || die "File?";
+
+my %stats        = (File => $file);
+my %fields       = ();
+my $delimiter    = find_delimiter();
+my $screen_lines = $ENV{LINES} - 1;
+
+my $empty_line_regex = qr/^[$delimiter\s]*$/;
+
+my @header;
+my $header;
+my @column_ids_header;
+my $column_ids_header;
+my @line;
+my $line;
+
+analyze_data();
+
+my $lines_shown = 0;
+
+my $last_line;
+open(F, $file) || die $!;
+binmode STDOUT, ":utf8";
+while (<F>) {
+
+    s/[\r\n]//g;
+
+    # convert latin to utf8 if necessary
+    if(/[\xc0\xc1\xc4-\xff]/) {
+        $stats{encoding} = "latin1";
+        $_ = decode( "iso-8859-15", $_);
+    }
+
+    if ($_ =~ $empty_line_regex || $_ =~ /^#/) {
+        next;
+    }
+
+    if ($lines_shown % $screen_lines == 0) {
+        print stats() . $column_ids_header . $header . padded_line(\@line, "-");
+        $lines_shown += 4;
+        next;
+    }
+
+    print padded_line([ split($delimiter) ]);
+
+    $lines_shown++;
+    $last_line = $.;
+}
+
+print "\n" x ($screen_lines -
+        ($lines_shown - int($lines_shown / $screen_lines) * $screen_lines));
+
+close(F);
+
+sub find_delimiter {
+
+    my $sample;
+
+    open(F, $file) || die $!;
+    my $line = 0;
+    while (<F>) {
+        next if /^#/;
+        s/[\r\n]//g;
+        $line++;
+        $sample .= $_;
+        last if $line == 3;
+    }
+    close(F);
+
+    my @special_chars = $sample =~ /(\W)/g;
+    my %special_char_count = ();
+    map { $special_char_count{$_}++ } @special_chars;
+
+    my $delimiter;
+    my $max = 0;
+    foreach my $special_char (keys %special_char_count) {
+        next if $special_char_count{$special_char} < $max;
+        $delimiter = $special_char;
+        $max       = $special_char_count{$special_char};
+    }
+
+    $stats{delimiter} = $delimiter;
+    return $delimiter || die "No delimiter found.";
+}
+
+sub calculate_alpha_column_name {
+    my ($num) = @_;
+
+    my $r;
+    while ($num != 0) {
+        $r = chr($num % 26 + 64) . $r if $num % 26;
+        $num = int($num / 26);
+    }
+
+    return $r;
+}
+
+sub analyze_data {
+
+    my $header_line;
+    open(F, $file) || die $!;
+
+    while (<F>) {
+
+        $stats{format} = "dos" if /\r/;
+        s/[\r\n]//g;
+
+        $stats{Lines} = $.;
+
+        if ($. == 1) {
+            $header_line = $_;
+            next;
+        }
+
+        if ($_ =~ $empty_line_regex) {
+            $stats{"Empty Lines"}++;
+            next;
+        }
+
+        add_field_stats([ split($delimiter) ]);
+    }
+    close(F);
+
+
+    @header = split($delimiter, $header_line);
+    add_field_stats(\@header, 1);
+
+    set_field_types();
+    create_column_ids_header();
+    add_field_stats(\@column_ids_header, 1);
+
+    $column_ids_header = padded_line(\@column_ids_header);
+    $header            = padded_line(\@header);
+
+    my $i = -1;
+    foreach my $value (@header) {
+        $i++;
+        $line[$i] = "-" x $fields{$i}{length};
+    }
+    $line = padded_line(\@line);
+
+    foreach my $field (keys %fields) {
+
+        if($fields{$field}{type} eq "blank") {
+            $stats{"Blank columns"}++;
+            next;
+        }
+
+        if($fields{$field}{type} eq "empty") {
+            $stats{"Empty columns"}++;
+            next;
+        }
+    }
+}
+
+sub add_field_stats {
+    my ($line, $ignore_empty) = @_;
+    my $i = -1;
+    foreach my $value (@$line) {
+        $i++;
+        if(! $ignore_empty || $fields{$i}{length} ) {
+            $fields{$i}{length} = length($value)
+                if length($value) > $fields{$i}{length};
+        }
+
+        next if $ignore_empty;
+
+        $fields{$i}{values}{$value}++;
+
+        foreach my $field_type (@field_type_order) {
+            my $regex = $field_types{$field_type};
+            if($value =~ $regex) {
+                $fields{$i}{types}{$field_type} = $value;
+                last;
+            }
+        }
+    }
+}
+
+sub padded_line {
+    my ($in, $pad) = @_;
+
+    $pad ||= " ";
+
+    my @out;
+    my $i2 = -1;
+    foreach my $i (sort { $a <=> $b } keys %fields) {
+        my $value = $in->[$i];
+        next if $fields{$i}{type} =~ /empty|blank/;
+        $i2++;
+        $fields{$i}{name} = $header[$i];
+        my $justify = $fields{$i}{type} eq "num" ? "" : "-";
+        $out[$i2] = sprintf('%' . $justify . $fields{$i}{length} . 's', $value);
+    }
+    return join(" | ", @out) . "\n";
+}
+
+sub stats {
+    my $s = "File: " . $stats{File};
+    local $stats{File};
+    delete $stats{File};
+    my @r;
+    my $i = -1;
+    map { $i++; $r[$i] = $_ . ": " . $stats{$_} } sort keys %stats;
+    return $s . ", " . join(", ", @r) . "\n";
+}
+
+sub create_column_ids_header {
+    my $i = -1;
+    foreach my $value (@header) {
+        $i++;
+        $column_ids_header[$i] =
+            ($i + 1) . " (" . calculate_alpha_column_name($i + 1) . ") "
+            . $fields{$i}{type}
+            . " " . keys(%{$fields{$i}{values}});
+    }
+}
+
+sub set_field_types {
+    my $i = -1;
+    foreach my $field (@header) {
+        $i++;
+        foreach my $type (@field_type_order) {
+            next if ! exists $fields{$i}{types}{$type};
+            $fields{$i}{type} = $type;
+            last;
+        }
+    }
+}
+
+### function _display_jobs() ###################################################
+# cleaned up jobs replacement
+
+my $black     = "\x1b[38;5;0m";
+my $gray      = "\x1b[38;5;250m";
+my $dark_gray = "\x1b[38;5;244m";
+my $red       = "\x1b[38;5;124m";
+
+my %cmds      = ();
+my %last_args = ();
+
+foreach ( split( "\n", $ENV{_bashrc_jobs} ) ) {
+
+    my ( $jid, $state, $cmd ) = /^(\[\d+\][+-]*)\s+(\S+)\s+(.+)\s*$/;
+
+    next if !$jid;
+
+    $jid =~ s/[\[\]]//g;
+    $jid = " $jid" if $jid !~ /\d\d/g;
+    my ($wd) = $cmd =~ /\s+\(wd\:\ (.+)\)\s*$/;
+    $cmd =~ s/\s+\(wd\:\ (.+)\)\s*$//g;
+
+    $cmd =~ s/^(\w+=\w*\s+)*//g;
+
+    my $args = $cmd;
+
+    ($cmd) = $cmd =~ /^\s*([^\s]+)/;
+
+    my ($last_arg) = $args;
+    $last_arg =~ s/(\||\().*$//g;
+    $last_arg =~ s/\w*>.*$//g;
+    $last_arg =~ s/[\s&]*$//g;
+    ($last_arg) = $last_arg =~ /[\s]*([^\s]+|$)$/;
+    my $full_last_arg = $last_arg;
+    $last_arg =~ s/.*\///g;
+
+    if ( $args eq $cmd ) {
+        $args = "";
+    }
+
+    if ( $last_arg eq $cmd ) {
+        $last_arg = "";
+    }
+
+    if ( $cmd eq "(" ) {
+        $cmd .= ")";
+    }
+    else {
+        $args = "";
+    }
+
+    my $max = $ENV{_bashrc_columns} - length($cmd) - length($last_arg) - 5 - 1;
+    my $length = length($args);
+
+    if ( $length > $max ) {
+        my $leave = $max / 2;
+        $args
+            = substr( $args, 0, $leave - 1 )
+            . "$red*$gray"
+            . substr( $args, $length - $leave + 1, $leave );
+    }
+
+    push( @{ $last_args{$last_arg} }, $jid ) if $last_arg;
+    $cmds{$jid} = [ $cmd, $last_arg, $args, $full_last_arg, $state ];
+}
+
+# lengthen args that are the same until they are not
+foreach my $jid ( keys %last_args ) {
+
+    next if @{ $last_args{$jid} } == 1;
+
+    my %diff       = ();
+    my $length     = 0;
+    my $max_length = 0;
+
+    while (1) {
+
+        %diff = ();
+        $length++;
+
+        foreach my $same_jid ( @{ $last_args{$jid} } ) {
+
+            my $arg = $cmds{$same_jid}[3];
+
+            $max_length = length($arg) if length($arg) > $max_length;
+
+            if ( length($arg) <= $length ) {
+                $diff{$arg} = $same_jid;
+                next;
+            }
+
+            $arg = substr( $arg, length($arg) - $length, length($arg) );
+
+            $diff{$arg} = $same_jid;
+        }
+
+        last if keys(%diff) == @{ $last_args{$jid} };
+        last if $length == $max_length;
+    }
+
+    my $final_length = 0;
+
+    # add everything after the first slash
+    foreach my $arg ( keys %diff ) {
+
+        my $jid = $diff{$arg};
+
+        my $org_arg = $cmds{$jid}[3];
+
+        ($arg) = $org_arg =~ /.*\/(.+$arg)$/;
+
+        $arg =~ s#/.+/#/\*/#g;
+
+        $final_length = length($arg) if length($arg) > $final_length;
+
+        $cmds{$jid}[1] = $arg;
+    }
+
+    # prefix with space to same length
+    foreach my $jid ( values %diff ) {
+        my $arg = $cmds{$jid}[1];
+        $cmds{$jid}[1] = sprintf( "%${final_length}s", $arg );
+    }
+}
+
+foreach my $jid ( sort keys %cmds ) {
+
+    my ( $cmd, $last_arg, $args, $full_last_arg, $state ) = @{ $cmds{$jid} };
+
+    my $fg = $black;
+    $fg = $red if $state =~ /running/i;
+
+    print $fg;
+    printf( "%-3s %s %s %s\n",
+        $jid, $cmd, $last_arg, $gray . $args . $black );
+}
+
+### function simpletree() ######################################################
+# tree substitute which groups similar named files
+
+use strict;
+use warnings;
+no warnings 'uninitialized';
+binmode STDOUT, ":utf8";
+use File::Basename;
+use Cwd;
+
+use Getopt::Long;
+Getopt::Long::Configure("bundling");
+my $opts = {
+    "d|directories-only" => \my $dirs_only,
+    "s|summary"          => \my $summary_only,
+    "c|sort-by-count"    => \my $sort_by_count,
+    "l|list-counts"      => \my $list_counts,
+    "a|show-dot-files"   => \my $show_dot_files,
+};
+GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
+
+my $blue     = "\x1b[34;5;250m";
+my $green    = "\x1b[32;5;250m";
+my $red      = "\x1b[31;5;250m";
+my $gray     = "\x1b[37;5;250m";
+my $no_color = "\x1b[33;0m";
+
+my $depth      = -1;
+my $max        = $ENV{COLUMNS};
+my ($root_dev) = stat ".";
+my $mounted    = 0;
+my $dirlinks   = 0;
+my $root_dir   = $ARGV[0] || getcwd;
+my $prefix;
+
+listdir($root_dir);
+
+print $red . "==> Skipped $mounted mounted directories.\n" . $no_color
+    if $mounted;
+print $red . "==> Skipped $dirlinks linked directories.\n" . $no_color
+    if $dirlinks;
+
+sub inc_prefix {
+    my ($has_next) = @_;
+
+    return if $depth == -1;
+
+    if ($has_next) {
+        $prefix .= "\x{2502}";
+    }
+    else {
+        $prefix .= " ";
+    }
+
+    $prefix .= "   ";
+}
+
+sub prefix {
+    my ( $is_dir, $has_next ) = @_;
+    return if $depth == -1;
+    my $add_prefix .= $has_next ? "\x{251c}" : "\x{2514}";
+    return $prefix . $add_prefix . "\x{2500}\x{2500} ";
+}
+
+sub dec_prefix {
+    $prefix = substr( $prefix, 0, length($prefix) - 4 );
+}
+
+sub listdir {
+    my ( $dir, $has_next ) = @_;
+
+    my $normal_dir = 0;
+    my ($dev)      = stat $dir;
+    my $label      = $depth == -1 && ! $ARGV[0] ? "." : basename($dir);
+
+    if ( -l $dir ) {
+        $label .= $red . " -> " . readlink($dir);
+        $dirlinks++;
+    }
+    elsif ( $dev != $root_dev ) {
+        $label .= $red . " MOUNTED" . $no_color;
+        $mounted++;
+    }
+    else {
+        $normal_dir = 1;
+    }
+
+    if ( !$normal_dir ) {
+        print prefix(1, $has_next) . $blue . $label . $no_color . "\n";
+        return;
+    }
+
+    my @dirs       = ();
+    my %files      = ();
+    my $file_count = 0;
+
+    my @entries;
+    opendir(DIR, "$dir") || die $!;
+    while(my $entry = readdir(DIR) ) {
+
+        next if $entry =~ /^\.{1,2}$/;
+        next if ! $show_dot_files && $entry =~ /^\./;
+
+        $entry = "$dir/$entry";
+        push(@entries, $entry);
+    }
+    closedir(DIR) || die $!;
+
+    foreach my $entry (sort @entries) {
+
+        if ( -d $entry ) {
+            push( @dirs, $entry );
+            next;
+        }
+
+        $file_count++;
+
+        next if $dirs_only;
+
+        my $file    = basename($entry);
+        my $cleaned = $file;
+        my $link;
+
+        if ( -l $entry ) {
+            $link = readlink($entry);
+            $cleaned .= $red . " -> $link";
+        }
+        else {
+            $cleaned =~ s/[\d\W_\s]+//g;
+        }
+
+        $files{$cleaned}{count}++;
+        if ( exists $files{$cleaned}{name} ) {
+            if ( length $entry > length $files{$cleaned}{name} ) {
+                next;
+            }
+        }
+        $files{$cleaned}{name} = $file;
+        $files{$cleaned}{link} = $link if $link;
+    }
+
+    if ($list_counts) {
+        $label .= " $gray" . @dirs . "/" . $file_count . $no_color
+            if $file_count || @dirs;
+    }
+    print prefix( 1, $has_next ) . $blue . $label . $no_color . "\n";
+
+    inc_prefix($has_next);
+
+    $depth++;
+    {
+        my $dir_entry_number = 0;
+        my $dir_entry_count  = @dirs;
+        foreach my $lower_dir (@dirs) {
+
+            $dir_entry_number++;
+
+            my $has_next = $dir_entry_number != $dir_entry_count;
+            listdir( $lower_dir, %files || $has_next );
+        }
+    }
+
+    if ($dirs_only) {
+        dec_prefix();
+        $depth--;
+        return;
+    }
+
+    my %file_counts = ();
+    foreach my $file ( sort keys %files ) {
+        my $count = $files{$file}{count};
+        $count = 1 if !$sort_by_count;
+        my $example_file = $files{$file}{name};
+        $file_counts{$count}{$file} = $example_file;
+    }
+
+    my $shown_files = 0;
+
+DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
+
+        my $entry_number = 0;
+        my $entry_count  = keys %{ $file_counts{$count_order} };
+        foreach my $cleaned ( sort keys %{ $file_counts{$count_order} } ) {
+
+            $entry_number++;
+
+            my $count = $count_order;
+            $count = $files{$cleaned}{count} if !$sort_by_count;
+
+            my $count_label;
+            if ( $count > 1 ) {
+                $count_label = $gray . "$count*" . $no_color if $count > 1;
+            }
+
+            my $file = $files{$cleaned}{name};
+            my $link = $files{$cleaned}{link};
+
+            if($count > 1) {
+                $file =~ s/[\d\W_\s]+/$red*$green/g;
+            }
+
+            $file = $green . $file . $no_color;
+
+            $file = $red . "{" . $file . $red . "}" . $no_color
+                if $count > 1;
+            $file .= $red . " -> $link" . $no_color if $link;
+
+            print prefix( 0, $entry_number != $entry_count ) 
+                . $count_label
+                . $file
+                . " \n";
+
+            $shown_files++;
+
+            if ( $shown_files == 3 && $summary_only ) {
+
+                next if keys %files == 4;
+
+                if ( keys %files > 3 ) {
+                    print prefix . "...\n";
+                }
+
+                last DIR;
+            }
+        }
+    }
+
+    dec_prefix();
+    $depth--;
+}
+
+### function xmv() #############################################################
+# Rename files by perl expression protect against duplicate resulting file names
+
+# use warnings FATAL => 'all';
+use File::Basename;
+
+use Getopt::Long;
+Getopt::Long::Configure('bundling');
+
+my $dry = 1;
+
+my $opts = {
+    'x|execute' => sub { $dry = 0 },
+    'd|include-directories' => \my $include_directories,
+    'n|normalize'           => \my $normalize,
+    'e|execute-perl=s'      => \my $op,
+    'l|list-from-file=s'    => \my $list_file,
+    'S|dont-split-off-dir'  => \my $dont_split_off_dir,
+};
+GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
+
+if($list_file) {
+    open(F, $list_file) || die $!;
+    @ARGV = <F>;
+    close(F);
+    map { chop } @ARGV;
+}
+
+if (!@ARGV) {
+    die "Usage: xmv [-x] [-d] [-n] [-l file] [-S] [-e perlexpr] [filenames]\n";
+}
+
+my %will  = ();
+my %was   = ();
+my $abort = 0;
+my $COUNT = 0;
+
+for (@ARGV) {
+
+    next if /^\.{1,2}$/;
+
+    my $abs = $_;
+    my $dir = dirname($_);
+    my $file = basename($_);
+
+    if($dont_split_off_dir) {
+        $dir = "";
+        $file = $_;
+    }
+
+    $dir = "" if $dir eq ".";
+    $dir .= "/" if $dir;
+
+    $abs = $dir . $file;
+    my $was = $file;
+    $_ = $file;
+
+    $_ = normalize($abs) if $normalize;
+
+    # vars to use in perlexpr
+    $COUNT++;
+    $COUNT = sprintf("%0". length(scalar(@ARGV)) ."d", $COUNT);
+
+    if ($op) {
+        eval $op;
+        die $@ if $@;
+    }
+
+    my $will = $dir . $_;
+
+    if (!-e $abs) {
+        warn "no such file: '$was'";
+        $abort = 1;
+        next;
+    }
+
+    if (-d $abs && !$include_directories) {
+        next;
+    }
+
+    my $other = $will{$will} if exists $will{$will};
+    if ($other) {
+        warn "name '$will' for '$abs' already taken by '$other'.";
+        $abort = 1;
+        next;
+    }
+
+    next if $will eq $abs;
+
+    if (-e $will) {
+        warn "file '$will' already exists.";
+        $abort = 1;
+        next;
+    }
+
+    $will{$will} = $abs;
+    $was{$abs}   = $will;
+}
+
+exit 1 if $abort;
+
+foreach my $was (sort keys %was) {
+
+    my $will = $was{$was};
+
+    print "moving '$was' -> '$will'\n";
+
+    next if $dry;
+
+    system("mv", $was, $will) && die $!;
+}
+
+sub normalize {
+    my ($abs) = @_;
+
+    my $file = basename($abs);
+    my $ext  = "";
+
+    if (!-d $abs && $file =~ /^(.+)(\..+?)$/) {
+        ($file, $ext) = ($1, $2);
+    }
+
+    $_ = $file;
+
+    s/www\.[^\.]+\.[[:alnum:]]+//g;
+    s/'//g;
+    s/[^\w\.]+/_/g;
+    s/[\._]+/_/g;
+    s/^[\._]+//g;
+    s/[\._]+$//g;
+
+    $_ ||= "_empty_file_name";
+
+    return $_ . lc($ext);
+}
+
+### function filltemplate() ####################################################
+# create a file from a template
+
+use File::Copy;
+
+die "Usage: filltemplate" .
+    " file_to_create_from_template field1=value1 field2=value2 ...\n"
+    if @ARGV < 2;
+
+my ($file, @tuples) = @ARGV;
+my $template = $file. ".template";
+
+die "Template not found: $template" if !-e $template;
+die "Specify mappings." if !@tuples;
+
+$/ = undef;
+
+open(my $templatef, "<", $template) || die $!;
+my $data = <$templatef>;
+close($templatef);
+
+for my $tuple (@tuples) {
+
+    my ($name, $value) = $tuple =~ /^(.+?)=(.+)$/;
+
+    $name = "TEMPL_" . uc($name);
+
+    die "No such field: $name\n" if $data !~ /$name/;
+
+    $data =~ s/$name/$value/igm;
+}
+
+my $temp = "/tmp/$file.$$"; 
+open(my $tempf, ">", $temp) || die $!;
+print $tempf $data;
+close($tempf);
+
+move($temp, $file) || die $!;
 
 ### END ########################################################################
