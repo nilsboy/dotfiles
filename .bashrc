@@ -531,10 +531,10 @@ function m() {
     fi
 
     (
-        _printifok perldoc perldoc -f $cmd
         _printifok help help -m $cmd
         _printifok man man -a $cmd || \
         _printifok internet _man_internet $cmd
+        _printifok perldoc perldoc -f $cmd
         _printifok apt-search apt-cache search $cmd
         _printifok related man -k $cmd
 
@@ -543,7 +543,7 @@ function m() {
 
 function _man_internet() {
     local cmd=$1
-    links -dump http://man.cx/$cmd \
+    wcat -s http://man.cx/$cmd \
         | perl -0777 -pe 's/^.*\n(?=\s*NAME\s*$)|\n\s*COMMENTS.*$//smg' \
         | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/' \
         && echo
@@ -569,16 +569,16 @@ EOF
 
 # translate a word
 function tl() {
-    links -dump "http://dict.leo.org/ende?lang=de&search=$@" \
-        | perl -ne 'print "$1\n" if /^\s*\|(.+)\|\s*$/' \
-        | tac;
+    wcat -s "http://dict.leo.org/ende?lang=de&search=$@" \
+        | perl -0777 -ne 'print "$1\n" if /Treffer(.+)$/igsm' \
+        | less -S;
 }
 
 ### network functions ##########################################################
 
 # find own public ip if behind firewall etc
 function publicip() {
-    caturl http://checkip.dyndns.org \
+    wcat http://checkip.dyndns.org \
         | perl -ne '/Address\: (.+?)</i || die; print $1'
 }
 
@@ -596,26 +596,6 @@ function freeport() {
         | perl -0777 -ne '@ports = /tcp.*?\:(\d+)\s+/imsg ; for $port ('$ports') {if(!grep(/^$port$/, @ports)) { print $port; last } }'
 }
 
-# fetch a page - in case no other tool is available
-function caturl() {
-
-    local IFS=$'\n';
-
-    perl - $@ <<'EOF'
-
-    use LWP::UserAgent;
-    my $ua = LWP::UserAgent->new;
-    $ua->add_handler( response_done =>
-        sub { my ( $response, $ua, $h ) = @_; die if $response->is_error } );
-
-    my $url = $ARGV[0];
-    $url = "http://" . $url if $url !~ /^.+\:\/\//;
-    my $req = HTTP::Request->new( GET => $url );
-    print $ua->request($req)->content;
-EOF
-
-}
-
 ### conf files handling ########################################################
 
 # cp dotfile from github
@@ -623,8 +603,7 @@ function _cphub() {
     local tmp=$(basename $1).$$
     (
         set -e
-        wget -q --no-check-certificate \
-            -O $tmp http://github.com/evenless/etc/raw/master/$1
+        wcat http://github.com/evenless/etc/raw/master/$1 >$tmp
     )
     mv -f $tmp $1
 }
@@ -1244,15 +1223,14 @@ function setupcpanm() { (
     cd $WD
 
     INFO "setting up local::lib..."
-    wget -q \
-    http://search.cpan.org/CPAN/authors/id/G/GE/GETTY/local-lib-1.006007.tar.gz
-
-    tar xfz local-lib*tar.gz
+    wcat \
+    search.cpan.org/CPAN/authors/id/G/GE/GETTY/local-lib-1.006007.tar.gz \
+    | tar xfz -
 
     cd local-lib*/
 
-    perl Makefile.PL --bootstrap 1>/dev/null
-    make install 1>/dev/null
+    perl Makefile.PL --bootstrap >/dev/null
+    make install >/dev/null
 
     cd /tmp
     rm $WD -rf
@@ -1264,7 +1242,8 @@ function setupcpanm() { (
         rm cpanm
     fi
 
-    wget -q http://cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.1001/bin/cpanm
+    wcat cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.1001/bin/cpanm \
+        > cpanm
     perl -p -i -e 's/^#\!perl$/#\!\/usr\/bin\/perl/g' cpanm
     chmod +x cpanm
 
@@ -1979,9 +1958,10 @@ function _run_perl_app() {(
 function _setup_perl_apps() {
 
     while read funct ; do
-        alias $funct="_run_perl_app $funct"
+        eval "function $funct() { _run_perl_app $funct \"\$@\" ; }"
     done<<EOF
-        $(perl -ne 'foreach (/^### function (.+?)\(/) {print "$_\n" }' $REMOTE_BASHRC)
+        $(perl -ne 'foreach (/^### function (.+?)\(/) {print "$_\n" }' \
+            $REMOTE_BASHRC)
 EOF
 }
 
@@ -1989,7 +1969,6 @@ _setup_perl_apps
 
 alias normalizefilenames="xmv -ndx"
 
-unalias csvview
 function csvview() {
     _run_perl_app csvview "$@" | less -S
 }
@@ -2797,5 +2776,890 @@ print $tempf $data;
 close($tempf);
 
 move($temp, $file) || die $!;
+
+### function wcat() ############################################################
+
+use Getopt::Long;
+
+my $opts = {
+    "h|headers"    => \my $show_headers,
+    "s|strip-tags" => \my $strip_tags,
+};
+GetOptions(%$opts) or die "Usage:\n" . join( "\n", sort keys %$opts ) . "\n";
+
+my $url = $ARGV[0] || die "Specify URL.";
+
+if ( $url !~ m#^(.+?)://# ) {
+    $url = "http://$url";
+}
+
+my $response = HTTP::Tiny->new->get($url);
+
+die "Failed: " . $response->{status} . " = " . $response->{reason} . "\n"
+    unless $response->{success};
+
+if ($show_headers) {
+    while ( my ( $k, $v ) = each %{ $response->{headers} } ) {
+        for ( ref $v eq 'ARRAY' ? @$v : $v ) {
+            print "$k: $_\n";
+        }
+    }
+    exit;
+}
+
+exit if ! length $response->{content};
+
+my $content = $response->{content};
+
+if($strip_tags) {
+    $content =~ s#<\s*script.+?>.+?</script>##imsg;
+    $content =~ s#<\s*head.+?>.+?</head>##imsg;
+    $content =~ s#\n+##igms;
+    $content =~ s#<(br)/*>#\n#igms;
+    $content =~ s#<(li).*?>#\* #igms;
+    $content =~ s#</(li).*?>#\n#igms;
+    $content =~ s#</(p|div).*?>#\n\n#igms;
+    $content =~ s#</h\d+.*?>#\n\n#igms;
+    $content =~ s#<.+?/>\n*##igms;
+    $content =~ s#<td.*?>#\t#igms;
+    $content =~ s#</tr.*?>#\n#igms;
+
+    $content =~ s#<.+?>##igms;
+
+    $content =~ s#&minus;#-#igms;
+    $content =~ s#&gt;#>#igms;
+    $content =~ s#&lt;#<#igms;
+    $content =~ s#&\w+;# #igms;
+    $content =~ s/&#\d+;/ /igms;
+}
+
+print $content;
+
+BEGIN {
+
+    package HTTP::Tiny;
+
+    use strict;
+    use warnings;
+    our $VERSION = '0.013';    # VERSION
+
+    use Carp ();
+
+    my @attributes;
+
+    BEGIN {
+        @attributes
+            = qw(agent default_headers max_redirect max_size proxy timeout);
+        no strict 'refs';
+        for my $accessor (@attributes) {
+            *{$accessor} = sub {
+                @_ > 1 ? $_[0]->{$accessor} = $_[1] : $_[0]->{$accessor};
+            };
+        }
+    }
+
+    sub new {
+        my ( $class, %args ) = @_;
+        ( my $agent = $class ) =~ s{::}{-}g;
+        my $self = {
+            agent => $agent . "/" . ( $class->VERSION || 0 ),
+            max_redirect => 5,
+            timeout      => 60,
+        };
+        for my $key (@attributes) {
+            $self->{$key} = $args{$key} if exists $args{$key};
+        }
+
+        # Never override proxy argument as this breaks backwards compat.
+        if ( !exists $self->{proxy} && ( my $http_proxy = $ENV{http_proxy} ) ) {
+            if ( $http_proxy =~ m{\Ahttp://[^/?#:@]+:\d+/?\z} ) {
+                $self->{proxy} = $http_proxy;
+            }
+            else {
+                Carp::croak(
+                    qq{Environment 'http_proxy' must be in format http://<host>:<port>/\n}
+                );
+            }
+        }
+
+        return bless $self, $class;
+    }
+
+    sub get {
+        my ( $self, $url, $args ) = @_;
+        @_ == 2 || ( @_ == 3 && ref $args eq 'HASH' )
+            or Carp::croak( q/Usage: $http->get(URL, [HASHREF])/ . "\n" );
+        return $self->request( 'GET', $url, $args || {} );
+    }
+
+    sub mirror {
+        my ( $self, $url, $file, $args ) = @_;
+        @_ == 3 || ( @_ == 4 && ref $args eq 'HASH' )
+            or
+            Carp::croak( q/Usage: $http->mirror(URL, FILE, [HASHREF])/ . "\n" );
+        if ( -e $file and my $mtime = ( stat($file) )[9] ) {
+            $args->{headers}{'if-modified-since'} ||= $self->_http_date($mtime);
+        }
+        my $tempfile = $file . int( rand( 2**31 ) );
+        open my $fh, ">", $tempfile
+            or Carp::croak(
+            qq/Error: Could not open temporary file $tempfile for downloading: $!\n/
+            );
+        binmode $fh;
+        $args->{data_callback} = sub { print {$fh} $_[0] };
+        my $response = $self->request( 'GET', $url, $args );
+        close $fh
+            or Carp::croak(
+            qq/Error: Could not close temporary file $tempfile: $!\n/);
+        if ( $response->{success} ) {
+            rename $tempfile, $file
+                or Carp::croak(qq/Error replacing $file with $tempfile: $!\n/);
+            my $lm = $response->{headers}{'last-modified'};
+            if ( $lm and my $mtime = $self->_parse_http_date($lm) ) {
+                utime $mtime, $mtime, $file;
+            }
+        }
+        $response->{success} ||= $response->{status} eq '304';
+        unlink $tempfile;
+        return $response;
+    }
+
+    my %idempotent = map { $_ => 1 } qw/GET HEAD PUT DELETE OPTIONS TRACE/;
+
+    sub request {
+        my ( $self, $method, $url, $args ) = @_;
+        @_ == 3 || ( @_ == 4 && ref $args eq 'HASH' )
+            or Carp::croak(
+            q/Usage: $http->request(METHOD, URL, [HASHREF])/ . "\n" );
+        $args ||= {};    # we keep some state in this during _request
+
+        # RFC 2616 Section 8.1.4 mandates a single retry on broken socket
+        my $response;
+        for ( 0 .. 1 ) {
+            $response = eval { $self->_request( $method, $url, $args ) };
+            last
+                unless $@
+                    && $idempotent{$method}
+                    && $@ =~ m{^(?:Socket closed|Unexpected end)};
+        }
+
+        if ( my $e = "$@" ) {
+            $response = {
+                success => q{},
+                status  => 599,
+                reason  => 'Internal Exception',
+                content => $e,
+                headers => {
+                    'content-type'   => 'text/plain',
+                    'content-length' => length $e,
+                }
+            };
+        }
+        return $response;
+    }
+
+    my %DefaultPort = (
+        http  => 80,
+        https => 443,
+    );
+
+    sub _request {
+        my ( $self, $method, $url, $args ) = @_;
+
+        my ( $scheme, $host, $port, $path_query ) = $self->_split_url($url);
+
+        my $request = {
+            method => $method,
+            scheme => $scheme,
+            host_port =>
+                ( $port == $DefaultPort{$scheme} ? $host : "$host:$port" ),
+            uri     => $path_query,
+            headers => {},
+        };
+
+        my $handle = HTTP::Tiny::Handle->new( timeout => $self->{timeout} );
+
+        if ( $self->{proxy} ) {
+            $request->{uri} = "$scheme://$request->{host_port}$path_query";
+            die(qq/HTTPS via proxy is not supported\n/)
+                if $request->{scheme} eq 'https';
+            $handle->connect(
+                ( $self->_split_url( $self->{proxy} ) )[ 0 .. 2 ] );
+        }
+        else {
+            $handle->connect( $scheme, $host, $port );
+        }
+
+        $self->_prepare_headers_and_cb( $request, $args );
+        $handle->write_request($request);
+
+        my $response;
+        do { $response = $handle->read_response_header }
+            until ( substr( $response->{status}, 0, 1 ) ne '1' );
+
+        if ( my @redir_args
+            = $self->_maybe_redirect( $request, $response, $args ) )
+        {
+            $handle->close;
+            return $self->_request( @redir_args, $args );
+        }
+
+        if ( $method eq 'HEAD' || $response->{status} =~ /^[23]04/ ) {
+
+            # response has no message body
+        }
+        else {
+            my $data_cb = $self->_prepare_data_cb( $response, $args );
+            $handle->read_body( $data_cb, $response );
+        }
+
+        $handle->close;
+        $response->{success} = substr( $response->{status}, 0, 1 ) eq '2';
+        return $response;
+    }
+
+    sub _prepare_headers_and_cb {
+        my ( $self, $request, $args ) = @_;
+
+        for ( $self->{default_headers}, $args->{headers} ) {
+            next unless defined;
+            while ( my ( $k, $v ) = each %$_ ) {
+                $request->{headers}{ lc $k } = $v;
+            }
+        }
+        $request->{headers}{'host'}       = $request->{host_port};
+        $request->{headers}{'connection'} = "close";
+        $request->{headers}{'user-agent'} ||= $self->{agent};
+
+        if ( defined $args->{content} ) {
+            $request->{headers}{'content-type'} ||= "application/octet-stream";
+            if ( ref $args->{content} eq 'CODE' ) {
+                $request->{headers}{'transfer-encoding'} = 'chunked'
+                    unless $request->{headers}{'content-length'}
+                        || $request->{headers}{'transfer-encoding'};
+                $request->{cb} = $args->{content};
+            }
+            else {
+                my $content = $args->{content};
+                if ( $] ge '5.008' ) {
+                    utf8::downgrade( $content, 1 )
+                        or die(qq/Wide character in request message body\n/);
+                }
+                $request->{headers}{'content-length'} = length $content
+                    unless $request->{headers}{'content-length'}
+                        || $request->{headers}{'transfer-encoding'};
+                $request->{cb}
+                    = sub { substr $content, 0, length $content, '' };
+            }
+            $request->{trailer_cb} = $args->{trailer_callback}
+                if ref $args->{trailer_callback} eq 'CODE';
+        }
+        return;
+    }
+
+    sub _prepare_data_cb {
+        my ( $self, $response, $args ) = @_;
+        my $data_cb = $args->{data_callback};
+        $response->{content} = '';
+
+        if ( !$data_cb || $response->{status} !~ /^2/ ) {
+            if ( defined $self->{max_size} ) {
+                $data_cb = sub {
+                    $_[1]->{content} .= $_[0];
+                    die(qq/Size of response body exceeds the maximum allowed of $self->{max_size}\n/
+                    ) if length $_[1]->{content} > $self->{max_size};
+                };
+            }
+            else {
+                $data_cb = sub { $_[1]->{content} .= $_[0] };
+            }
+        }
+        return $data_cb;
+    }
+
+    sub _maybe_redirect {
+        my ( $self, $request, $response, $args ) = @_;
+        my $headers = $response->{headers};
+        my ( $status, $method ) = ( $response->{status}, $request->{method} );
+        if ((   $status eq '303'
+                or ( $status =~ /^30[127]/ && $method =~ /^GET|HEAD$/ )
+            )
+            and $headers->{location}
+            and ++$args->{redirects} <= $self->{max_redirect}
+            )
+        {
+            my $location
+                = ( $headers->{location} =~ /^\// )
+                ? "$request->{scheme}://$request->{host_port}$headers->{location}"
+                : $headers->{location};
+            return ( ( $status eq '303' ? 'GET' : $method ), $location );
+        }
+        return;
+    }
+
+    sub _split_url {
+        my $url = pop;
+
+        # URI regex adapted from the URI module
+        my ( $scheme, $authority, $path_query )
+            = $url =~ m<\A([^:/?#]+)://([^/?#]*)([^#]*)>
+            or die(qq/Cannot parse URL: '$url'\n/);
+
+        $scheme = lc $scheme;
+        $path_query = "/$path_query" unless $path_query =~ m<\A/>;
+
+        my $host = ( length($authority) ) ? lc $authority : 'localhost';
+        $host =~ s/\A[^@]*@//;    # userinfo
+        my $port = do {
+            $host =~ s/:([0-9]*)\z// && length $1
+                ? $1
+                : ( $scheme eq 'http' ? 80 : $scheme eq 'https' ? 443 : undef );
+        };
+
+        return ( $scheme, $host, $port, $path_query );
+    }
+
+    # Date conversions adapted from HTTP::Date
+    my $DoW = "Sun|Mon|Tue|Wed|Thu|Fri|Sat";
+    my $MoY = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
+
+    sub _http_date {
+        my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime( $_[1] );
+        return sprintf(
+            "%s, %02d %s %04d %02d:%02d:%02d GMT",
+            substr( $DoW, $wday * 4, 3 ),
+            $mday,
+            substr( $MoY, $mon * 4, 3 ),
+            $year + 1900,
+            $hour, $min, $sec
+        );
+    }
+
+    sub _parse_http_date {
+        my ( $self, $str ) = @_;
+        require Time::Local;
+        my @tl_parts;
+        if ( $str
+            =~ /^[SMTWF][a-z]+, +(\d{1,2}) ($MoY) +(\d\d\d\d) +(\d\d):(\d\d):(\d\d) +GMT$/
+            )
+        {
+            @tl_parts = ( $6, $5, $4, $1, ( index( $MoY, $2 ) / 4 ), $3 );
+        }
+        elsif ( $str
+            =~ /^[SMTWF][a-z]+, +(\d\d)-($MoY)-(\d{2,4}) +(\d\d):(\d\d):(\d\d) +GMT$/
+            )
+        {
+            @tl_parts = ( $6, $5, $4, $1, ( index( $MoY, $2 ) / 4 ), $3 );
+        }
+        elsif ( $str
+            =~ /^[SMTWF][a-z]+ +($MoY) +(\d{1,2}) +(\d\d):(\d\d):(\d\d) +(?:[^0-9]+ +)?(\d\d\d\d)$/
+            )
+        {
+            @tl_parts = ( $5, $4, $3, $2, ( index( $MoY, $1 ) / 4 ), $6 );
+        }
+        return eval {
+            my $t = @tl_parts ? Time::Local::timegm(@tl_parts) : -1;
+            $t < 0 ? undef : $t;
+        };
+    }
+
+    package HTTP::Tiny::Handle;    # hide from PAUSE/indexers
+    use strict;
+    use warnings;
+
+    use Errno qw[EINTR EPIPE];
+    use IO::Socket qw[SOCK_STREAM];
+
+    sub BUFSIZE () {32768}
+
+    my $Printable = sub {
+        local $_ = shift;
+        s/\r/\\r/g;
+        s/\n/\\n/g;
+        s/\t/\\t/g;
+        s/([^\x20-\x7E])/sprintf('\\x%.2X', ord($1))/ge;
+        $_;
+    };
+
+    my $Token
+        = qr/[\x21\x23-\x27\x2A\x2B\x2D\x2E\x30-\x39\x41-\x5A\x5E-\x7A\x7C\x7E]/;
+
+    sub new {
+        my ( $class, %args ) = @_;
+        return bless {
+            rbuf             => '',
+            timeout          => 60,
+            max_line_size    => 16384,
+            max_header_lines => 64,
+            %args
+        }, $class;
+    }
+
+    my $ssl_verify_args = {
+        check_cn         => "when_only",
+        wildcards_in_alt => "anywhere",
+        wildcards_in_cn  => "anywhere"
+    };
+
+    sub connect {
+        @_ == 4 || die( q/Usage: $handle->connect(scheme, host, port)/ . "\n" );
+        my ( $self, $scheme, $host, $port ) = @_;
+
+        if ( $scheme eq 'https' ) {
+            eval "require IO::Socket::SSL"
+                unless exists $INC{'IO/Socket/SSL.pm'};
+            die(qq/IO::Socket::SSL must be installed for https support\n/)
+                unless $INC{'IO/Socket/SSL.pm'};
+        }
+        elsif ( $scheme ne 'http' ) {
+            die(qq/Unsupported URL scheme '$scheme'\n/);
+        }
+
+        $self->{fh} = 'IO::Socket::INET'->new(
+            PeerHost => $host,
+            PeerPort => $port,
+            Proto    => 'tcp',
+            Type     => SOCK_STREAM,
+            Timeout  => $self->{timeout}
+        ) or die(qq/Could not connect to '$host:$port': $@\n/);
+
+        binmode( $self->{fh} )
+            or die(qq/Could not binmode() socket: '$!'\n/);
+
+        if ( $scheme eq 'https' ) {
+            IO::Socket::SSL->start_SSL( $self->{fh} );
+            ref( $self->{fh} ) eq 'IO::Socket::SSL'
+                or die(qq/SSL connection failed for $host\n/);
+            $self->{fh}->verify_hostname( $host, $ssl_verify_args )
+                or die(qq/SSL certificate not valid for $host\n/);
+        }
+
+        $self->{host} = $host;
+        $self->{port} = $port;
+
+        return $self;
+    }
+
+    sub close {
+        @_ == 1 || die( q/Usage: $handle->close()/ . "\n" );
+        my ($self) = @_;
+        CORE::close( $self->{fh} )
+            or die(qq/Could not close socket: '$!'\n/);
+    }
+
+    sub write {
+        @_ == 2 || die( q/Usage: $handle->write(buf)/ . "\n" );
+        my ( $self, $buf ) = @_;
+
+        if ( $] ge '5.008' ) {
+            utf8::downgrade( $buf, 1 )
+                or die(qq/Wide character in write()\n/);
+        }
+
+        my $len = length $buf;
+        my $off = 0;
+
+        local $SIG{PIPE} = 'IGNORE';
+
+        while () {
+            $self->can_write
+                or die(
+                qq/Timed out while waiting for socket to become ready for writing\n/
+                );
+            my $r = syswrite( $self->{fh}, $buf, $len, $off );
+            if ( defined $r ) {
+                $len -= $r;
+                $off += $r;
+                last unless $len > 0;
+            }
+            elsif ( $! == EPIPE ) {
+                die(qq/Socket closed by remote server: $!\n/);
+            }
+            elsif ( $! != EINTR ) {
+                die(qq/Could not write to socket: '$!'\n/);
+            }
+        }
+        return $off;
+    }
+
+    sub read {
+        @_ == 2
+            || @_ == 3
+            || die( q/Usage: $handle->read(len [, allow_partial])/ . "\n" );
+        my ( $self, $len, $allow_partial ) = @_;
+
+        my $buf = '';
+        my $got = length $self->{rbuf};
+
+        if ($got) {
+            my $take = ( $got < $len ) ? $got : $len;
+            $buf = substr( $self->{rbuf}, 0, $take, '' );
+            $len -= $take;
+        }
+
+        while ( $len > 0 ) {
+            $self->can_read
+                or die(
+                q/Timed out while waiting for socket to become ready for reading/
+                    . "\n" );
+            my $r = sysread( $self->{fh}, $buf, $len, length $buf );
+            if ( defined $r ) {
+                last unless $r;
+                $len -= $r;
+            }
+            elsif ( $! != EINTR ) {
+                die(qq/Could not read from socket: '$!'\n/);
+            }
+        }
+        if ( $len && !$allow_partial ) {
+            die(qq/Unexpected end of stream\n/);
+        }
+        return $buf;
+    }
+
+    sub readline {
+        @_ == 1 || die( q/Usage: $handle->readline()/ . "\n" );
+        my ($self) = @_;
+
+        while () {
+            if ( $self->{rbuf} =~ s/\A ([^\x0D\x0A]* \x0D?\x0A)//x ) {
+                return $1;
+            }
+            if ( length $self->{rbuf} >= $self->{max_line_size} ) {
+                die(qq/Line size exceeds the maximum allowed size of $self->{max_line_size}\n/
+                );
+            }
+            $self->can_read
+                or die(
+                qq/Timed out while waiting for socket to become ready for reading\n/
+                );
+            my $r = sysread( $self->{fh}, $self->{rbuf}, BUFSIZE,
+                length $self->{rbuf} );
+            if ( defined $r ) {
+                last unless $r;
+            }
+            elsif ( $! != EINTR ) {
+                die(qq/Could not read from socket: '$!'\n/);
+            }
+        }
+        die(qq/Unexpected end of stream while looking for line\n/);
+    }
+
+    sub read_header_lines {
+        @_ == 1
+            || @_ == 2
+            || die( q/Usage: $handle->read_header_lines([headers])/ . "\n" );
+        my ( $self, $headers ) = @_;
+        $headers ||= {};
+        my $lines = 0;
+        my $val;
+
+        while () {
+            my $line = $self->readline;
+
+            if ( ++$lines >= $self->{max_header_lines} ) {
+                die(qq/Header lines exceeds maximum number allowed of $self->{max_header_lines}\n/
+                );
+            }
+            elsif ( $line
+                =~ /\A ([^\x00-\x1F\x7F:]+) : [\x09\x20]* ([^\x0D\x0A]*)/x )
+            {
+                my ($field_name) = lc $1;
+                if ( exists $headers->{$field_name} ) {
+                    for ( $headers->{$field_name} ) {
+                        $_ = [$_] unless ref $_ eq "ARRAY";
+                        push @$_, $2;
+                        $val = \$_->[-1];
+                    }
+                }
+                else {
+                    $val = \( $headers->{$field_name} = $2 );
+                }
+            }
+            elsif ( $line =~ /\A [\x09\x20]+ ([^\x0D\x0A]*)/x ) {
+                $val
+                    or die(qq/Unexpected header continuation line\n/);
+                next unless length $1;
+                $$val .= ' ' if length $$val;
+                $$val .= $1;
+            }
+            elsif ( $line =~ /\A \x0D?\x0A \z/x ) {
+                last;
+            }
+            else {
+                die( q/Malformed header line: / . $Printable->($line) . "\n" );
+            }
+        }
+        return $headers;
+    }
+
+    sub write_request {
+        @_ == 2 || die( q/Usage: $handle->write_request(request)/ . "\n" );
+        my ( $self, $request ) = @_;
+        $self->write_request_header( @{$request}{qw/method uri headers/} );
+        $self->write_body($request) if $request->{cb};
+        return;
+    }
+
+    my %HeaderCase = (
+        'content-md5'      => 'Content-MD5',
+        'etag'             => 'ETag',
+        'te'               => 'TE',
+        'www-authenticate' => 'WWW-Authenticate',
+        'x-xss-protection' => 'X-XSS-Protection',
+    );
+
+    sub write_header_lines {
+        ( @_ == 2 && ref $_[1] eq 'HASH' )
+            || die( q/Usage: $handle->write_header_lines(headers)/ . "\n" );
+        my ( $self, $headers ) = @_;
+
+        my $buf = '';
+        while ( my ( $k, $v ) = each %$headers ) {
+            my $field_name = lc $k;
+            if ( exists $HeaderCase{$field_name} ) {
+                $field_name = $HeaderCase{$field_name};
+            }
+            else {
+                $field_name =~ /\A $Token+ \z/xo
+                    or die( q/Invalid HTTP header field name: /
+                        . $Printable->($field_name)
+                        . "\n" );
+                $field_name =~ s/\b(\w)/\u$1/g;
+                $HeaderCase{ lc $field_name } = $field_name;
+            }
+            for ( ref $v eq 'ARRAY' ? @$v : $v ) {
+                /[^\x0D\x0A]/
+                    or die( qq/Invalid HTTP header field value ($field_name): /
+                        . $Printable->($_)
+                        . "\n" );
+                $buf .= "$field_name: $_\x0D\x0A";
+            }
+        }
+        $buf .= "\x0D\x0A";
+        return $self->write($buf);
+    }
+
+    sub read_body {
+        @_ == 3
+            || die( q/Usage: $handle->read_body(callback, response)/ . "\n" );
+        my ( $self, $cb, $response ) = @_;
+        my $te = $response->{headers}{'transfer-encoding'} || '';
+        if ( grep {/chunked/i} ( ref $te eq 'ARRAY' ? @$te : $te ) ) {
+            $self->read_chunked_body( $cb, $response );
+        }
+        else {
+            $self->read_content_body( $cb, $response );
+        }
+        return;
+    }
+
+    sub write_body {
+        @_ == 2 || die( q/Usage: $handle->write_body(request)/ . "\n" );
+        my ( $self, $request ) = @_;
+        if ( $request->{headers}{'content-length'} ) {
+            return $self->write_content_body($request);
+        }
+        else {
+            return $self->write_chunked_body($request);
+        }
+    }
+
+    sub read_content_body {
+        @_ == 3
+            || @_ == 4
+            || die(
+            q/Usage: $handle->read_content_body(callback, response, [read_length])/
+                . "\n" );
+        my ( $self, $cb, $response, $content_length ) = @_;
+        $content_length ||= $response->{headers}{'content-length'};
+
+        if ($content_length) {
+            my $len = $content_length;
+            while ( $len > 0 ) {
+                my $read = ( $len > BUFSIZE ) ? BUFSIZE : $len;
+                $cb->( $self->read( $read, 0 ), $response );
+                $len -= $read;
+            }
+        }
+        else {
+            my $chunk;
+            $cb->( $chunk, $response )
+                while length( $chunk = $self->read( BUFSIZE, 1 ) );
+        }
+
+        return;
+    }
+
+    sub write_content_body {
+        @_ == 2 || die( q/Usage: $handle->write_content_body(request)/ . "\n" );
+        my ( $self, $request ) = @_;
+
+        my ( $len, $content_length )
+            = ( 0, $request->{headers}{'content-length'} );
+        while () {
+            my $data = $request->{cb}->();
+
+            defined $data && length $data
+                or last;
+
+            if ( $] ge '5.008' ) {
+                utf8::downgrade( $data, 1 )
+                    or die(qq/Wide character in write_content()\n/);
+            }
+
+            $len += $self->write($data);
+        }
+
+        $len == $content_length
+            or die(
+            qq/Content-Length missmatch (got: $len expected: $content_length)\n/
+            );
+
+        return $len;
+    }
+
+    sub read_chunked_body {
+        @_ == 3
+            || die(
+            q/Usage: $handle->read_chunked_body(callback, $response)/ . "\n" );
+        my ( $self, $cb, $response ) = @_;
+
+        while () {
+            my $head = $self->readline;
+
+            $head =~ /\A ([A-Fa-f0-9]+)/x
+                or
+                die( q/Malformed chunk head: / . $Printable->($head) . "\n" );
+
+            my $len = hex($1)
+                or last;
+
+            $self->read_content_body( $cb, $response, $len );
+
+            $self->read(2) eq "\x0D\x0A"
+                or die(qq/Malformed chunk: missing CRLF after chunk data\n/);
+        }
+        $self->read_header_lines( $response->{headers} );
+        return;
+    }
+
+    sub write_chunked_body {
+        @_ == 2 || die( q/Usage: $handle->write_chunked_body(request)/ . "\n" );
+        my ( $self, $request ) = @_;
+
+        my $len = 0;
+        while () {
+            my $data = $request->{cb}->();
+
+            defined $data && length $data
+                or last;
+
+            if ( $] ge '5.008' ) {
+                utf8::downgrade( $data, 1 )
+                    or die(qq/Wide character in write_chunked_body()\n/);
+            }
+
+            $len += length $data;
+
+            my $chunk = sprintf '%X', length $data;
+            $chunk .= "\x0D\x0A";
+            $chunk .= $data;
+            $chunk .= "\x0D\x0A";
+
+            $self->write($chunk);
+        }
+        $self->write("0\x0D\x0A");
+        $self->write_header_lines( $request->{trailer_cb}->() )
+            if ref $request->{trailer_cb} eq 'CODE';
+        return $len;
+    }
+
+    sub read_response_header {
+        @_ == 1 || die( q/Usage: $handle->read_response_header()/ . "\n" );
+        my ($self) = @_;
+
+        my $line = $self->readline;
+
+        $line
+            =~ /\A (HTTP\/(0*\d+\.0*\d+)) [\x09\x20]+ ([0-9]{3}) [\x09\x20]+ ([^\x0D\x0A]*) \x0D?\x0A/x
+            or die( q/Malformed Status-Line: / . $Printable->($line) . "\n" );
+
+        my ( $protocol, $version, $status, $reason ) = ( $1, $2, $3, $4 );
+
+        die(qq/Unsupported HTTP protocol: $protocol\n/)
+            unless $version =~ /0*1\.0*[01]/;
+
+        return {
+            status   => $status,
+            reason   => $reason,
+            headers  => $self->read_header_lines,
+            protocol => $protocol,
+        };
+    }
+
+    sub write_request_header {
+        @_ == 4
+            || die(
+            q/Usage: $handle->write_request_header(method, request_uri, headers)/
+                . "\n" );
+        my ( $self, $method, $request_uri, $headers ) = @_;
+
+        return $self->write("$method $request_uri HTTP/1.1\x0D\x0A")
+            + $self->write_header_lines($headers);
+    }
+
+    sub _do_timeout {
+        my ( $self, $type, $timeout ) = @_;
+        $timeout = $self->{timeout}
+            unless defined $timeout && $timeout >= 0;
+
+        my $fd = fileno $self->{fh};
+        defined $fd && $fd >= 0
+            or die(qq/select(2): 'Bad file descriptor'\n/);
+
+        my $initial = time;
+        my $pending = $timeout;
+        my $nfound;
+
+        vec( my $fdset = '', $fd, 1 ) = 1;
+
+        while () {
+            $nfound
+                = ( $type eq 'read' )
+                ? select( $fdset, undef,  undef, $pending )
+                : select( undef,  $fdset, undef, $pending );
+            if ( $nfound == -1 ) {
+                $! == EINTR
+                    or die(qq/select(2): '$!'\n/);
+                redo
+                    if !$timeout
+                        || ( $pending = $timeout - ( time - $initial ) ) > 0;
+                $nfound = 0;
+            }
+            last;
+        }
+        $! = 0;
+        return $nfound;
+    }
+
+    sub can_read {
+        @_ == 1
+            || @_ == 2
+            || die( q/Usage: $handle->can_read([timeout])/ . "\n" );
+        my $self = shift;
+        return $self->_do_timeout( 'read', @_ );
+    }
+
+    sub can_write {
+        @_ == 1
+            || @_ == 2
+            || die( q/Usage: $handle->can_write([timeout])/ . "\n" );
+        my $self = shift;
+        return $self->_do_timeout( 'write', @_ );
+    }
+
+    1;
+}
 
 ### END ########################################################################
