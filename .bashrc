@@ -377,8 +377,12 @@ function findolderthandays() {
     find . -type f -ctime +$@ | less
 }
 
-function findlastchanges() {
+function findnewest() {
     find -type f -printf "%CF %CH:%CM %h/%f\n" | sort | tac | less
+}
+
+function findfromdate() {
+    findnewest | perl -ne 'print if m#^\Q'$@'\E#' | less
 }
 
 function findlargestfiles() {
@@ -525,8 +529,8 @@ function wp() {
 # quick command help lookup
 function m() {
 
-    local cmd=$1
-    local arg=$2
+    local cmd=$1 ; shift
+    local arg="$@"
 
     if [[ $arg =~ ^- ]] ; then
        arg=" {3,}"$arg
