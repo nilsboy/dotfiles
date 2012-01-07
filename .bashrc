@@ -356,7 +356,8 @@ function abs() {
 
         my $file = $ARGV[0] || ".";
 
-        if($file !~ /^\//) {
+        if($file !~ m#^/#) {
+
             while($file =~ s#^\.\./##g) {
                 pop(@cwd);
             }
@@ -364,6 +365,7 @@ function abs() {
             $file = join("/", @cwd) . "/" . $file;
         }
 
+        $file =~ s#/\.##g;
         $file .= "/" if -d $file;
 
         print $file . "\n";
