@@ -125,7 +125,7 @@ export VISUAL=vi
 
 alias cp="cp -i"
 alias mv="mv -i"
-export LESS="-j.5 -inRgFX"
+export LESS="-j.5 -inRgS"
 alias crontab="crontab -i"
 
 alias ls='ls --color=auto --time-style=+"%F %H:%M" '
@@ -198,9 +198,9 @@ alias aptw="apt-cache show"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
-alias  t="simpletree "
-alias td="t -d"
-alias ts="t -sc"
+function  t() { simpletree "$@" | less ; }
+function td() { simpletree -d "$@" | less ; }
+function ts() { simpletree -sc "$@" | less ; }
 alias diffdir="diff -rq"
 
 # make less more friendly for non-text input files, see lesspipe(1)
@@ -371,13 +371,15 @@ EOF
 
 }
 
-function find_older_than_days() {
-    find . -type f -ctime +$@
+function findolderthandays() {
+    find . -type f -ctime +$@ | less
 }
 
-alias find_last_changes='find -type f -printf "%CF %CH:%CM %h/%f\n" | sort'
+function findlastchanges() {
+    find -type f -printf "%CF %CH:%CM %h/%f\n" | sort | tac | less
+}
 
-function find_largest_files() {
+function findlargestfiles() {
     find . -mount -type f -printf "%k %p\n" \
         | sort -rg \
         | cut -d \  -f 2- \
@@ -484,7 +486,7 @@ function p() {
 
     pstree -apl \
         | perl -ne '$x = "xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
-        | less -SR $args
+        | less $args
 }
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
@@ -571,7 +573,7 @@ EOF
 function tl() {
     wcat -s "http://dict.leo.org/ende?lang=de&search=$@" \
         | perl -0777 -ne 'print "$1\n" if /Treffer(.+)$/igsm' \
-        | less -S;
+        | less
 }
 
 ### network functions ##########################################################
@@ -1004,7 +1006,7 @@ function mysql() {
     fi
 
     xtitle "mysql@$h" && MYSQL_PS1="\\u@$h:\\d db> " \
-        command mysql --show-warnings --pager="less -S" "$@"
+        command mysql --show-warnings --pager="less -FX" "$@"
 }
 
 ### perl #######################################################################
@@ -1970,7 +1972,7 @@ _setup_perl_apps
 alias normalizefilenames="xmv -ndx"
 
 function csvview() {
-    _run_perl_app csvview "$@" | less -S
+    _run_perl_app csvview "$@" | less
 }
 
 function j() {
