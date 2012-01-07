@@ -425,7 +425,7 @@ function ga() {
     perl -e 'while(my $l = <STDIN>) { $m=1; foreach(@ARGV) { $m=0 if $l !~ /$_/i }; print $l if $m; }' "$@"
 }
 
-# quick find a file matching pattern
+# quick find a file or dir matching pattern exclude hidden
 function f() { (
 
     local search="$@"
@@ -434,12 +434,12 @@ function f() { (
         search=.
     fi
 
-    find . -mount \
-        | perl -MFile::Basename -ne 'print if m#'$search'(?!\/)#i' \
+    fa $search \
+        | perl -MFile::Basename -ne 'print if ! m#/\.#' \
         | grep -i "$search"
 ) }
 
-# quick find a path matching pattern
+# quick find a file or dir matching pattern
 function fa() { (
 
     local search="$@"
@@ -449,7 +449,7 @@ function fa() { (
     fi
 
     find . -mount \
-        | perl -ne 'print if /'$search'/i && $_ !~ /\/\.{1,2}|^\.$/' \
+        | perl -MFile::Basename -ne 'print if m#'$search'(?!.*\/.*)#i' \
         | grep -i "$search"
 ) }
 
