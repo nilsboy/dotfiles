@@ -125,7 +125,7 @@ export VISUAL=vi
 
 alias cp="cp -i"
 alias mv="mv -i"
-export LESS="-j.5 -inRg"
+export LESS="-j.5 -inRgFX"
 alias crontab="crontab -i"
 
 alias ls='ls --color=auto --time-style=+"%F %H:%M" '
@@ -538,7 +538,7 @@ function m() {
         _printifok apt-search apt-cache search $cmd
         _printifok related man -k $cmd
 
-    ) | less +/"$arg"
+    ) | LESS="-j.5 -inRg" less +/"$arg"
 }
 
 function _man_internet() {
