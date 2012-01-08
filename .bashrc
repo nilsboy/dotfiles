@@ -136,6 +136,7 @@ alias lc='ls -rtlhc'
 alias cdt='cd $REMOTE_HOME/tmp'
 
 alias lsop='netstat -tapn'
+alias df='df -h | csvview'
 
 # search history for an existing directory containing string and go there
 function cdh() {
