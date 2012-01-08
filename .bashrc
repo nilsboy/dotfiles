@@ -397,19 +397,16 @@ export GREP_OPTIONS="--color=auto"
 alias listgrep="grep -xFf"
 
 # a simple grep without the need for quoting or excluding dot files
-alias gi="set -f && _gi"
-alias  g="set -f && _gi ."
-function _gi() { (
-
-    if [[ $# < 2 ]] ; then
-        DIE "\nusage: g  [search term]\nor   : gi [filename pattern] [search term]"
-    fi
-
+function g() {
+(
     trap "exit 1" SIGINT
+    set -f
 
-    local pattern=$1; shift;
-
-    f $pattern | xargs grep -sinH "$*" {}
+    if [[ -t 0 ]] ; then
+        ff | while read i; do _andgrep -pf "$i" $@ ; done
+    else
+        _andgrep $@
+    fi
 )
 
     local exit_code=$?
@@ -428,25 +425,6 @@ function goo() {
     perl -e 'while (my $l = <STDIN>) { foreach (sort { length($b) <=> length($a) } @ARGV) { print "$_\n" x $l =~ s/$_//ig; } }' "$@"
 }
 
-# and-grep
-function ga() {
-    perl -e 'while(my $l = <STDIN>) { $m=1; foreach(@ARGV) { $m=0 if $l !~ /$_/i }; print $l if $m; }' "$@"
-}
-
-# quick find a file or dir matching pattern exclude hidden
-function f() { (
-
-    local search="$@"
-
-    if [[ ! $search ]] ; then
-        search=.
-    fi
-
-    fa $search \
-        | perl -MFile::Basename -ne 'print if ! m#/\.#' \
-        | grep -i "$search"
-) }
-
 # quick find a file or dir matching pattern
 function fa() { (
 
@@ -461,6 +439,33 @@ function fa() { (
         | grep -i "$search"
 ) }
 
+# quick find a file or dir matching pattern exclude hidden
+function f() { (
+
+    local search="$@"
+
+    if [[ ! $search ]] ; then
+        search=.
+    fi
+
+    fa "$search" \
+        | perl -MFile::Basename -ne 'print if ! m#/\.#' \
+        | grep -i "$search"
+) }
+
+function ff() {
+
+    local search="$@"
+
+    if [[ ! $search ]] ; then
+        search=.
+    fi
+
+    f "$search" \
+        | perl -MFile::Basename -nle 'print if ! m#/\.# && ! -d $_' \
+        | grep -i "$search"
+    true;
+}
 
 # backup a file appending a date
 function bak() {
@@ -3668,6 +3673,46 @@ BEGIN {
     }
 
     1;
+}
+
+### function _andgrep() ############################################################
+
+use strict;
+use warnings;
+use Data::Dumper;
+use Getopt::Long;
+Getopt::Long::Configure("bundling");
+
+my $red      = "\x1b[38;5;124m";
+my $no_color = "\x1b[33;0m";
+
+my $opts = {
+    "f|file=s" => \my $file,
+    "p|prefix-file-name" => \my $prefix,
+};
+GetOptions(%$opts) or die "Usage:\n$0 " . join( "\n", sort keys %$opts ) . "\n";
+
+my @patterns = @ARGV;
+@patterns || die "Specify patterns to search for.";
+
+my $h = *STDIN;
+if ($file) {
+    open( $h, $file ) || die $!;
+}
+
+LINE: while (<$h>) {
+
+    foreach my $pattern (@patterns) {
+        if ( !s/$pattern/$red${pattern}$no_color/gi ) {
+            next LINE;
+        }
+    }
+
+    if($prefix) {
+        print "$file:$.:$_";
+    } else {
+        print;
+    }
 }
 
 ### END ########################################################################
