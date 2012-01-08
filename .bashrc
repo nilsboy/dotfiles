@@ -613,14 +613,12 @@ function freeport() {
 ### conf files handling ########################################################
 
 # cp dotfile from github
-function _cphub() {
-    local tmp=$(basename $1).$$
-    (
-        set -e
-        wcat http://github.com/evenless/etc/raw/master/$1 >$tmp
-    )
+function _cphub() {(
+    local tmp="/tmp/cphub.$$"
+    set -e
+    wcat http://github.com/evenless/etc/raw/master/$1 >$tmp
     mv -f $tmp $1
-}
+)}
 
 function bashrc_clean_environment() {
 
