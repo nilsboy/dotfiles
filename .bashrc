@@ -2017,7 +2017,21 @@ my %field_types = (
 
 my @field_type_order = qw(num nnum alph anum blank empty msc);
 
-my $file = shift @ARGV || die "File?";
+my $file;
+if(! -t STDIN) {
+    $file = "/tmp/csvvview.stdin.$$.csv";
+
+    open(F, ">", $file) || die $!;
+    while(<>) {
+        print F $_;
+    }
+    close(F);
+
+} else {
+    $file = shift @ARGV || die "File?";
+}
+
+open(F, $file) || die $!;
 
 my %stats        = (File => $file);
 my %fields       = ();
@@ -2245,6 +2259,10 @@ sub set_field_types {
             last;
         }
     }
+}
+
+END {
+    unlink($file) if -e $file;
 }
 
 ### function _display_jobs() ###################################################
