@@ -2821,10 +2821,13 @@ move($temp, $file) || die $!;
 ### function wcat() ############################################################
 
 use Getopt::Long;
+Getopt::Long::Configure("bundling");
 
 my $opts = {
-    "h|headers"    => \my $show_headers,
-    "s|strip-tags" => \my $strip_tags,
+    "h|headers"      => \my $show_headers,
+    "s|strip-tags"   => \my $strip_tags,
+    "f|save-to-file" => \my $to_file,
+    "o|overwrite"    => \my $overwrite,
 };
 GetOptions(%$opts) or die "Usage:\n" . join( "\n", sort keys %$opts ) . "\n";
 
@@ -2832,6 +2835,14 @@ my $url = $ARGV[0] || die "Specify URL.";
 
 if ( $url !~ m#^(.+?)://# ) {
     $url = "http://$url";
+}
+
+my $file;
+if($to_file) {
+    ($file) = $url =~ m#^.+?://.*?/(.+)$#;
+    print "Saving as: $file\n";
+    die "Error creating file name from url." if ! $file;
+    die "File exists: $file" if -f $file && ! $overwrite;
 }
 
 my $response = HTTP::Tiny->new->get($url);
@@ -2874,7 +2885,13 @@ if($strip_tags) {
     $content =~ s/&#\d+;/ /igms;
 }
 
-print $content;
+if($to_file) {
+    open(F, ">", $file) || die $!;
+    print F $content;
+    close(F);
+} else {
+    print $content;
+}
 
 BEGIN {
 
