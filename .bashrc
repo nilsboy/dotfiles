@@ -1983,7 +1983,7 @@ _setup_perl_apps
 alias normalizefilenames="xmv -ndx"
 
 function csvview() {
-    _run_perl_app csvview "$@" | less
+    _run_perl_app csvview "$@" | LESS= less -S
 }
 
 function j() {
@@ -2018,8 +2018,10 @@ my %field_types = (
 my @field_type_order = qw(num nnum alph anum blank empty msc);
 
 my $file;
+my $is_temp_file = 0;
 if(! -t STDIN) {
     $file = "/tmp/csvvview.stdin.$$.csv";
+    $is_temp_file = 1;
 
     open(F, ">", $file) || die $!;
     while(<>) {
@@ -2105,14 +2107,19 @@ sub find_delimiter {
     map { $special_char_count{$_}++ } @special_chars;
 
     my $delimiter;
-    my $max = 0;
-    foreach my $special_char (keys %special_char_count) {
-        next if $special_char_count{$special_char} < $max;
-        $delimiter = $special_char;
-        $max       = $special_char_count{$special_char};
+
+    if($sample =~ / {3,}/) {
+        $delimiter = " +";
+    } else {
+        my $max = 0;
+        foreach my $special_char (keys %special_char_count) {
+            next if $special_char_count{$special_char} < $max;
+            $delimiter = $special_char;
+            $max       = $special_char_count{$special_char};
+        }
     }
 
-    $stats{delimiter} = $delimiter;
+    $stats{delimiter} = '"' . $delimiter . '"';
     return $delimiter || die "No delimiter found.";
 }
 
@@ -2262,7 +2269,9 @@ sub set_field_types {
 }
 
 END {
-    unlink($file) if -e $file;
+    if($is_temp_file) {
+        unlink($file) if -e $file;
+    }
 }
 
 ### function _display_jobs() ###################################################
