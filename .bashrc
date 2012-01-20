@@ -382,8 +382,9 @@ function findnewest() {
     find -type f -printf "%CF %CH:%CM %h/%f\n" | sort | tac | less
 }
 
-function findfromdate() {
-    findnewest | perl -ne 'print if m#^\Q'$@'\E#' | less
+function lsfromdate() {
+    find -maxdepth 1 -type f -printf "%CF %CH:%CM %h/%f\n" \
+        | perl -ne 'print substr($_, 19) if m#^\Q'$@'\E#'
 }
 
 function findlargestfiles() {
