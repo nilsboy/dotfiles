@@ -384,7 +384,7 @@ function findnewest() {
 
 function lsfromdate() {
     find -maxdepth 1 -type f -printf "%CF %CH:%CM %h/%f\n" \
-        | perl -ne 'print substr($_, 19) if m#^\Q'$@'\E#'
+        | perl -ne 'print substr($_, 17) if m#^\Q'$@'\E#'
 }
 
 function findlargestfiles() {
