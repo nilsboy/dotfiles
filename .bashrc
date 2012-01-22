@@ -329,20 +329,6 @@ function parent() {
 
 ## file handling functions #####################################################
 
-# replace strings in files
-function replace() { (
-
-    local search=$1
-    local replace=$2
-    local files=$3
-
-    if [[ $search = "" || $replace = "" || $files = "" ]] ; then
-        DIE 'usage: replace "search" "replace" "file pattern"'
-    fi
-
-    find -iname "$files" -exec perl -p -i -e 's/'$search'/'$replace'/g' {} \;
-) }
-
 # absolute path
 function abs() {
 
@@ -405,7 +391,7 @@ function g() {
     set -f
 
     if [[ -t 0 ]] ; then
-        ff | while read i; do _andgrep -pf "$i" $@ ; done
+        ff | while read i; do _andgrep -pf "$i" "$@" ; done
     else
         _andgrep $@
     fi
@@ -3747,7 +3733,7 @@ if ($file) {
 LINE: while (<$h>) {
 
     foreach my $pattern (@patterns) {
-        if ( !s/$pattern/$red${pattern}$no_color/gi ) {
+        if ( !s/\Q$pattern\E/$red${pattern}$no_color/gi ) {
             next LINE;
         }
     }
@@ -3757,6 +3743,39 @@ LINE: while (<$h>) {
     } else {
         print;
     }
+}
+
+### function replace() #########################################################
+
+use strict;
+use warnings;
+use Data::Dumper;
+use Getopt::Long;
+
+my $search = $ARGV[0] || die "Search term?";
+my $replace = $ARGV[1] || die "Replace term?";
+
+while (<STDIN>) {
+
+    local $/ = undef;
+
+    chomp;
+    my $file = $_;
+    $file =~ s/\n//g;
+
+    open(F, $file) || die $!;
+    my $data = <F>;
+    close(F);
+
+    $data =~ /\Q$search\E/igms || next;
+
+    print "Replacing in $file...\n";
+
+    $data =~ s/\Q$search\E/$replace/igms;
+
+    open(F, ">", $file) || die $!;
+    print F $data;
+    close(F);
 }
 
 ### END ########################################################################
