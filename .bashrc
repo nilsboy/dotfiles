@@ -3733,7 +3733,7 @@ if ($file) {
 LINE: while (<$h>) {
 
     foreach my $pattern (@patterns) {
-        if ( !s/\Q$pattern\E/$red${pattern}$no_color/gi ) {
+        if ( !s/(\Q$pattern\E)/$red$1$no_color/gi ) {
             next LINE;
         }
     }
