@@ -333,29 +333,11 @@ function parent() {
 function abs() {
 
     perl - "$@" <<'EOF'
-
-        use strict;
-        use warnings;
         use Cwd;
-
-        my $cwd = $ENV{PWD};
-        my @cwd = split("/", $cwd);
-
         my $file = $ARGV[0] || ".";
-
-        if($file !~ m#^/#) {
-
-            while($file =~ s#^\.\./##g) {
-                pop(@cwd);
-            }
-
-            $file = join("/", @cwd) . "/" . $file;
-        }
-
-        $file =~ s#/\.##g;
-        $file .= "/" if -d $file;
-
-        print $file . "\n";
+        print Cwd::abs_path($file);
+        print "/" if -d $file;
+        print "\n";
 EOF
 
 }
