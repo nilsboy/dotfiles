@@ -1915,21 +1915,26 @@ fi
 
 ### perl functions #############################################################
 
+# dump a perl app located at the end of this file
+function _dump_perl_app() {(
+    local function=${1?Specify function}
+    shift
+
+    echo '#!/usr/bin/perl'
+    echo "use warnings;"
+    echo "no warnings qw{uninitialized};"
+    echo "use Data::Dumper;"
+    perl -0777 -ne \
+        'print $1 if /(^### function '$function'\(\).*?)### /igsm' \
+        $REMOTE_BASHRC
+)}
+
 # run a perl app located at the end of this file
 function _run_perl_app() {(
     local function=${1?Specify function}
     shift
 
-    code=$(perl -0777 -ne \
-        'print $1 if /(^### function '$function'\(\).*?)### /igsm' \
-        $REMOTE_BASHRC
-    )
-
-    if ! [[ $code ]] ; then
-        DIE "Function not found: $function"
-    fi
-
-    code="no warnings qw{uninitialized}; use Data::Dumper; $code"
+    code=$(_dump_perl_app $function)
 
     export code
     perl -we 'eval $ENV{code}; die $@ if $@;' -- "$@"
