@@ -1985,7 +1985,7 @@ function j() {
 return 0
 
 ### function csvview() #########################################################
-#!/usr/bin/perl
+
 use warnings;
 no warnings qw{uninitialized};
 use Data::Dumper;
@@ -2270,6 +2270,10 @@ END {
 ### function _display_jobs() ###################################################
 # cleaned up jobs replacement
 
+use strict;
+use warnings;
+use Data::Dumper;
+
 my $black     = "\x1b[38;5;0m";
 my $gray      = "\x1b[38;5;250m";
 my $dark_gray = "\x1b[38;5;244m";
@@ -2410,6 +2414,7 @@ foreach my $jid ( sort keys %cmds ) {
 use strict;
 use warnings;
 no warnings 'uninitialized';
+
 binmode STDOUT, ":utf8";
 use File::Basename;
 use Cwd;
@@ -2638,6 +2643,10 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
 ### function xmv() #############################################################
 # Rename files by perl expression protect against duplicate resulting file names
 
+use strict;
+use warnings;
+use Data::Dumper;
+
 # use warnings FATAL => 'all';
 use File::Basename;
 
@@ -2774,6 +2783,10 @@ sub normalize {
 ### function filltemplate() ####################################################
 # create a file from a template
 
+use strict;
+use warnings;
+use Data::Dumper;
+
 use File::Copy;
 
 die "Usage: filltemplate" .
@@ -2811,6 +2824,10 @@ close($tempf);
 move($temp, $file) || die $!;
 
 ### function wcat() ############################################################
+
+use strict;
+use warnings;
+use Data::Dumper;
 
 use Getopt::Long;
 Getopt::Long::Configure("bundling");
@@ -3717,6 +3734,7 @@ BEGIN {
 use strict;
 use warnings;
 use Data::Dumper;
+
 use Getopt::Long;
 Getopt::Long::Configure("bundling");
 
@@ -3757,6 +3775,7 @@ LINE: while (<$h>) {
 use strict;
 use warnings;
 use Data::Dumper;
+
 use Getopt::Long;
 
 my $search = $ARGV[0] || die "Search term?";
