@@ -632,51 +632,71 @@ function setupdotfiles() { (
     echo 'set editing-mode vi' > $INPUTRC
 ) }
 
-function bashrc_export_function() {
+function __dump_function() {
 
     local funct=${1?specify function name}
 
     echo "export LINES COLUMNS"
-    echo -n "# "
+    echo
+    echo -n "### "
     type $funct
     echo
-    echo $funct '"$@"'
 }
 
-function bashrc_export_function_to_file() {
-
-    local funct=${1?specify function name}
+function _dump_function() {
+    local function=${1?specify function name}
     local file=$2
 
-    if ! [[ $file ]] ; then
-        file=$funct
+    local perl_app=$(_dump_perl_app $function)
+
+    if [[ $perl_app ]] ; then
+        echo 'REMOTE_BASHRC=$0'
+        __dump_function _dump_perl_app
+        __dump_function _run_perl_app
     fi
+
+    __dump_function $function
+
+    echo $function '"$@"'
+
+    if [[ $perl_app ]] ; then
+        echo
+        echo "exit 0"
+        echo
+        _dump_perl_app $function
+        echo "### end"
+    fi
+}
+
+function _dump_function_to_file() {
+    local function=${1?specify function name}
+    local file=$function
 
     local note="# automatic bashrc export - do not edit"
     local is_export=
 
-    if [ -e $funct ] ; then
-        grep -q "$note" $funct && is_export=1
+    if [ -e $function ] ; then
+        grep -q "$note" $function && is_export=1
 
         if ! [ $is_export ] ; then
-            WARN "skipping - file exists: $funct"
+            WARN "skipping - file exists: $function"
             continue
         fi
     fi
 
     # bash interactive mode to export LINES and COLUMNS vars
-    echo '#!/bin/bash -i'          > $file
-    echo "$note"                  >> $file
-    bashrc_export_function $funct >> $file
+    echo '#!/bin/bash -i'       > $file
+    echo "$note"               >> $file
+    _dump_function $function >> $file
 
     chmod +x $file
 }
 
-function bashrc_export_functions_to_files() {
+function _dump_functions_to_files() {
 
-    while read funct ; do
+    while read function ; do
 
-    bashrc_export_function_to_file $funct
+    _dump_function_to_file $function
 
     done<<EOF
         $(perl -ne 'foreach (/^function ((?!_).+?)\(/) {print "$_\n" }' \
@@ -702,7 +722,7 @@ function setup_remote_multiuser_account() {
 
     local funct=bashrc_setup_multiuser_environment
 
-    bashrc_export_function $funct \
+    _dump_function $funct \
         | perl -0777 -pe 's/^.*?\n{|\n}.*//smg' \
         | ssh $server "cat > ~/.$funct"
 
@@ -1920,10 +1940,6 @@ function _dump_perl_app() {(
     local function=${1?Specify function}
     shift
 
-    echo '#!/usr/bin/perl'
-    echo "use warnings;"
-    echo "no warnings qw{uninitialized};"
-    echo "use Data::Dumper;"
     perl -0777 -ne \
         'print $1 if /(^### function '$function'\(\).*?)### /igsm' \
         $REMOTE_BASHRC
@@ -1969,6 +1985,10 @@ function j() {
 return 0
 
 ### function csvview() #########################################################
+#!/usr/bin/perl
+use warnings;
+no warnings qw{uninitialized};
+use Data::Dumper;
 
 use Getopt::Long;
 use Encode;
