@@ -135,7 +135,7 @@ alias lc='ls -rtlhc'
 
 alias cdt='cd $REMOTE_HOME/tmp'
 
-alias lsop='netstat -tapn'
+alias lsop='netstat -tapnu | less -S'
 alias df="df -h | perl -0777 -pe 's/^(\S+)\n/\$1/gm' | csvview"
 
 # search history for an existing directory containing string and go there
