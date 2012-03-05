@@ -1929,8 +1929,10 @@ if [[ ! $_is_reload ]] ; then
 fi
 _is_reload=1
 
-if [ -r $REMOTE_HOME/.bashrc_local ] ; then
-    source $REMOTE_HOME/.bashrc_local
+if [ -d $REMOTE_HOME/.bashrc.d ] ; then
+    for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
+        source $rc
+    done
 fi
 
 ### perl functions #############################################################
