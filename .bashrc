@@ -824,6 +824,7 @@ fi
 # * cssh = clusterssh
 
 alias ssh="ssh -A"
+alias sshnocheck="ssh -q -o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
 # save ssh-agent vars to be loaded in a nother session or on reconnect inside
 # screen or tmux
