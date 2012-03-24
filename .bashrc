@@ -100,8 +100,8 @@ bind 'set completion-query-items -1'
 # don't show completions in pager
 bind 'set page-completions off'
 
-# don't expand tilde
-bind 'tilde-expand off'
+# don't expand tilde - disables e-key?!?
+# bind 'tilde-expand off'
 
 # expand hi to underscores
 set 'completion-map-case on'
