@@ -3783,12 +3783,24 @@ LINE: while (<$h>) {
 
 use strict;
 use warnings;
+no warnings 'uninitialized';
 use Data::Dumper;
 
 use Getopt::Long;
 
-my $search = $ARGV[0] || die "Search term?";
-my $replace = $ARGV[1] || die "Replace term?";
+my $red = "\x1b[38;5;124m";
+my $dry = 1;
+
+my $opts = {
+    "x|xecute" => sub { $dry = 0 },
+    "e=s" => \my $op,
+};
+GetOptions(%$opts) or die usage();
+
+sub usage { "Usage:\n$0 " . join( "\n", sort keys %$opts ) . "\n"; }
+
+my $files_changed = 0;
+my $example_file;
 
 while (<STDIN>) {
 
@@ -3802,15 +3814,26 @@ while (<STDIN>) {
     my $data = <F>;
     close(F);
 
-    $data =~ /\Q$search\E/igms || next;
+    $_ = $data;
 
-    print "Replacing in $file...\n";
+    eval $op;
+    die $@ if $@;
 
-    $data =~ s/\Q$search\E/$replace/igms;
+    next if $_ eq $data;
+
+    $files_changed++;
+    $example_file = $file;
+
+    next if $dry;
+
+    $data = $_;
 
     open(F, ">", $file) || die $!;
     print F $data;
     close(F);
 }
+
+print STDERR "Files changed: $files_changed (example: $example_file)"
+    . ($dry? "$red - dry run." : "") . "\n";
 
 ### END ########################################################################
