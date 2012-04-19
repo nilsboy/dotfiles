@@ -3792,12 +3792,13 @@ my $red = "\x1b[38;5;124m";
 my $dry = 1;
 
 my $opts = {
-    "x|xecute" => sub { $dry = 0 },
-    "e=s" => \my $op,
+    "e|eval=s"  => \my $op,
+    "x|execute" => sub { $dry = 0 },
 };
-GetOptions(%$opts) or die usage();
+GetOptions(%$opts) || usage();
+$op || usage();
 
-sub usage { "Usage:\n$0 " . join( "\n", sort keys %$opts ) . "\n"; }
+sub usage { die "Usage:\n" . join( "\n", sort keys %$opts ) . "\n"; }
 
 my $files_changed = 0;
 my $example_file;
