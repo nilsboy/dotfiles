@@ -3800,10 +3800,13 @@ $op || usage();
 
 sub usage { die "Usage:\n" . join( "\n", sort keys %$opts ) . "\n"; }
 
+my $file_count;
 my $files_changed = 0;
 my $example_file;
 
 while (<STDIN>) {
+
+    $file_count++;
 
     local $/ = undef;
 
@@ -3834,7 +3837,8 @@ while (<STDIN>) {
     close(F);
 }
 
-print STDERR "Files changed: $files_changed (example: $example_file)"
+print STDERR "Files $files_changed of $file_count files changed"
+    . " (example: $example_file)"
     . ($dry? "$red - dry run." : "") . "\n";
 
 ### END ########################################################################
