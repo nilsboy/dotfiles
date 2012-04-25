@@ -49,8 +49,9 @@ else
 fi
 
 export DISTRIBUTION
-
 export LINES COLUMNS
+
+export _bashrc_tty=$(tty)
 
 ### input config ###############################################################
 
@@ -317,16 +318,6 @@ function timestamp2date() {
 }
 
 ## shell helper functions ######################################################
-
-# clear screen also create distance to last command for easy viewing
-function v() {
-
-    local i=0
-    while [ $i -le 80 ] ; do
-        i=$(($i + 1))
-        echo
-    done
-}
 
 # get parent process id
 function parent() {
@@ -1054,159 +1045,32 @@ function cpanm_reinstall_local_modules() {(
     cpan-outdated | cpanm -nq --reinstall
 )}
 
-# find a lib via PERL5LIB
-function pmpath() {
-
-     perl - $@ <<'EOF'
-        use strict;
-        use warnings;
-        my $module = $ARGV[0] or die q{specify module.};
-        eval qq{require $module};
-        $module =~ s{::}{/}g;
-        $module =~ s/$/.pm/g;
-        $INC{$module} || exit 1;
-        print $INC{$module} . "\n";
-EOF
+# search for a perl module or script
+function pm() {
+    find $(perl -e 'print join (" ", @INC)') -iname '*.p[ml]' 2>/dev/null \
+        | grep -v thread \
+        | sort -u \
+        | g "$@"
 }
 
-# fuzzy find
-function _pathfuzzyfind() {
+# edit a file from a list on STDIN
+function v() {
+    local line=$1
 
-     perl - $@ <<'EOF'
-        use warnings;
-        no warnings 'uninitialized';
-        use File::Find;
-
-        my $to_find = shift @ARGV;
-
-        my $dirs = $ENV{$to_find};
-
-        @ARGV || die "specify module.";
-
-        my $module = join("/", @ARGV);
-        $module =~ s{::}{/}g;
-
-        my @dirs = ( split( ":", $dirs ) );
-        push(@dirs, @INC) if $to_find eq "PERL5LIB";
-        push(@dirs, "lib") if $to_find eq "PERL5LIB";
-
-        my $exact_match = $module;
-
-        if($to_find eq "PERL5LIB") {
-            $exact_match = "$module\.pm";
-        }
-
-        my %matches       = ();
-        my %fuzzy_matches = ();
-        foreach my $dir (@dirs) {
-
-            $dir .= "/";
-
-            next if !-d $dir;
-            next if $dir =~ /^\./;
-
-            find(
-                sub {
-                    my $abs = $File::Find::name;
-                    my $file = $dir . $abs;
-
-                    if($to_find eq "PERL5LIB") {
-                        return if $file !~ /\.pm$/;
-                    } else {
-                        $file = $abs;
-
-                        my $top_dir_depth = $dir =~ tr!/!!;
-                        my $depth = $file =~ tr!/!!;
-
-                        return if $depth != $top_dir_depth;
-                    }
-
-                    return if -d $file;
-
-                    $file =~ s/^$dir(\/i486-linux-gnu-thread-multi\/)*//g;
-
-                    return if $file !~ /$module/i;
-
-                    if($file =~ /^((\/)*\/|)$exact_match$/i) {
-                        $matches{$file} = $abs;
-                        return;
-                    }
-
-                    $fuzzy_matches{$file} = $abs;
-                },
-                $dir
-            );
-        }
-
-        if ( keys %matches == 1 ) {
-            print values %matches;
-            exit 0;
-        }
-
-        if(exists $matches{$exact_match}) {
-            print $matches{$exact_match};
-            exit 0;
-        }
-
-        if( ! %matches && keys %fuzzy_matches == 1) {
-            print values %fuzzy_matches;
-            exit 0;
-        }
-
-        if (%matches) {
-            print STDERR "\n---- exact matches " , "-" x 61, "\n";
-            print STDERR join("\n", sort keys %matches) . "\n";
-        }
-
-        if (!%matches && %fuzzy_matches) {
-            print STDERR "\n---- fuzzy matches ", "-" x 61, "\n";
-            print STDERR join("\n", sort keys %fuzzy_matches) . "\n";
-        }
-
-        if(! %matches && ! %fuzzy_matches) {
-            print STDERR "nothing found.\n";
-        } else {
-            print STDERR "-" x 80, "\n\n";
-        }
-
-        exit 1;
-EOF
-}
-
-# fuzzy find a lib via $PERL5LIB
-function pmpathfuzzy() {
-    _pathfuzzyfind PERL5LIB "$@"
-}
-
-# fuzzy find a bin via $PATH
-function binpathfuzzy() {
-    _pathfuzzyfind PATH "$@"
-}
-
-# edit a lib via PERL5LIB
-function vii() {
-
-    local file=$(pmpathfuzzy "$@")
-
-    if  ! [[ $file ]] ; then
-        return 1;
+    if [[ ! $line ]] ; then
+        cat | nl
+        return
     fi
 
-    command vi $file
+    local file=$(cat | perl -ne 'print if $. == '$line)
+
+    # close STDIN by connect it back to the terminal
+    exec < $_bashrc_tty
+
+    vi $file
 }
 
-# edit a lib via PATH
-function vib() {
-
-    local file=$(binpathfuzzy "$@")
-
-    if  ! [[ $file ]] ; then
-        return 1;
-    fi
-
-    command vi $file
-}
-
+# recursively find a file and open it in vim
 function vif() {
 
     local entry=$(f "$@" | perl -lne 'print if ! -d' | head -1)
@@ -3749,6 +3613,10 @@ Getopt::Long::Configure("bundling");
 
 my $red      = "\x1b[38;5;124m";
 my $no_color = "\x1b[33;0m";
+
+if (! -t STDOUT) {
+    $red = $no_color = "";
+}
 
 my $opts = {
     "f|file=s" => \my $file,
