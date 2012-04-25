@@ -3705,7 +3705,9 @@ while (<STDIN>) {
     close(F);
 }
 
-print STDERR "Files $files_changed of $file_count files changed"
+exit 1 if ! $files_changed;
+
+print STDERR "$files_changed of $file_count files changed"
     . " (example: $example_file)"
     . ($dry? "$red - dry run." : "") . "\n";
 
