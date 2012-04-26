@@ -1968,7 +1968,7 @@ sub find_delimiter {
     }
     close(F);
 
-    my @special_chars = $sample =~ /(\W)/g;
+    my @special_chars = $sample =~ /([^\w"])/g;
     my %special_char_count = ();
     map { $special_char_count{$_}++ } @special_chars;
 
