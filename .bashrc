@@ -1088,35 +1088,12 @@ function setupcpanm() { (
     set -e
 
     if [ -e ~/.cpan ] ; then
-        DIE "remove ~/.cpan first" >&2
+        mv -v ~/.cpan ~/.cpan.$(date +%Y%m%d_%H%M%S)
     fi
 
-    WD=$(mktemp -d)
-    cd $WD
-
-    INFO "setting up local::lib..."
-    wcat \
-    search.cpan.org/CPAN/authors/id/G/GE/GETTY/local-lib-1.006007.tar.gz \
-    | tar xfz -
-
-    cd local-lib*/
-
-    perl Makefile.PL --bootstrap >/dev/null
-    make install >/dev/null
-
-    cd /tmp
-    rm $WD -rf
-
-    INFO "setting up cpanm..."
     cd ~/bin
-
-    if [ -e cpanm ] ; then
-        rm cpanm
-    fi
-
-    wcat cpansearch.perl.org/src/MIYAGAWA/App-cpanminus-1.1001/bin/cpanm \
-        > cpanm
-    perl -p -i -e 's/^#\!perl$/#\!\/usr\/bin\/perl/g' cpanm
+    wcat http://xrl.us/cpanm > cpanm.new
+    mv -fv cpanm.new cpanm
     chmod +x cpanm
 
     INFO "Now set your lib path like: PERL5LIB=$HOME/perl5/lib/perl5:$HOME/perldev/lib"
