@@ -1,7 +1,7 @@
 ### for all shells #############################################################
 
 if [[ ! $_is_reload ]] ; then
-    export PATH=~/bin:~/perl5/bin:$PATH
+    export PATH=~/bin:~/opt/bin:~/perl5/bin:$PATH
     export PERL5LIB=~/perl5/lib/perl5:~/perldev/lib:$PERL5LIB
 fi
 
