@@ -582,8 +582,7 @@ function freeport() {
 function _cphub() {(
     local tmp="/tmp/cphub.$$"
     set -e
-    wcat http://github.com/evenless/etc/raw/master/$1 >$tmp
-    mv -f $tmp $1
+    wcat http://github.com/evenless/etc/raw/master/$1 -fr
 )}
 
 function bashrc_clean_environment() {
@@ -1092,8 +1091,7 @@ function setupcpanm() { (
     fi
 
     cd ~/bin
-    wcat http://xrl.us/cpanm > cpanm.new
-    mv -fv cpanm.new cpanm
+    wcat http://xrl.us/cpanm -fr
     chmod +x cpanm
 
     INFO "Now set your lib path like: PERL5LIB=$HOME/perl5/lib/perl5:$HOME/perldev/lib"
@@ -2679,8 +2677,9 @@ move($temp, $file) || die $!;
 
 use strict;
 use warnings;
+no warnings 'uninitialized';
 use Data::Dumper;
-
+use File::Copy;
 use Getopt::Long;
 Getopt::Long::Configure("bundling");
 
@@ -2688,7 +2687,8 @@ my $opts = {
     "h|headers"      => \my $show_headers,
     "s|strip-tags"   => \my $strip_tags,
     "f|save-to-file" => \my $to_file,
-    "o|overwrite"    => \my $overwrite,
+    "r|replace"      => \my $overwrite,
+    "o|out-file=s"     => \my $file,
 };
 GetOptions(%$opts) or die "Usage:\n" . join( "\n", sort keys %$opts ) . "\n";
 
@@ -2698,10 +2698,10 @@ if ( $url !~ m#^(.+?)://# ) {
     $url = "http://$url";
 }
 
-my $file;
 if($to_file) {
-    ($file) = $url =~ m#^.+?://.*?/(.+)$#;
-    print "Saving as: $file\n";
+    if(! $file) {
+        ($file) = $url =~ m#^.+?://.*?/([^\/]+)$#
+    }
     die "Error creating file name from url." if ! $file;
     die "File exists: $file" if -f $file && ! $overwrite;
 }
@@ -2714,7 +2714,7 @@ die "Failed: " . $response->{status} . " = " . $response->{reason} . "\n"
 if ($show_headers) {
     while ( my ( $k, $v ) = each %{ $response->{headers} } ) {
         for ( ref $v eq 'ARRAY' ? @$v : $v ) {
-            print "$k: $_\n";
+            print STDERR "$k: $_\n";
         }
     }
     exit;
@@ -2747,9 +2747,11 @@ if($strip_tags) {
 }
 
 if($to_file) {
-    open(F, ">", $file) || die $!;
+    my $tmp_file = "/tmp/wcat.$$.$file";
+    open(F, ">", $tmp_file) || die "Cannot write to file: $tmp_file: $!";
     print F $content;
     close(F);
+    move($tmp_file, $file) || die "Cannot move to file $file: $!";
 } else {
     print $content;
 }
