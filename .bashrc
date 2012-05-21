@@ -1044,6 +1044,15 @@ function cpanm_reinstall_local_modules() {(
     cpan-outdated | cpanm -nq --reinstall
 )}
 
+function cpan-listchanges() {(
+    set -e
+    type -f cpan-listchanges 2>&1>/dev/null || (
+        cpanm -nq cpan-listchanges
+    )
+
+    command cpan-listchanges "$@"
+)}
+
 # search for a perl module or script
 function pm() {
     find $(perl -e 'print join (" ", @INC)') -iname '*.p[ml]' 2>/dev/null \
