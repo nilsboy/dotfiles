@@ -1053,6 +1053,10 @@ function cpan-listchanges() {(
     command cpan-listchanges "$@"
 )}
 
+function perloneliners() {
+    wcat http://www.catonmat.net/download/perl1line.txt | less +/"$@"
+}
+
 # search for a perl module or script
 function pm() {
     find $(perl -e 'print join (" ", @INC)') -iname '*.p[ml]' 2>/dev/null \
