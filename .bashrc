@@ -1044,7 +1044,7 @@ function cpanm_reinstall_local_modules() {(
     cpan-outdated | cpanm -nq --reinstall
 )}
 
-function cpan-listchanges() {(
+function cpan_listchanges() {(
     set -e
     type -f cpan-listchanges 2>&1>/dev/null || (
         cpanm -nq cpan-listchanges
