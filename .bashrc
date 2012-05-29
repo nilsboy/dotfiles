@@ -185,10 +185,12 @@ function cdf() {
     cd "$entry"
 }
 
-# search for file from cur dir and edit it with vi
+# recursively find a file and open it in vim
 function vif() {
 
-    local entry=$(f -type f "$@" | head -1)
+    local search=$(perl -e '$_ = "'"$@"'" ; s#\:\:#/#g; print')
+
+    local entry=$(f "$search" | head -1)
 
     if [[ ! "$entry" ]] ; then
         return 1
@@ -1080,18 +1082,6 @@ function v() {
     exec < $_bashrc_tty
 
     vi $file
-}
-
-# recursively find a file and open it in vim
-function vif() {
-
-    local entry=$(f "$@" | perl -lne 'print if ! -d' | head -1)
-
-    if [[ ! "$entry" ]] ; then
-        return 1
-    fi
-
-    command vi "$entry"
 }
 
 # setup local::lib and cpanm
