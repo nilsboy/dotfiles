@@ -201,7 +201,7 @@ function vif() {
 
 alias greppath="compgen -c | grep -i"
 
-alias xargs="xargs -I {}"
+alias xargs='xargs -I {} -d \\n'
 
 alias apts="apt-cache search"
 alias aptw="apt-cache show"
