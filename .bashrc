@@ -9,11 +9,90 @@ if [[ ! $JAVA_HOME ]] ; then
     export JAVA_HOME=/usr/lib/jvm/java-6-sun
 fi
 
+## helper functions ############################################################
+
+function _LOG() {
+
+    local level=$1 ; shift
+
+    local crap
+    read log_level_prio crap <<<$(_calc_prio $LOG_LEVEL)
+    if [[ ! $LOG_LEVEL ]] ; then
+        if [[ -t 1 ]] ; then
+            log_level_prio=3
+        else
+            log_level_prio=6
+        fi
+    fi
+
+    local message_prio
+    local prio
+    local location
+    local color
+
+    read message_prio show_location color <<<$(_calc_prio $level)
+
+    if [[ $message_prio < $log_level_prio ]] ; then
+        return
+    fi
+
+    if [[ $show_location ]] ; then
+
+        read line function file <<<$(caller 1)
+        local location=$line
+
+        if [[ $file ]] ; then
+            location=$(basename $file)":"$location
+        fi
+
+        if [[ $location ]] ; then
+            location=" "$location
+        fi
+    fi
+
+    if [ -t 1 ] ; then
+        echo "$color${level}$location> $@${NO_COLOR}" >&1
+    else
+        echo "$(date +'%F %T') ${level}$location> $@" >&1
+    fi
+}
+
+function _calc_prio() {
+    local level=$1
+
+    case $level in
+        TRACE) prio=1 ; show_location=1 ; color=$GRAY ;;
+        DEBUG) prio=2 ; show_location=0 ; color=$GRAY ;;
+        INFO)  prio=3 ; show_location=0 ; color=$GREEN ;;
+        WARN)  prio=4 ; show_location=0 ; color=$ORANGE ;;
+        ERROR) prio=5 ; show_location=1 ; color=$RED ;;
+        FATAL) prio=6 ; show_location=1 ; color=$RED ;;
+    esac
+
+    echo $prio $show_location $color
+}
+
+function TRACE() { _LOG "TRACE" "$@" ; }
+function DEBUG() { _LOG "DEBUG" "$@" ; }
+function INFO()  { _LOG "INFO " "$@" ; }
+function WARN()  { _LOG "WARN " "$@" ; }
+function ERROR() { _LOG "ERROR" "$@" ; }
+function DIE()   { _LOG "FATAL" "$@" ; exit 1 ; }
+
+function usefatal() {
+    trap DIE err
+}
+
+# does not work :(
+function nousefatal() {
+    trap '' err
+}
+
 [ -z "$PS1" ] && return
 
+################################################################################
 ### for interactive shells only ################################################
-
-### variables ##################################################################
+################################################################################
 
 [[ $REMOTE_USER   ]] || export REMOTE_USER=$USER
 [[ $REMOTE_HOME   ]] || export REMOTE_HOME=$HOME
@@ -226,60 +305,10 @@ fi
 
 ### functions ##################################################################
 
-## helper functions ############################################################
-
-function _LOG() {
-
-    local level=$1 ; shift
-    local color=$1 ; shift
-    local output_to=$1 ; shift
-    local show_location=$1 ; shift
-
-    if [[ $show_location = 1 ]] ; then
-
-        read line function file <<<$(caller 1)
-        local location=$line
-
-        if [[ $file ]] ; then
-            location=$(basename $file)":"$location
-        fi
-
-        location=" "$location
-    fi
-
-    if [[ $level = FATAL ]] ; then
-        if [[ ! $@ ]] ; then
-            set Unknown error in file $file at line $line
-        fi
-    fi
-
-    if [ -t $output_to ] ; then
-        echo -e "${color}${level}$location> $@${NO_COLOR2}" >&$output_to
-    else
-        echo -e "$(date +'%F %T') ${level}$location> $@" >&$output_to
-    fi
-}
-
-function DEBUG() { _LOG "DEBUG" $GRAY2   1 1 "$@" ; }
-function INFO()  { _LOG "INFO " $GREEN2  1 0 "$@" ; }
-function WARN()  { _LOG "WARN " $ORANGE2 1 0 "$@" ; }
-function ERROR() { _LOG "ERROR" $RED2    2 1 "$@" ; }
-function DIE()   { _LOG "FATAL" $RED2    2 1 "$@" ; exit 1 ; }
-
-function usefatal() {
-    trap DIE err
-}
-
-# does not work :(
-function nousefatal() {
-    trap err
-    trap true err
-}
-
 function SHOW()  {
     local var=$1
     shift
-    echo -e "$GREEN2$var$NO_COLOR2: $@"
+    echo "$GREEN$var$NO_COLOR: $@"
 }
 
 ## system functions ############################################################
@@ -1524,44 +1553,11 @@ function uniqunsorted() {
 
 # some default colors
 function _set_colors() {
-
-    # disable any colors
-    NO_COLOR="\[\033[0m\]"
-    NO_COLOR2="\033[0m"
-
-    BLACK="\[\033[0;30m\]"
-
-    RED="\[\033[0;31m\]"
-    RED2="\033[0;31m"
-
-    GREEN="\[\033[0;32m\]"
-    GREEN2="\033[0;32m"
-
-    GRAY="\[\033[0;37m\]"
-    GRAY2="\033[0;37m"
-
-    ORANGE="\[\033[0;33m\]"
-    ORANGE2="\033[0;33m"
-
-    BLUE="\[\033[0;34m\]"
-    BLUE2="\033[0;34m"
-
-    MAGENTA="\[\033[0;35m\]"
-    CYAN="\[\033[0;36m\]"
-    WHITE="\[\033[0;37m\]"
-
-    BROWN="\[\033[0;33m\]"
-
-    # background colors
-    BG_BLACK="\[\033[40m\]"
-    BG_RED="\[\033[41m\]"
-    BG_GREEN="\[\033[42m\]"
-    BG_YELLOW="\[\033[43m\]"
-    BG_BLUE="\[\033[44m\]"
-    BG_MAGENTA="\[\033[45m\]"
-    BG_CYAN="\[\033[46m\]"
-    BG_WHITE="\[\033[47m\]"
-    BG_BROWN="\[\033[44;XXm\]"
+    NO_COLOR=$(echo -e "\x1b[33;0;m")
+    GRAY=$(echo -e "\x1b[38;5;243m")
+    GREEN=$(echo -e "\x1b[38;5;2m")
+    ORANGE=$(echo -e "\x1b[38;5;3m")
+    RED=$(echo -e "\x1b[38;5;9m")
 }
 
 # shorten prompt dir to max 15 chars
@@ -1682,7 +1678,7 @@ function _print_on_error() {
     for item in ${bashrc_last_return_values[*]} ; do
 
         if [ $item != 0 ] ; then
-            echo -e ${RED2}exit: $bashrc_last_return_values$NO_COLOR2 >&2
+            echo ${RED}exit: $bashrc_last_return_values$NO_COLOR >&2
             break
         fi
 
@@ -1700,7 +1696,6 @@ function _prompt_command_default() {
     _fix_pwd
     _set_bg_jobs_count
 
-    # $NO_COLOR first to reset color setting from other programs
     PS1=$GRAY"$time$NO_COLOR $hostname:$_pwd${_bg_jobs_count}"">$BASHRC_BG_COLOR "
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
