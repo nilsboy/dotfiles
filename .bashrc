@@ -233,19 +233,48 @@ function _LOG() {
     local level=$1 ; shift
     local color=$1 ; shift
     local output_to=$1 ; shift
+    local show_location=$1 ; shift
+
+    if [[ $show_location = 1 ]] ; then
+
+        read line function file <<<$(caller 1)
+        local location=$line
+
+        if [[ $file ]] ; then
+            location=$(basename $file)":"$location
+        fi
+
+        location=" "$location
+    fi
+
+    if [[ $level = FATAL ]] ; then
+        if [[ ! $@ ]] ; then
+            set Unknown error in file $file at line $line
+        fi
+    fi
 
     if [ -t $output_to ] ; then
-        echo -e "${color}${level}> $@${NO_COLOR2}" >&$output_to ;
+        echo -e "${color}${level}$location> $@${NO_COLOR2}" >&$output_to
     else
-        echo -e "$(date +'%F %T') ${level}> $@" >&$output_to ;
+        echo -e "$(date +'%F %T') ${level}$location> $@" >&$output_to
     fi
 }
 
-function DEBUG() { _LOG "DEBUG" $GRAY2   1 "$@" ; }
-function INFO()  { _LOG "INFO " $GREEN2  1 "$@" ; }
-function WARN()  { _LOG "WARN " $ORANGE2 1 "$@" ; }
-function ERROR() { _LOG "ERROR" $RED2    2 "$@" ; }
-function DIE()   { _LOG "FATAL" $RED2    2 "$@" ; exit 1 ; }
+function DEBUG() { _LOG "DEBUG" $GRAY2   1 1 "$@" ; }
+function INFO()  { _LOG "INFO " $GREEN2  1 0 "$@" ; }
+function WARN()  { _LOG "WARN " $ORANGE2 1 0 "$@" ; }
+function ERROR() { _LOG "ERROR" $RED2    2 1 "$@" ; }
+function DIE()   { _LOG "FATAL" $RED2    2 1 "$@" ; exit 1 ; }
+
+function usefatal() {
+    trap DIE err
+}
+
+# does not work :(
+function nousefatal() {
+    trap err
+    trap true err
+}
 
 function SHOW()  {
     local var=$1
