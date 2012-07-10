@@ -1692,11 +1692,11 @@ function _prompt_command_default() {
     _print_on_error
     local secs=$(_track_time)
     local time=$(humanize_secs $secs)
-    local hostname=$(_color_user)@$GREEN$HOSTNAME$NO_COLOR
+    local hostname=$(_color_user)"@\[$GREEN\]$HOSTNAME\[$NO_COLOR\]"
     _fix_pwd
     _set_bg_jobs_count
 
-    PS1=$GRAY"$time$NO_COLOR $hostname:$_pwd${_bg_jobs_count}"">$BASHRC_BG_COLOR "
+    PS1="\[$GRAY\]$time\[$NO_COLOR\] $hostname:$_pwd${_bg_jobs_count}>\[$BASHRC_BG_COLOR\] "
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
@@ -1720,10 +1720,10 @@ function _prompt_command_simple() {
 
     local if_root=""
     if [[ $USER == "root" ]] ; then
-        if_root="${RED}root$NO_COLOR "
+        if_root="\[$RED\]root\[$NO_COLOR\] "
     fi
 
-    PS1=$NO_COLOR"$GRAY$time$NO_COLOR $if_root$_pwd${_bg_jobs_count}"">$BASHRC_BG_COLOR "
+    PS1="\[${GRAY}\]${time}\[$NO_COLOR\] ${if_root}${_pwd}${_bg_jobs_count}>\[$BASHRC_BG_COLOR\] "
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
@@ -1740,7 +1740,7 @@ function _prompt_command_spare() {
     _fix_pwd
     _set_bg_jobs_count
 
-    PS1=$NO_COLOR"$_pwd${_bg_jobs_count}""$BASHRC_BG_COLOR> "
+    PS1="\[$NO_COLOR\]$_pwd${_bg_jobs_count}>\[$BASHRC_BG_COLOR\] "
     xtitle  $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
