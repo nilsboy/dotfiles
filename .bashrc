@@ -297,6 +297,11 @@ if [[ $(type -p lesspipe ) ]] ; then
     eval "$(lesspipe)"
 fi
 
+function vncviewer() {
+    $(type -pf vncviewer) -encoding tight -shared -owncmap \
+        -compresslevel 9 -quality 0 -x11cursor -via $1 localhost:0
+}
+
 ### distri fixes ###############################################################
 
 if [[ $DISTRIBUTION = "suse" ]] ; then
