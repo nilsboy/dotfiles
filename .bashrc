@@ -278,6 +278,12 @@ function vif() {
     command vi "$entry"
 }
 
+# edit perl modul that is located within perls module path
+function vip() {
+    perl -M$1 -e \
+        '$_ = "'$1'"; eval "use $_"; s/::/\//g; s/$/.pm/g; print $INC{$_};'
+}
+
 alias greppath="compgen -c | grep -i"
 
 alias xargs='xargs -I {} -d \\n'
