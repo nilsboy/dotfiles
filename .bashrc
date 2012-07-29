@@ -1608,7 +1608,7 @@ function _fix_pwd () {
         local left=${_pwd:0:$left_split}
         local right=${_pwd:$right_start:$length}
 
-        _pwd=$left${RED}"*"${NO_COLOR}$right
+        _pwd="$left\[${RED}\]"*"\[${NO_COLOR}\]$right"
         _xtitle_pwd=$left"..."$right
 
     else
@@ -1676,7 +1676,7 @@ EOF
         unset _bg_jobs_count
     else
         if [[ $_bg_jobs_running_count -gt 0 ]] ; then
-            _bg_jobs_count=${RED}$_bg_jobs_count${NO_COLOR}
+            _bg_jobs_count="\[${RED}\]$_bg_jobs_count\[${NO_COLOR}\]"
         fi
 
         _bg_jobs_count=" "$_bg_jobs_count
@@ -1686,7 +1686,7 @@ EOF
 function _color_user() {
 
     if [[ $USER == "root" ]] ; then
-        echo ${RED}$USER${NO_COLOR}
+        echo "\[${RED}\]$USER\[${NO_COLOR}\]"
     else
         echo $USER
     fi
@@ -1698,7 +1698,7 @@ function _print_on_error() {
     for item in ${bashrc_last_return_values[*]} ; do
 
         if [ $item != 0 ] ; then
-            echo ${RED}exit: $bashrc_last_return_values$NO_COLOR >&2
+            echo "${RED}exit: $bashrc_last_return_values$NO_COLOR" >&2
             break
         fi
 
