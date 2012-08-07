@@ -1850,14 +1850,14 @@ function _run_perl_app() {(
     code=$(_dump_perl_app $function)
 
     export code
-    perl -we 'eval $ENV{code}; die $@ if $@;' -- "$@"
+    perl -we 'eval $ENV{code} || die $@;' -- "$@"
 )}
 
 # setup aliases for all the perl apps at the end of this file
 function _setup_perl_apps() {
 
     while read funct ; do
-        eval "function $funct() { _run_perl_app $funct \"\$@\" ; }"
+        eval "function $funct() { ( set +e ; _run_perl_app $funct \"\$@\" ; ) }"
     done<<EOF
         $(perl -ne 'foreach (/^### function (.+?)\(/) {print "$_\n" }' \
             $REMOTE_BASHRC)
