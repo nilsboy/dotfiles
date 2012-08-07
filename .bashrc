@@ -2841,7 +2841,7 @@ use Getopt::Long;
 Getopt::Long::Configure("bundling");
 
 my $opts = {
-    "h|headers"      => \my $show_headers,
+    "h|only-show-response-headers" => \my $show_headers,
     "s|strip-tags"   => \my $strip_tags,
     "f|save-to-file" => \my $to_file,
     "r|replace"      => \my $overwrite,
@@ -2865,9 +2865,6 @@ if($to_file) {
 
 my $response = HTTP::Tiny->new->get($url);
 
-die "Failed: " . $response->{status} . " = " . $response->{reason} . "\n"
-    unless $response->{success};
-
 if ($show_headers) {
     while ( my ( $k, $v ) = each %{ $response->{headers} } ) {
         for ( ref $v eq 'ARRAY' ? @$v : $v ) {
@@ -2876,6 +2873,10 @@ if ($show_headers) {
     }
     exit;
 }
+
+die "Failed: " . $response->{status} . " = " . $response->{reason} . "\n"
+    . Dumper($response)
+    unless $response->{success};
 
 exit if ! length $response->{content};
 
