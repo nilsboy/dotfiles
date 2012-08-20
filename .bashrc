@@ -103,6 +103,43 @@ if [[ ! $_is_reload && $REMOTE_HOME != $HOME ]] ; then
     export PATH=$REMOTE_HOME/bin:$PATH
 fi
 
+### setup functions from scripts at the end of this file #######################
+
+function _dump_perl_app() {(
+    local function=${1?Specify function}
+    shift
+
+    perl -0777 -ne \
+        'print $1 if /(^### function '$function'\(\).*?)### /igsm' \
+        $REMOTE_BASHRC
+)}
+
+# run a perl app located at the end of this file
+function _run_perl_app() {(
+    local function=${1?Specify function}
+    shift
+
+    code=$(_dump_perl_app $function)
+
+    export code
+    perl -we 'eval $ENV{code} || die $@;' -- "$@"
+)}
+
+# setup aliases for all the perl apps at the end of this file
+function _setup_perl_apps() {
+
+    while read funct ; do
+        eval "function $funct() { ( set +e ; _run_perl_app $funct \"\$@\" ; ) }"
+    done<<EOF
+        $(perl -ne 'foreach (/^### function (.+?)\(/) {print "$_\n" }' \
+            $REMOTE_BASHRC)
+EOF
+}
+
+_setup_perl_apps
+
+################################################################################
+
 export LANG="de_DE.UTF-8"
 # export LC_ALL="de_DE.UTF-8"
 # export LC_CTYPE="de_DE.UTF-8"
@@ -1395,7 +1432,7 @@ unset HISTFILESIZE
 ### eternal history
 
 # echo $REMOTE_HOME
-HISTFILE_ETERNAL=$REMOTE_HOME/.bash_eternal_history
+export HISTFILE_ETERNAL=$REMOTE_HOME/.bash_eternal_history
 
 if [ ! -e $HISTFILE_ETERNAL ] ; then
     touch $HISTFILE_ETERNAL
@@ -1436,133 +1473,7 @@ function _add_to_history() {
     history -a
 }
 
-alias h="set -f && historysearch -e -s"
-
-# search in eternal history
-function historysearch() {
-
-(
-    HISTFILE_ETERNAL=$HISTFILE_ETERNAL perl - "$@" <<'EOF'
-
-use strict;
-use warnings;
-no warnings 'uninitialized';
-use Getopt::Long;
-use Cwd;
-
-my $gray        = "\x1b[38;5;250m";
-my $reset_color = "\x1b[38;5;0m";
-my $red         = "\x1b[38;5;124m";
-
-my $pipe_mode = ! -t STDOUT;
-
-if($pipe_mode) {
-    $gray = $reset_color = $red = "";
-}
-
-my $opts = {
-    "a|all" => \my $show_all,
-    "e|everything" => \my $show_everything,
-    "existing-only" => \my $show_existing_only,
-    "skip-current-dir" => \my $skip_current,
-    "d|directories" => \my $show_dirs_only,
-    "files" => \my $find_files,
-    "s|search-directories" => \my $search_dirs,
-    "r|succsessful-result-only" => \my $show_successful,
-    "l|commands-here" => \my $show_local,
-    "c|count=i" => \my $count,
-};
-GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
-
-my @search = @ARGV;
-my $wd = cwd;
-
-# user 2011-08-20 21:02:47 19202 "dir" "0 1" cmd with options ...
-#                  usr  date time  pid   dir   exit codes  cmd
-my $hist_regex = '^(.+) (.+) (.+) (\d*) "(.+)" "([\d ]+)" (.+)$';
-
-my $h = $ENV{HISTFILE_ETERNAL};
-open(F, "tac $h |") || die $!;
-
-my %shown = ();
-$count ||= 100;
-my @to_show = ();
-
-ENTRY: while(<F>) {
-    my(@all) = $_ =~ /$hist_regex/g;
-    my($user, $date, $time, $pid, $dir, $result, $cmd) = @all;
-    my $was_successful = $result =~ /[0 ]+/g;
-
-    next if $show_successful && ! $was_successful;
-    next if $dir ne $wd && $show_local;
-
-    my $to_match;
-    my $show;
-
-    if($show_dirs_only) {
-        next if $show_existing_only && ! -d $dir;
-        $to_match = $dir;
-        $show = $dir;
-        $show_everything = 0;
-    }
-    else {
-        $to_match = $cmd;
-        $show = $cmd;
-        $show = $red . $show . $reset_color if ! $was_successful;
-    }
-
-    if($search_dirs) {
-        $to_match .= " $dir";
-    }
-
-    if(@search) {
-        foreach my $search (@search) {
-
-            next ENTRY if $to_match !~ /$search/i;
-
-            my $found;
-            if($find_files) {
-                foreach(split(" ", $cmd)) {
-                    if(/^\//) {
-                    } elsif(/^~/) {
-                        s/^~/$ENV{HOME}/g;
-                    } else {
-                        $_ = "$dir/$_";
-                    }
-                    next if $_ !~ /$search/i;
-                    next if ! -f $_;
-                    $found = $_;
-                    last;
-                }
-                next ENTRY if ! $found;
-                $to_match = $found;
-                $show = $found;
-            }
-        }
-    }
-
-    next if exists $shown{$to_match};
-
-    $shown{$to_match} = 1;
-
-    $show .= "\n";
-    $show .= $gray . "   (" . join(" ", @all[0..$#all-1]) . ")\n" . $reset_color
-        if $show_everything;
-
-    push(@to_show, $show);
-
-    last if !$show_all && keys %shown == $count;
-}
-
-map { print $_ } reverse @to_show;
-
-EOF
-)
-
-    local exit_code=$?
-    set +f
-    return $exit_code
-}
+alias h="historysearch -e -s"
 
 # uniq replacement without the need of sorted input
 function uniqunsorted() {
@@ -1831,40 +1742,6 @@ if [ -d $REMOTE_HOME/.bashrc.d ] ; then
 fi
 
 ### perl functions #############################################################
-
-# dump a perl app located at the end of this file
-function _dump_perl_app() {(
-    local function=${1?Specify function}
-    shift
-
-    perl -0777 -ne \
-        'print $1 if /(^### function '$function'\(\).*?)### /igsm' \
-        $REMOTE_BASHRC
-)}
-
-# run a perl app located at the end of this file
-function _run_perl_app() {(
-    local function=${1?Specify function}
-    shift
-
-    code=$(_dump_perl_app $function)
-
-    export code
-    perl -we 'eval $ENV{code} || die $@;' -- "$@"
-)}
-
-# setup aliases for all the perl apps at the end of this file
-function _setup_perl_apps() {
-
-    while read funct ; do
-        eval "function $funct() { ( set +e ; _run_perl_app $funct \"\$@\" ; ) }"
-    done<<EOF
-        $(perl -ne 'foreach (/^### function (.+?)\(/) {print "$_\n" }' \
-            $REMOTE_BASHRC)
-EOF
-}
-
-_setup_perl_apps
 
 alias normalizefilenames="xmv -ndx"
 
@@ -3861,5 +3738,120 @@ sub _ssl_args {
     return \%ssl_args;
 }
 }
+
+### function historysearch() ###################################################
+
+use strict;
+use warnings;
+no warnings 'uninitialized';
+use Data::Dumper;
+use Getopt::Long;
+use Cwd;
+
+my $gray        = "\x1b[38;5;250m";
+my $reset_color = "\x1b[38;5;0m";
+my $red         = "\x1b[38;5;124m";
+
+my $pipe_mode = ! -t STDOUT;
+
+if($pipe_mode) {
+    $gray = $reset_color = $red = "";
+}
+
+my $opts = {
+    "a|all" => \my $show_all,
+    "e|everything" => \my $show_everything,
+    "existing-only" => \my $show_existing_only,
+    "skip-current-dir" => \my $skip_current,
+    "d|directories" => \my $show_dirs_only,
+    "files" => \my $find_files,
+    "s|search-directories" => \my $search_dirs,
+    "r|succsessful-result-only" => \my $show_successful,
+    "l|commands-here" => \my $show_local,
+    "c|count=i" => \my $count,
+};
+GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
+
+my @search = @ARGV;
+my $wd = cwd;
+
+# user 2011-08-20 21:02:47 19202 "dir" "0 1" cmd with options ...
+#                  usr  date time  pid   dir   exit codes  cmd
+my $hist_regex = '^(.+) (.+) (.+) (\d*) "(.+)" "([\d ]+)" (.+)$';
+
+my $h = $ENV{HISTFILE_ETERNAL};
+open(F, "tac $h |") || die $!;
+
+my %shown = ();
+$count ||= 100;
+my @to_show = ();
+
+ENTRY: while(<F>) {
+    my(@all) = $_ =~ /$hist_regex/g;
+    my($user, $date, $time, $pid, $dir, $result, $cmd) = @all;
+    my $was_successful = $result =~ /[0 ]+/g;
+
+    next if $show_successful && ! $was_successful;
+    next if $dir ne $wd && $show_local;
+
+    my $to_match;
+    my $show;
+
+    if($show_dirs_only) {
+        next if $show_existing_only && ! -d $dir;
+        $to_match = $dir;
+        $show = $dir;
+        $show_everything = 0;
+    }
+    else {
+        $to_match = $cmd;
+        $show = $cmd;
+        $show = $red . $show . $reset_color if ! $was_successful;
+    }
+
+    if($search_dirs) {
+        $to_match .= " $dir";
+    }
+
+    if(@search) {
+        foreach my $search (@search) {
+
+            next ENTRY if $to_match !~ /$search/i;
+
+            my $found;
+            if($find_files) {
+                foreach(split(" ", $cmd)) {
+                    if(/^\//) {
+                    } elsif(/^~/) {
+                        s/^~/$ENV{HOME}/g;
+                    } else {
+                        $_ = "$dir/$_";
+                    }
+                    next if $_ !~ /$search/i;
+                    next if ! -f $_;
+                    $found = $_;
+                    last;
+                }
+                next ENTRY if ! $found;
+                $to_match = $found;
+                $show = $found;
+            }
+        }
+    }
+
+    next if exists $shown{$to_match};
+
+    $shown{$to_match} = 1;
+
+    $show .= "\n";
+    $show .= $gray . "   (" . join(" ", @all[0..$#all-1]) . ")\n" . $reset_color
+        if $show_everything;
+
+    push(@to_show, $show);
+
+    last if !$show_all && keys %shown == $count;
+}
+
+map { print $_ } reverse @to_show;
 
 ### END ########################################################################
