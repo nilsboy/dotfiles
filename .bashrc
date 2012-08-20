@@ -110,7 +110,7 @@ function _dump_perl_app() {(
     shift
 
     perl -0777 -ne \
-        'print $1 if /(^### function '$function'\(\).*?)### /igsm' \
+        'print $1 . "exit 0;" if /(^### function '$function'\(\).*?)### /igsm' \
         $REMOTE_BASHRC
 )}
 
