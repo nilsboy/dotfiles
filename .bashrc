@@ -350,8 +350,14 @@ if [[ $(type -p lesspipe ) ]] ; then
 fi
 
 function vncviewer() {
+
+    local host=$1
+    local port=${2:-22}
+
+    export VNC_VIA_CMD="/usr/bin/ssh -C -p $port -f -L %L:%H:%R %G sleep 20"
+
     $(type -pf vncviewer) -encoding tight -shared -owncmap \
-        -compresslevel 9 -quality 0 -x11cursor -via "$@" localhost:0
+        -compresslevel 9 -quality 0 -x11cursor -via $host localhost:0
 }
 
 ### distri fixes ###############################################################
