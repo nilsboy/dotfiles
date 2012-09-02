@@ -352,9 +352,8 @@ fi
 function vncviewer() {
 
     local host=$1
-    local port=${2:-22}
 
-    export VNC_VIA_CMD="/usr/bin/ssh -C -p $port -f -L %L:%H:%R %G sleep 20"
+    export VNC_VIA_CMD="/usr/bin/ssh -C -f -L %L:%H:%R %G sleep 20"
 
     $(type -pf vncviewer) -encoding tight \
         -compresslevel 9 -quality 5 -x11cursor -via $host localhost:0
