@@ -356,8 +356,16 @@ function vncviewer() {
 
     export VNC_VIA_CMD="/usr/bin/ssh -C -p $port -f -L %L:%H:%R %G sleep 20"
 
-    $(type -pf vncviewer) -encoding tight -shared -owncmap \
-        -compresslevel 9 -quality 0 -x11cursor -via $host localhost:0
+    $(type -pf vncviewer) -encoding tight \
+        -compresslevel 9 -quality 5 -x11cursor -via $host localhost:0
+}
+
+function vnc-vino-preferences {
+    vino-preferences
+}
+
+function vnc-start-vino {
+    /usr/lib/vino/vino-server --display :0 &
 }
 
 ### distri fixes ###############################################################
@@ -1378,11 +1386,6 @@ function unjar() { (
 # NOTES ON user management
 # * newgrp - log in to a new group
 # * sg - execute command as different group ID
-
-# NOTES ON vnc
-# ssh -v -L 5900:localhost:59[display] -p sshport sshgateway
-# export VNC_VIA_CMD='/usr/bin/ssh -x -p port -l user -f -L %L:%H:%R %G sleep 20'
-# xtightvncviewer -via ssh-host -encodings tight -fullscreen localhost:0
 
 # NOTES ON ubuntu
 # * Releases:
