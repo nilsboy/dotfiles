@@ -110,7 +110,7 @@ function _dump_perl_app() {(
     shift
 
     perl -0777 -ne \
-        'print $1 . "exit 0;" if /(^### function '$function'\(\).*?)### /igsm' \
+        'print $1 . "exit 0;" if /(^### function '$function'\(\).*?)\n### /igsm' \
         $REMOTE_BASHRC
 )}
 
@@ -339,6 +339,7 @@ alias aptw="apt-cache show"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
+
 function  t() { simpletree "$@" | less ; }
 function td() { simpletree -d "$@" | less ; }
 function ts() { simpletree -sc "$@" | less ; }
@@ -3904,5 +3905,54 @@ ENTRY: while(<F>) {
 }
 
 map { print $_ } reverse @to_show;
+
+### function aptpop() ##########################################################
+# search for a debian package, sort by ranking, add description
+
+use strict;
+use warnings;
+no warnings 'uninitialized';
+use Data::Dumper;
+use autodie;
+
+my %apps = ();
+open( F, qq{apt-cache search "@{[ join(" ", @ARGV) ]}" |} );
+while (<F>) {
+    my ( $app, $desc ) = /^(.+?) - (.+)$/;
+    next if $app =~ /^lib/;
+    $apps{$app}{exists} = 1;
+}
+
+my %ranks = ();
+
+open( F, qq{wget -qqO- http://popcon.debian.org/by_inst.gz | gunzip |} );
+while (<F>) {
+    my ( $rank, $app ) = /^(\d+)\s+(\S+)/;
+
+    next if $app =~ /^lib/;
+
+    next if !$app;
+    next if !exists $apps{$app};
+
+    $apps{$app}{ranked} = 1;
+    $ranks{$rank} = { app => $app };
+}
+
+# add apps without a ranking
+my $i = 0;
+foreach my $app ( keys %apps ) {
+    $i++;
+    $ranks{"_$i"} = { app => $app }
+        if !exists $apps{$app}{ranked};
+}
+
+print "\n";
+
+foreach my $rank ( sort { $a <=> $b } keys %ranks ) {
+    my $app = $ranks{$rank}{app};
+    my ($desc) = `apt-cache show $app` =~ /^Description.*?\:(.+?)\n\S/igsm;
+    my $header = "### $app " . ("#" x ($ENV{COLUMNS} - length($app) - 5));
+    print "$header\n\n$desc\n\n";
+}
 
 ### END ########################################################################
