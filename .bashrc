@@ -770,7 +770,7 @@ function bashrc_clean_environment() {
 
     # remove functions
     while read funct ; do
-        unset $funct
+        unset -f $funct
     done<<EOF
         $(perl -ne 'foreach (/^function (.+?)\(/) {print "$_\n" }' $REMOTE_BASHRC)
 EOF
