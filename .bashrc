@@ -352,7 +352,9 @@ fi
 
 # setup remote desktop access via ssh and vnc right
 # from the login screen of lightdm
-function vnc-server-setup-upstart-script {
+function vnc-server-setup-upstart-script {(
+
+    set -e
 
     sudo apt-get install x11vnc
 
@@ -394,7 +396,7 @@ EOF
     sudo initctl emit login-session-start
 
     echo "check if vino is running!"
-}
+)}
 
 function vncviewer() {
     local host=$1
@@ -1250,7 +1252,7 @@ function v() {
 
     local file=$(cat | perl -ne 'print if $. == '$line)
 
-    # close STDIN by connect it back to the terminal
+    # close STDIN by connecting it back to the terminal
     exec < $_bashrc_tty
 
     vi $file
