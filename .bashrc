@@ -241,7 +241,7 @@ fi
 
 ### aliases ####################################################################
 
-export EDITOR="DISPLAY= vi -i $REMOTE_HOME/.viminfo
+export EDITOR="DISPLAY= vi -i $REMOTE_HOME/.viminfo"
 
 if [[ -e $REMOTE_HOME/.vimrc ]] ; then
     EDITOR="$EDITOR -u $REMOTE_HOME/.vimrc"
