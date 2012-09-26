@@ -223,6 +223,10 @@ bind 'set page-completions off'
 # expand hi to underscores
 set 'completion-map-case on'
 
+# do not attempt to search the PATH for possible completions
+# when completion is attempted on an empty line
+shopt -s no_empty_cmd_completion
+
 # reenable ctrl+s for forward history search (XOFF)
 stty stop ^-
 
