@@ -2119,6 +2119,7 @@ END {
 
 use strict;
 use warnings;
+no warnings 'uninitialized';
 use Data::Dumper;
 
 my $black     = "\x1b[38;5;0m";
@@ -2233,7 +2234,7 @@ foreach my $jid ( keys %last_args ) {
 
         $final_length = length($arg) if length($arg) > $final_length;
 
-        $cmds{$jid}[1] = $arg;
+        $cmds{$jid}[1] = $arg || $org_arg;
     }
 
     # prefix with space to same length
