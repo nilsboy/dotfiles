@@ -524,14 +524,19 @@ function parent() {
 # absolute path
 function abs() {
 
-    perl - "$@" <<'EOF'
+    perl - "$@" <<''
         use Cwd;
         my $file = $ARGV[0] || ".";
-        print Cwd::abs_path($file);
-        print "/" if -d $file;
-        print "\n";
-EOF
+        my $abs = Cwd::abs_path($file);
+        $abs .= "/" if -d $file;
+        $abs = "'$abs'" if $abs =~ /\s/;
+        print "$abs\n";
 
+}
+
+# relative path
+function rel() {
+    abs "$@" | perl -pe "s#^('|)($HOME/)#\$1#g"
 }
 
 function findolderthandays() {
@@ -1037,7 +1042,12 @@ alias nosshagent="grabssh && unset SSH_AUTH_SOCK SSH_CLIENT SSH_CONNECTION SSH_T
 
 # ssh url of a file or directory
 function url() {
-    echo $USER@$HOSTNAME:$(abs "$@")
+
+    HOSTNAME=$HOSTNAME perl - "$(rel $@)" <<''
+        my $rel = "@ARGV";
+        $rel = "\"$rel\"" if $rel =~ /\s/;
+        print "$ENV{USER}\@$ENV{HOSTNAME}:$rel\n"
+
 }
 
 # nicer ssh tunnel setup
