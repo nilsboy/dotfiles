@@ -534,6 +534,7 @@ function abs() {
         my $abs = Cwd::abs_path($file);
         $abs .= "/" if -d $file;
         $abs = "'$abs'" if $abs =~ /\s/;
+        $abs =~ s/;/\\;/g;
         print "$abs\n";
 
 }
@@ -1049,7 +1050,7 @@ function url() {
 
     HOSTNAME=$HOSTNAME perl - "$(rel $@)" <<''
         my $rel = "@ARGV";
-        $rel = "\"$rel\"" if $rel =~ /\s/;
+        $rel = "\"$rel\"" if $rel =~ /\s|;/;
         print "$ENV{USER}\@$ENV{HOSTNAME}:$rel\n"
 
 }
