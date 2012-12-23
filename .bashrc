@@ -366,7 +366,9 @@ alias aptc="sudo apt-get autoremove"
 function  t() { simpletree "$@" | less ; }
 function td() { simpletree -d "$@" | less ; }
 function ts() { simpletree -sc "$@" | less ; }
-alias diffdir="diff -rq"
+function diffdir() {
+    diff <(cd "$1" && find | sort) <(cd "$2" && find | sort)
+}
 
 # make less more friendly for non-text input files, see lesspipe(1)
 if [[ $(type -p lesspipe ) ]] ; then
