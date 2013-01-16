@@ -2512,8 +2512,9 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-# use warnings FATAL => 'all';
 use File::Basename;
+use File::Copy qw(mv);
+use File::stat;
 
 use Getopt::Long;
 Getopt::Long::Configure('bundling');
@@ -2618,7 +2619,10 @@ foreach my $was (sort keys %was) {
 
     next if $dry;
 
-    system("mv", $was, $will) && die $!;
+    # system("mv", $was, $will) && die $!;
+    my $stat = stat($was) || die $!;
+    mv($was, $will) || die $!;
+    utime($stat->atime, $stat->mtime, $will) || die $!;
 }
 
 sub normalize {
