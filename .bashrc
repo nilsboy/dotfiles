@@ -2834,7 +2834,7 @@ if($to_file) {
     die "File exists: $file" if -f $file && ! $overwrite;
 }
 
-my $options;
+my $options = "--no-check-certificate ";
 if ($show_headers) {
     $options .= "-S ";
 }
