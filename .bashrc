@@ -1207,7 +1207,7 @@ function srd() {
 # fix mysql prompt to show real hostname - NEVER localhost
 function mysql() {
 
-    local h=$(perl -e '"'"$*"'" =~ /[-]+h(?:ost)*\ (\S+)/ && print $1')
+    local h=$(perl -e '"'"$*"'" =~ /[-]+h(?:ost)*\ ([^ \\.]+)/ && print $1')
 
     if [[ ! $h || $h = localhost ]] ; then
         h=$HOSTNAME
