@@ -1213,7 +1213,7 @@ function mysql() {
         h=$HOSTNAME
     fi
 
-    xtitle "mysql@$h" && MYSQL_PS1="\\u@$h:\\d db> " \
+    xtitle "mysql@$h" && MYSQL_PS1="\\u@${GREEN}$h${NO_COLOR}:${RED}\\d db${NO_COLOR}> " \
         command mysql --show-warnings --pager="less -FX" "$@"
 }
 
