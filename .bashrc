@@ -1257,17 +1257,36 @@ export PERL_MM_USE_DEFAULT=1
 # testing
 alias prove="prove -lv --merge"
 
-function perlmoduleversion() {
-    perl -le 'eval "require $ARGV[0]" and print $ARGV[0]->VERSION' "$@"
+function perl-module-version() {(
+    set -e
+    perl-is-module-installed
+    perl -M"$@" -e 'print $ARGV[0]->VERSION' "$@"
+)}
+
+function perl-is-module-installed() {
+    perl -M"$@" -e "1;" 2>/dev/null
 }
 
-function cpanm_reinstall_local_modules() {(
+function proxyserver() {(
+    set -e
+    local mod="HTTP::Proxy"
+
+    if ! perl-is-module-installed $mod ; then
+        echo "Installing $mod..."
+        cpanm $mod
+    fi
+
+    PORT=$1 \
+    perl -MHTTP::Proxy -e 'HTTP::Proxy->new(port => $ENV{PORT} || 8080)->start'
+)}
+
+function cpanm-reinstall-local-modules() {(
     set -e
     cpanm -nq App::cpanoutdated
     cpan-outdated | cpanm -nq --reinstall
 )}
 
-function cpan_listchanges() {(
+function cpan-list-changes() {(
     set -e
     type -f cpan-listchanges 2>&1>/dev/null || (
         cpanm -nq cpan-listchanges
@@ -1276,7 +1295,7 @@ function cpan_listchanges() {(
     command cpan-listchanges "$@"
 )}
 
-function perloneliners() {
+function perl-one-liners() {
     wcat http://www.catonmat.net/download/perl1line.txt | less +/"$@"
 }
 
