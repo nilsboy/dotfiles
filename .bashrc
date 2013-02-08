@@ -1276,11 +1276,19 @@ function proxyserver() {(
         cpanm $mod
     fi
 
-    PORT=${1:-8080}
+    local PORT=${1:-8080}
     echo "Starting proxy server on port $PORT..."
     PORT=$PORT \
     perl -MHTTP::Proxy -e 'HTTP::Proxy->new(port => $ENV{PORT})->start'
 )}
+
+function proxy-setup-environment() {
+    local PORT=${1:-8080}
+
+    for proto in http https ftp ; do
+        export ${proto}_proxy=$proto://localhost:$PORT/
+    done
+}
 
 function cpanm-reinstall-local-modules() {(
     set -e
