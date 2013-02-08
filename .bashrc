@@ -1,8 +1,19 @@
 ### for all shells #############################################################
 
 if [[ ! $_is_reload ]] ; then
-    export PATH=~/bin:~/opt/bin:~/perl5/bin:$PATH
-    export PERL5LIB=~/perl5/lib/perl5:~/perldev/lib:$PERL5LIB
+
+    PATH=~/bin:~/opt/bin:$PATH
+    PERL5LIB=~/perldev/lib
+
+    if [[ -e ~/perl5/perlbrew/etc/bashrc ]] ; then
+        source ~/perl5/perlbrew/etc/bashrc
+    else
+        PATH=$PATH:~/perl5/bin
+        PERL5LIB=$PERL5LIB:~/perl5/lib/perl5
+    fi
+
+    export PERL5LIB
+    export PATH
 fi
 
 if [[ ! $JAVA_HOME ]] ; then
