@@ -1259,8 +1259,8 @@ alias prove="prove -lv --merge"
 
 function perl-module-version() {(
     set -e
-    perl-is-module-installed
-    perl -M"$@" -e 'print $ARGV[0]->VERSION' "$@"
+    perl-is-module-installed "$@"
+    perl -M"$@" -e 'print $ARGV[0]->VERSION . "\n"' "$@"
 )}
 
 function perl-is-module-installed() {
