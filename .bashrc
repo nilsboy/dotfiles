@@ -673,9 +673,7 @@ fi
 
 # display or search pstree, exclude current process
 function p() {
-
     local search=${@-$PPID}
-
     pstree -apl \
         | perl -ne '$x = "xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
         | less "+/$search"
@@ -1263,28 +1261,54 @@ function perl-is-module-installed() {
     perl -M"$@" -e "1;" 2>/dev/null
 }
 
+# install a proxyserver software from the cpan an run it
 function proxyserver() {(
     set -e
     local mod="HTTP::Proxy"
 
     if ! perl-is-module-installed $mod ; then
-        echo "Installing $mod..."
+        INFO "Installing $mod..."
         cpanm $mod
     fi
 
-    local PORT=${1:-8080}
-    echo "Starting proxy server on port $PORT..."
-    PORT=$PORT \
-    perl -MHTTP::Proxy -e 'HTTP::Proxy->new(port => $ENV{PORT})->start'
+    local port=${1:-8080}
+    local name=proxyserver_$port
+
+    if pidof $name >/dev/null ; then
+        INFO "Proxy server alread running on port $port"
+        exit 0
+    fi
+
+    port=$port \
+    exec -a $name \
+        perl -MHTTP::Proxy -e 'HTTP::Proxy->new(port => $ENV{port})->start' &
+    disown -har
+    INFO "Proxy server is now running on port $port"
 )}
 
+# set proxy environment variables
 function proxy-setup-environment() {
-    local PORT=${1:-8080}
+    local port=${1:-8080}
 
     for proto in http https ftp ; do
-        export ${proto}_proxy=$proto://localhost:$PORT/
+        export ${proto}_proxy=$proto://localhost:$port/
     done
 }
+
+# proxy traffic of a remove host through localhost
+# i.e. if the remote host has no access to the cpan or
+# other parts of the internet
+function ssh-with-reverse-proxy() {(
+    set -e
+    local host=${1?specify host}
+    local port=${2-59347}
+    proxyserver $port
+    ssh -t $host -R $port:localhost:$port \
+        http_proxy=http://localhost:$port \
+        https_proxy=https://localhost:$port \
+        ftp_proxy=ftp://localhost:$port \
+        bash -il
+)}
 
 function cpanm-reinstall-local-modules() {(
     set -e
