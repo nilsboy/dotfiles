@@ -1169,7 +1169,8 @@ function _ssh_completion() {
 }
 
 if [[ -e $REMOTE_HOME/.ssh/config ]] ; then
-    complete -W "$(_ssh_completion)" ssh
+    complete -W "$(_ssh_completion)" ssh scp ssh-with-reverse-proxy sshfs \
+        sshnocheck sshtunnel vncviewer
 fi
 
 ### SCREEN #####################################################################
