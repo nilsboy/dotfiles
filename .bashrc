@@ -1275,7 +1275,7 @@ function proxyserver() {(
     local name=proxyserver_$port
 
     if pidof $name >/dev/null ; then
-        INFO "Proxy server alread running on port $port"
+        INFO "Proxy server already running on port $port"
         exit 0
     fi
 
@@ -1295,13 +1295,13 @@ function proxy-setup-environment() {
     done
 }
 
-# proxy traffic of a remove host through localhost
+# proxy traffic of a remote host through localhost
 # i.e. if the remote host has no access to the cpan or
 # other parts of the internet
 function ssh-with-reverse-proxy() {(
     set -e
     local host=${1?specify host}
-    local port=${2-59347}
+    local port=${2:-59347}
     proxyserver $port
     ssh -t $host -R $port:localhost:$port \
         http_proxy=http://localhost:$port \
@@ -1312,14 +1312,14 @@ function ssh-with-reverse-proxy() {(
 
 function cpanm-reinstall-local-modules() {(
     set -e
-    cpanm -nq App::cpanoutdated
-    cpan-outdated | cpanm -nq --reinstall
+    cpanm App::cpanoutdated
+    cpan-outdated | cpanm --reinstall
 )}
 
 function cpan-list-changes() {(
     set -e
     type -f cpan-listchanges 2>&1>/dev/null || (
-        cpanm -nq cpan-listchanges
+        cpanm cpan-listchanges
     )
 
     command cpan-listchanges "$@"
