@@ -674,15 +674,11 @@ fi
 # display or search pstree, exclude current process
 function p() {
 
-    local args
-
-    if [[ $@ ]] ; then
-        args=" +/$@"
-    fi
+    local search=${@-$PPID}
 
     pstree -apl \
         | perl -ne '$x = "xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
-        | less $args
+        | less "+/$search"
 }
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
@@ -1259,8 +1255,8 @@ alias prove="prove -lv --merge"
 
 function perl-module-version() {(
     set -e
-    perl-is-module-installed "$@"
-    perl -M"$@" -e 'print $ARGV[0]->VERSION . "\n"' "$@"
+    perl-is-module-installed
+    perl -M"$@" -e 'print $ARGV[0]->VERSION' "$@"
 )}
 
 function perl-is-module-installed() {
