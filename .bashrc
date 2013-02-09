@@ -358,6 +358,11 @@ function vif() {
     command vi "$entry"
 }
 
+function cdm() {
+    mkdir "$@" || return 1
+    cd "$@"
+}
+
 # edit perl modul that is located within perls module path
 function vip() {
     pm "$@" | v 1
