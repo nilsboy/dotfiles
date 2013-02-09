@@ -360,8 +360,13 @@ function vif() {
 
 # edit perl modul that is located within perls module path
 function vip() {
-    perl -M$1 -e \
-        '$_ = "'$1'"; eval "use $_"; s/::/\//g; s/$/.pm/g; print $INC{$_};'
+    pm "$@" | v 1
+}
+
+# search for a perl module or script
+function pm() {
+    find $(perl -e 'print join (" ", @INC)') -iname "*$@*.pm" 2>/dev/null \
+        | cat
 }
 
 alias greppath="compgen -c | grep -i"
@@ -1328,14 +1333,6 @@ function cpan-list-changes() {(
 
 function perl-one-liners() {
     wcat http://www.catonmat.net/download/perl1line.txt | less +/"$@"
-}
-
-# search for a perl module or script
-function pm() {
-    find $(perl -e 'print join (" ", @INC)') -iname '*.p[ml]' 2>/dev/null \
-        | grep -v thread \
-        | sort -u \
-        | g "$@"
 }
 
 # edit a file from a list on STDIN
