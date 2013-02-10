@@ -1318,7 +1318,7 @@ function ssh-with-reverse-proxy() {(
         http_proxy=http://localhost:$port \
         https_proxy=https://localhost:$port \
         ftp_proxy=ftp://localhost:$port \
-        bash -il
+        bash -i
 )}
 
 function cpanm-reinstall-local-modules() {(
