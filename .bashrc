@@ -683,7 +683,7 @@ fi
 
 # display or search pstree, exclude current process
 function p() {
-    local search=${@-$PPID}
+    local search=${@:-,$PPID}
     pstree -apl \
         | perl -ne '$x = "xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
         | less "+/$search"
