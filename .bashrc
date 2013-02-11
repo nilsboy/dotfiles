@@ -1253,11 +1253,13 @@ function mysql() {
 # for cpan
 export FTP_PASSIVE=1
 
-export MODULEBUILDRC=~/perl5/.modulebuildrc
-export PERL_MM_OPT=INSTALL_BASE=~/perl5
+if [[ ! $PERLBREW_VERSION ]] ; then
+    export MODULEBUILDRC=~/perl5/.modulebuildrc
+    export PERL_MM_OPT=INSTALL_BASE=~/perl5
 
-# less questions from cpan
-export PERL_MM_USE_DEFAULT=1
+    # less questions from cpan
+    export PERL_MM_USE_DEFAULT=1
+fi
 
 # testing
 alias prove="prove -lv --merge"
