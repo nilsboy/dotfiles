@@ -727,28 +727,29 @@ function m() {
     local arg="$@"
 
     if [[ $arg =~ ^- ]] ; then
-       arg=" {3,}"$arg
-    elif [[ ! $arg ]] ; then
-        arg='(^[A-Z]+[A-Z ]+)|---'
+       arg="+/\s+$arg\s+"
+    elif [[ $arg ]] ; then
+       arg="+/$arg"
     fi
 
     (
         _printifok help help -m $cmd
-        _printifok man man -a $cmd || \
-        _printifok internet _man_internet $cmd
+        _printifok man man -a $cmd
         _printifok perldoc perldoc -f $cmd
-        _printifok apt-search apt-cache search $cmd
         _printifok related man -k $cmd
 
-    ) | LESS="-j.5 -inRg" less +/"$arg"
+    ) | LESS="-j.5 -inRg" less $arg
 }
 
-function _man_internet() {
+function man_internet() {
     local cmd=$1
-    wcat -s http://man.cx/$cmd \
-        | perl -0777 -pe 's/^.*\n(?=\s*NAME\s*$)|\n\s*COMMENTS.*$//smg' \
-        | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/' \
-        && echo
+    (
+        wcat -s http://man.cx/$cmd \
+            | perl -0777 -pe 's/^.*\n(?=\s*NAME\s*$)|\n\s*COMMENTS.*$//smg' \
+            | perl -0777 -pe 'exit 1 if /Sorry, I don.t have this manpage/' \
+            && echo
+
+    ) | LESS="-j.5 -inRg" less $arg
 }
 
 function _printifok() {
@@ -1230,8 +1231,16 @@ function mysql() {
         h=$HOSTNAME
     fi
 
-    xtitle "mysql@$h" && MYSQL_PS1="\\u@${GREEN}$h${NO_COLOR}:${RED}\\d db${NO_COLOR}> " \
-        command mysql --show-warnings --pager="less -FX" "$@"
+    local luit
+    if [[ $(type -t luit) ]] ; then
+        luit="luit -encoding ISO885915"
+    fi
+
+    # MYSQL_PS1="\\u@${GREEN}$h${NO_COLOR}:${RED}\\d db${NO_COLOR}> " \
+    xtitle "mysql@$h" && \
+        MYSQL_PS1="\\u@$h:\\d db> " \
+        command $luit mysql --default-character-set=latin1 \
+            --show-warnings --pager="less -FX" "$@"
 }
 
 ### perl #######################################################################
