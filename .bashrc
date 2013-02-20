@@ -121,8 +121,20 @@ function _dump_perl_app() {(
     shift
 
     perl -0777 -ne \
-        'print $1 . "exit 0;" if /(^### function '$function'\(\).*?)\n### /igsm' \
+        'print "#!/usr/bin/env perl\n" . $1 . "exit 0;" if /(^### function '$function'\(\).*?)\n### /igsm' \
         $REMOTE_BASHRC
+)}
+
+function _dump_perl_app_to_file() {(
+    local function=${1?Specify function}
+    shift
+
+    if [[ -e $function ]] ; then
+        DIE "File $function exists."
+    fi
+
+    _dump_perl_app $function > $function
+    chmod +x $function
 )}
 
 # run a perl app located at the end of this file
