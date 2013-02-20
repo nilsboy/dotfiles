@@ -2380,6 +2380,7 @@ my $opts = {
     "l|list-counts"      => \my $list_counts,
     "a|show-dot-files"   => \my $show_dot_files,
     "no-colors"          => \my $no_colors,
+    "ascii"              => \my $ascii,
 };
 GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
 
@@ -2391,6 +2392,17 @@ if(!$no_colors) {
     $red      = "\x1b[31;5;250m";
     $gray     = "\x1b[37;5;250m";
     $no_color = "\x1b[33;0m";
+}
+my $graph_vertical = "\x{2502}";
+my $graph_t = "\x{251c}";
+my $graph_l = "\x{2514}";
+my $graph_line = "\x{2500}\x{2500} ";
+
+if($ascii) {
+    $graph_vertical = "|";
+    $graph_t = "+";
+    $graph_l = "+";
+    $graph_line = "--";
 }
 
 my $depth      = -1;
@@ -2414,7 +2426,7 @@ sub inc_prefix {
     return if $depth == -1;
 
     if ($has_next) {
-        $prefix .= "\x{2502}";
+        $prefix .= $graph_vertical;
     }
     else {
         $prefix .= " ";
@@ -2426,8 +2438,8 @@ sub inc_prefix {
 sub prefix {
     my ( $is_dir, $has_next ) = @_;
     return if $depth == -1;
-    my $add_prefix .= $has_next ? "\x{251c}" : "\x{2514}";
-    return $prefix . $add_prefix . "\x{2500}\x{2500} ";
+    my $add_prefix .= $has_next ? $graph_t : $graph_l;
+    return $prefix . $add_prefix . "$graph_line ";
 }
 
 sub dec_prefix {
