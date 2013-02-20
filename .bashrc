@@ -2367,14 +2367,19 @@ my $opts = {
     "c|sort-by-count"    => \my $sort_by_count,
     "l|list-counts"      => \my $list_counts,
     "a|show-dot-files"   => \my $show_dot_files,
+    "no-colors"          => \my $no_colors,
 };
 GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
 
-my $blue     = "\x1b[34;5;250m";
-my $green    = "\x1b[32;5;250m";
-my $red      = "\x1b[31;5;250m";
-my $gray     = "\x1b[37;5;250m";
-my $no_color = "\x1b[33;0m";
+my ($blue, $green, $red, $gray, $no_color);
+
+if(!$no_colors) {
+    $blue     = "\x1b[34;5;250m";
+    $green    = "\x1b[32;5;250m";
+    $red      = "\x1b[31;5;250m";
+    $gray     = "\x1b[37;5;250m";
+    $no_color = "\x1b[33;0m";
+}
 
 my $depth      = -1;
 my $max        = $ENV{COLUMNS};
