@@ -2381,6 +2381,7 @@ my $opts = {
     "a|show-dot-files"   => \my $show_dot_files,
     "no-colors"          => \my $no_colors,
     "ascii"              => \my $ascii,
+    "skip-dir=s"         => \my $skip_dir,
 };
 GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
 
@@ -2448,6 +2449,8 @@ sub dec_prefix {
 
 sub listdir {
     my ( $dir, $has_next ) = @_;
+
+    return if $skip_dir && $dir =~ /$skip_dir/i;
 
     my $normal_dir = 0;
     my ($dev)      = stat $dir;
