@@ -2382,6 +2382,7 @@ my $opts = {
     "no-colors"          => \my $no_colors,
     "ascii"              => \my $ascii,
     "skip-dir=s"         => \my $skip_dir,
+    "e|eval=s"           => \my $eval,
 };
 GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
 
@@ -2484,7 +2485,14 @@ sub listdir {
         next if $entry =~ /^\.{1,2}$/;
         next if ! $show_dot_files && $entry =~ /^\./;
 
-        $entry = "$dir/$entry";
+        $_ = $entry;
+        if ($eval) {
+            eval $eval;
+            die $@ if $@;
+        }
+
+        next if $_ eq "";
+        $entry = "$dir/$_";
         push(@entries, $entry);
     }
     closedir(DIR) || die $!;
