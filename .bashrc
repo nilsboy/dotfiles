@@ -488,7 +488,7 @@ function SHOW()  {
 ## system functions ############################################################
 
 # display infos about the system
-function showenv() {
+function env-show() {
 
     while read v ; do
         SHOW $v ${!v}
@@ -515,6 +515,10 @@ EOF
     else
         SHOW Linux $(cat /etc/issue.net)
     fi
+}
+
+function env-grep {
+    env | grep -i "$@"
 }
 
 function switch_to_iso() { export LANG=de_DE@euro ; }
