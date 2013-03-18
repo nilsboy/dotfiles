@@ -821,7 +821,7 @@ function freeport() {
 function _cphub() {(
     local tmp="/tmp/cphub.$$"
     set -e
-    wcat http://github.com/evenless/etc/raw/master/$1 -fr
+    wcat http://github.com/evenless/dotfiles/raw/master/$1 -fr
 )}
 
 function bashrc_clean_environment() {
