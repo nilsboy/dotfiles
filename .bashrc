@@ -1157,6 +1157,29 @@ function sslstrip() { (
     xtitle "sslstrip $cmd" && $cmd
 ) }
 
+function ssl-create-self-signed-certificate() {(
+
+    set -e
+
+    local host=${1?Specify host}
+
+    if [[ -e server-key.pem ]] ; then
+        DIE "File server-key.pem exists"
+    fi
+
+    if [[ -e server-cert.pem ]] ; then
+        DIE "File server-cert.pem exists"
+    fi
+
+    openssl req -x509 -newkey rsa:1024 \
+        -keyout server-key.pem \
+        -out server-cert.pem \
+        -days 365 -nodes \
+        -subj "/C=DE/ST=SH/L=Germany/CN=$host"
+
+    ls server-key.pem server-cert.pem
+)}
+
 function sdiff() {(
     _pscp 1 $1 $2
 )}
