@@ -2257,7 +2257,7 @@ use Data::Dumper;
 
 my $black     = "\x1b[38;5;0m";
 my $gray      = "\x1b[38;5;250m";
-my $dark_gray = "\x1b[38;5;244m";
+my $dark_gray = "\x1b[38;5;243m";
 my $red       = "\x1b[38;5;124m";
 
 my %cmds      = ();
@@ -2421,7 +2421,7 @@ if(!$no_colors) {
     $blue     = "\x1b[34;5;250m";
     $green    = "\x1b[32;5;250m";
     $red      = "\x1b[31;5;250m";
-    $gray     = "\x1b[37;5;250m";
+    $gray     = "\x1b[38;5;243m";
     $no_color = "\x1b[33;0m";
 }
 my $graph_vertical = "\x{2502}";
@@ -3030,7 +3030,7 @@ use Data::Dumper;
 use Getopt::Long;
 use Cwd;
 
-my $gray        = "\x1b[38;5;250m";
+my $gray        = "\x1b[38;5;243m";
 my $reset_color = "\x1b[38;5;0m";
 my $red         = "\x1b[38;5;124m";
 
