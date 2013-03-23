@@ -2427,13 +2427,13 @@ if(!$no_colors) {
 my $graph_vertical = "\x{2502}";
 my $graph_t = "\x{251c}";
 my $graph_l = "\x{2514}";
-my $graph_line = "\x{2500}\x{2500} ";
+my $graph_line = "\x{2500}";
 
 if($ascii) {
     $graph_vertical = "|";
     $graph_t = "+";
     $graph_l = "+";
-    $graph_line = "--";
+    $graph_line = "-";
 }
 
 my $depth      = -1;
@@ -2463,18 +2463,18 @@ sub inc_prefix {
         $prefix .= " ";
     }
 
-    $prefix .= "   ";
+    $prefix .= "  ";
 }
 
 sub prefix {
     my ( $is_dir, $has_next ) = @_;
     return if $depth == -1;
     my $add_prefix .= $has_next ? $graph_t : $graph_l;
-    return $prefix . $add_prefix . "$graph_line ";
+    return $prefix . $add_prefix . "$graph_line";
 }
 
 sub dec_prefix {
-    $prefix = substr( $prefix, 0, length($prefix) - 4 );
+    $prefix = substr( $prefix, 0, length($prefix) - 3 );
 }
 
 sub listdir {
