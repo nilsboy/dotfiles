@@ -386,7 +386,9 @@ function pm() {
         | cat
 }
 
-alias greppath="compgen -c | grep -i"
+alias grep-path="compgen -c | grep -i"
+alias grep-until="perl -ne 'print; last if /@ARGV/i' -"
+alias grep-from="perl -e 'while(<STDIN>) { \$found = 1 if /@ARGV/i; print if \$found }'"
 
 alias xargs='xargs -I {} -d \\n'
 
