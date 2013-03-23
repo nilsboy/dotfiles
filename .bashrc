@@ -693,10 +693,6 @@ function unix2dos() {
 
 ## process management ##########################################################
 
-if [[ ! $(type -t pstree) ]] ; then
-    alias p="ps axjf"
-fi
-
 # display or search pstree, exclude current process
 function p() {
     local search=${@:-,$PPID}
@@ -704,6 +700,10 @@ function p() {
         | perl -ne '$x = "xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
         | less "+/$search"
 }
+
+if [[ ! $(type -t pstree) ]] ; then
+    alias p="ps axjf"
+fi
 
 function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
 
@@ -1226,8 +1226,8 @@ fi
 
 ### SCREEN #####################################################################
 
-alias screen="xtitle screen@$HOSTNAME ; export DISPLAY=; screen -c $REMOTE_HOME/.screenrc"
-alias   tmux="xtitle   tmux@$HOSTNAME ; export DISPLAY= ; tmux"
+alias screen="xtitle screen@$HOSTNAME ; screen -c $REMOTE_HOME/.screenrc"
+alias   tmux="xtitle   tmux@$HOSTNAME ; tmux"
 
 # reconnect to a screen or tmux session
 function srd() {
@@ -1835,12 +1835,10 @@ function _prompt_command_default() {
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
+    $_PROMPT_WMCTRL
 
     # has to be done here!?!
     _track_then=$SECONDS
-
-    # TODO
-    # $_PROMPT_WMCTRL
 }
 
 function _prompt_command_simple() {
@@ -1862,6 +1860,7 @@ function _prompt_command_simple() {
     xtitle $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
+    $_PROMPT_WMCTRL
 
     # has to be done here!?!
     _track_then=$SECONDS
@@ -1879,6 +1878,7 @@ function _prompt_command_spare() {
     xtitle  $USER@$HOSTNAME:$_xtitle_pwd
 
     _add_to_history
+    $_PROMPT_WMCTRL
 }
 
 function prompt_default() {
