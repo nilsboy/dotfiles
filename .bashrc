@@ -398,7 +398,8 @@ alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 
-function  t() { simpletree "$@" | less ; }
+function  t() { simpletree "$@" ; }
+function  tp() { simpletree "$@" | less ; }
 function td() { simpletree -d "$@" | less ; }
 function ts() { simpletree -sc "$@" | less ; }
 
@@ -2462,7 +2463,7 @@ my $o;
 
 listdir($root_dir);
 
-print stats() . "\n" . $o . stats();
+print $o . stats();
 
 sub stats {
     my $o;
@@ -2470,7 +2471,7 @@ sub stats {
         if $mounted;
     $o .= $red . "==> Skipped $dirlinks linked directories.\n" . $no_color
         if $dirlinks;
-    $o .= $red . "==> Dotfiles found: $dot_files" . $no_color
+    $o .= $red . "==> Dot files found: $dot_files\n" . $no_color
         if $dot_files;
     return $o
 }
