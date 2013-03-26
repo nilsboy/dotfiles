@@ -401,8 +401,22 @@ alias aptc="sudo apt-get autoremove"
 function  t() { simpletree "$@" | less ; }
 function td() { simpletree -d "$@" | less ; }
 function ts() { simpletree -sc "$@" | less ; }
+
 function diffdir() {
-    diff <(cd "$1" && find | sort) <(cd "$2" && find | sort)
+
+    local left=$1 ; shift
+    local right=$1 ; shift
+
+    local diff=diff
+
+    if [[ $(type -p colordiff) ]] ; then
+        diff=colordiff
+    fi
+
+    $diff -y \
+        <(t --no-colors --ascii $@ "$left") \
+        <(t --no-colors --ascii $@ "$right") \
+        | less
 }
 
 # make less more friendly for non-text input files, see lesspipe(1)
@@ -2441,15 +2455,25 @@ my $max        = $ENV{COLUMNS};
 my ($root_dev) = stat ".";
 my $mounted    = 0;
 my $dirlinks   = 0;
+my $dot_files  = 0;
 my $root_dir   = $ARGV[0] || getcwd;
 my $prefix;
+my $o;
 
 listdir($root_dir);
 
-print $red . "==> Skipped $mounted mounted directories.\n" . $no_color
-    if $mounted;
-print $red . "==> Skipped $dirlinks linked directories.\n" . $no_color
-    if $dirlinks;
+print stats() . "\n" . $o . stats();
+
+sub stats {
+    my $o;
+    $o .= $red . "==> Skipped $mounted mounted directories.\n" . $no_color
+        if $mounted;
+    $o .= $red . "==> Skipped $dirlinks linked directories.\n" . $no_color
+        if $dirlinks;
+    $o .= $red . "==> Dotfiles found: $dot_files" . $no_color
+        if $dot_files;
+    return $o
+}
 
 sub inc_prefix {
     my ($has_next) = @_;
@@ -2499,7 +2523,7 @@ sub listdir {
     }
 
     if ( !$normal_dir ) {
-        print prefix(1, $has_next) . $blue . $label . $no_color . "\n";
+        $o .= prefix(1, $has_next) . $blue . $label . $no_color . "\n";
         return;
     }
 
@@ -2512,7 +2536,11 @@ sub listdir {
     while(my $entry = readdir(DIR) ) {
 
         next if $entry =~ /^\.{1,2}$/;
-        next if ! $show_dot_files && $entry =~ /^\./;
+
+        if($entry =~ /^\./) {
+            $dot_files++;
+            next if ! $show_dot_files;
+        } 
 
         $_ = $entry;
         if ($eval) {
@@ -2563,7 +2591,7 @@ sub listdir {
         $label .= " $gray" . @dirs . "/" . $file_count . $no_color
             if $file_count || @dirs;
     }
-    print prefix( 1, $has_next ) . $blue . $label . $no_color . "\n";
+    $o .= prefix( 1, $has_next ) . $blue . $label . $no_color . "\n";
 
     inc_prefix($has_next);
 
@@ -2625,7 +2653,7 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
                 if $count > 1;
             $file .= $red . " -> $link" . $no_color if $link;
 
-            print prefix( 0, $entry_number != $entry_count ) 
+            $o .= prefix( 0, $entry_number != $entry_count ) 
                 . $count_label
                 . $file
                 . " \n";
@@ -2637,7 +2665,7 @@ DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
                 next if keys %files == 4;
 
                 if ( keys %files > 3 ) {
-                    print prefix . "...\n";
+                    $o .= prefix . "...\n";
                 }
 
                 last DIR;
