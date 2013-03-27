@@ -398,8 +398,7 @@ alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 
-function  t() { simpletree "$@" ; }
-function  tp() { simpletree "$@" | less ; }
+function  t() { simpletree "$@" | less ; }
 function td() { simpletree -d "$@" | less ; }
 function ts() { simpletree -sc "$@" | less ; }
 
@@ -1076,7 +1075,7 @@ fi
 # * cssh = clusterssh
 
 alias ssh="ssh -A"
-alias sshnocheck="ssh -q -o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+alias ssh-no-check="ssh -q -o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
 # save ssh-agent vars to be loaded in a nother session or on reconnect inside
 # screen or tmux
@@ -1107,14 +1106,14 @@ function url() {
 }
 
 # nicer ssh tunnel setup
-function sshtunnel() { (
+function ssh-tunnel() { (
 
     local  in=$1
     local  gw=$2
     local out=$3
 
     if [[ ${#@} < 2 ]] ; then
-        DIE "usage: sshtunnel [[in_host:]in_port] user@gateway [out_host:]out_port"
+        DIE "usage: ssh-tunnel [[in_host:]in_port] user@gateway [out_host:]out_port"
     fi
 
     if [[ ${#@} < 3 ]] ; then
