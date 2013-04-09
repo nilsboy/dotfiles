@@ -758,8 +758,10 @@ function m() {
     local cmd=$1 ; shift
     local arg="$@"
 
-    if [[ $arg =~ ^- ]] ; then
-       arg="+/\s+$arg\s+"
+    if [[ $arg =~ ^-- ]] ; then
+       arg="+/$arg"
+    elif [[ $arg =~ ^- ]] ; then
+       arg="+/^\s+$arg"
     elif [[ $arg ]] ; then
        arg="+/$arg"
     fi
