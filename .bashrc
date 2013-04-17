@@ -306,6 +306,9 @@ alias cdt='cd $REMOTE_HOME/tmp'
 
 alias lsop='netstat -tapnu | less -S'
 
+alias shell-turn-off-line-wrapping="tput rmam"
+alias shell-turn-on-line-wrapping="tput smam"
+
 function df() {
 
     if [[ $@ ]] ; then
