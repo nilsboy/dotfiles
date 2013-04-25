@@ -311,6 +311,28 @@ alias shell-turn-on-line-wrapping="tput smam"
 
 alias pgrep="pgrep -fl"
 
+function kill-tree() {
+    local pid=${1?PID?}
+    kill -- -$(ps opgid= $pid)
+}
+
+function kill-tree-grep() {(
+    set -e
+    local pattern=${1?Process name or argument?}
+
+    pgrep $pattern
+    WARN "These and their sub processes?"
+
+    read a
+
+    if [[ $a != y ]] ; then
+        DIE "User interupt."
+    fi
+
+    local pids=$(\pgrep -f $pattern)
+    kill -- -$(ps opgid= $pids)
+)}
+
 function df() {
 
     if [[ $@ ]] ; then
