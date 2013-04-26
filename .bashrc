@@ -425,17 +425,23 @@ alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 
-function apt-hold-package() {
+# keep a package from beeing upgraded
+function apt-hold-package() {(
+    set -e
     local package_name=${1?package name?}
+    dpkg --get-selections tmux
     echo $package_name hold | sudo dpkg --set-selections
     dpkg --get-selections tmux
-}
+)}
 
-function apt-unhold-package() {
+# return a package to default upgrade state
+function apt-unhold-package() {(
+    set -e
     local package_name=${1?package name?}
+    dpkg --get-selections tmux
     echo $package_name install | sudo dpkg --set-selections
     dpkg --get-selections tmux
-}
+)}
 
 function  t() { simpletree "$@" | less ; }
 function td() { simpletree -d "$@" | less ; }
