@@ -425,6 +425,18 @@ alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 
+function apt-hold-package() {
+    local package_name=${1?package name?}
+    echo $package_name hold | sudo dpkg --set-selections
+    dpkg --get-selections tmux
+}
+
+function apt-unhold-package() {
+    local package_name=${1?package name?}
+    echo $package_name install | sudo dpkg --set-selections
+    dpkg --get-selections tmux
+}
+
 function  t() { simpletree "$@" | less ; }
 function td() { simpletree -d "$@" | less ; }
 function ts() { simpletree -sc "$@" | less ; }
