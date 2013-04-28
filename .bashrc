@@ -310,6 +310,7 @@ alias shell-turn-off-line-wrapping="tput rmam"
 alias shell-turn-on-line-wrapping="tput smam"
 
 alias pgrep="pgrep -fl"
+alias ps-attach="sudo strace -ewrite -s 1000 -p"
 
 function kill-tree() {
     local pid=${1?PID?}
