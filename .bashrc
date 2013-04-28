@@ -1436,6 +1436,50 @@ function ssh-with-reverse-proxy() {(
         bash -i
 )}
 
+function ssh-reverse-tunnel-setup() {(
+
+    set -e
+
+    local ssh_key_file=~/.ssh/reverse-tunnel
+
+    if [[ ! -e $ssh_key_file ]] ; then
+
+        local server=${1?Server?}
+        local port=${1?Port?}
+        ssh-keygen -q -t rsa -b 2048 -P "" -f $ssh_key_file
+        INFO "Add this new public key for tunnel@$server"
+        cat $ssh_key_file.pub
+
+    INFO "Adding ~/.ssh/config entry..."
+
+cat << EOF >> ~/.ssh/config
+
+Host reverse-tunnel-server
+    Hostname $server
+    Port $port
+    User tunnel
+    IdentityFile ~/.ssh/reverse-tunnel
+    RemoteForward 0 localhost:22
+    CheckHostIP no
+    UserKnownHostsFile /dev/null
+    StrictHostKeyChecking no
+    ServerAliveInterval 60
+    Compression yes
+EOF
+
+    fi
+
+    CMD="bash -c '(while true ; do ssh -N reverse-tunnel-server 2>&1 ; sleep 300 ; done 0<&- | logger -i) &' # reverse tunnel dont edit"
+
+    INFO "Adding crontab entry..."
+    (crontab -l | grep -v "# reverse tunnel dont edit" ; echo "@reboot $CMD") | crontab -
+
+    INFO "Starting tunnel now..."
+    echo $CMD | bash
+
+    INFO "done."
+)}
+
 function cpanm-reinstall-local-modules() {(
     set -e
     cpanm App::cpanoutdated
