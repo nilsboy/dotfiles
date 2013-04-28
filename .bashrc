@@ -313,7 +313,8 @@ alias pgrep="pgrep -fl"
 
 function kill-tree() {
     local pid=${1?PID?}
-    kill -- -$(ps opgid= $pid)
+    local pids=$(ps opgid= $pid | perl -pe 's/^/-/g; s/\n/ /g')
+    kill -TERM $pids
 }
 
 function kill-tree-grep() {(
@@ -330,7 +331,8 @@ function kill-tree-grep() {(
     fi
 
     local pids=$(\pgrep -f $pattern)
-    kill -- -$(ps opgid= $pids)
+    pids=$(ps opgid= $pids | perl -pe 's/^/-/g; s/\n/ /g')
+    kill -TERM $pids
 )}
 
 function df() {
