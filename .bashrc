@@ -1445,13 +1445,17 @@ function ssh-reverse-tunnel-setup() {(
 
     local ssh_key_file=~/.ssh/reverse-tunnel
 
-    if [[ ! -e $ssh_key_file ]] ; then
+    if [[ -e $ssh_key_file ]] ; then
+        DIE "$ssh_key_file already exists"
+    fi
 
-        local server=${1?Server?}
-        local port=${1?Port?}
-        ssh-keygen -q -t rsa -b 2048 -P "" -f $ssh_key_file
-        INFO "Add this new public key for tunnel@$server"
-        cat $ssh_key_file.pub
+    local server=${1?Server?}
+    local port=${1?Port?}
+
+    ssh-keygen -q -t rsa -b 2048 -P "" -f $ssh_key_file
+
+    INFO "Add this new public key to tunnel@$server"
+    cat $ssh_key_file.pub
 
     INFO "Adding ~/.ssh/config entry..."
 
@@ -1461,7 +1465,7 @@ Host reverse-tunnel-server
     Hostname $server
     Port $port
     User tunnel
-    IdentityFile ~/.ssh/reverse-tunnel
+    IdentityFile $ssh_key_file
     RemoteForward 0 localhost:22
     CheckHostIP no
     UserKnownHostsFile /dev/null
@@ -1469,8 +1473,6 @@ Host reverse-tunnel-server
     ServerAliveInterval 60
     Compression yes
 EOF
-
-    fi
 
     CMD="bash -c '(while true ; do ssh -N reverse-tunnel-server 2>&1 ; sleep 300 ; done 0<&- | logger -i) &' # reverse tunnel dont edit"
 
