@@ -432,18 +432,18 @@ alias aptc="sudo apt-get autoremove"
 function apt-hold-package() {(
     set -e
     local package_name=${1?package name?}
-    dpkg --get-selections tmux
+    dpkg --get-selections $package_name
     echo $package_name hold | sudo dpkg --set-selections
-    dpkg --get-selections tmux
+    dpkg --get-selections $package_name
 )}
 
 # return a package to default upgrade state
 function apt-unhold-package() {(
     set -e
     local package_name=${1?package name?}
-    dpkg --get-selections tmux
+    dpkg --get-selections $package_name
     echo $package_name install | sudo dpkg --set-selections
-    dpkg --get-selections tmux
+    dpkg --get-selections $package_name
 )}
 
 function  t() { simpletree "$@" | less ; }
