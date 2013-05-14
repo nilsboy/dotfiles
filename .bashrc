@@ -1296,6 +1296,8 @@ fi
 alias screen="xtitle screen@$HOSTNAME ; screen -c $REMOTE_HOME/.screenrc"
 alias   tmux="xtitle   tmux@$HOSTNAME ; tmux"
 
+alias tmux-reload-environment="eval $(tmux show-env | grep -v '^-')"
+
 # reconnect to a screen or tmux session
 function srd() {
 
