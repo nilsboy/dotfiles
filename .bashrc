@@ -312,6 +312,10 @@ alias shell-turn-on-line-wrapping="tput smam"
 alias pgrep="pgrep -fl"
 alias ps-attach="sudo strace -ewrite -s 1000 -p"
 
+function repeat() {
+    perl -0777 -e 'print <STDIN> x $ARGV[0]' "$@"
+}
+
 function kill-tree() {
     local pid=${1?PID?}
     local pids=$(ps opgid= $pid | perl -pe 's/^/-/g; s/\n/ /g')
