@@ -536,6 +536,10 @@ function vnc-start-vino {
     /usr/lib/vino/vino-server --display :0 &
 }
 
+function repeat() {
+    perl -0777 -e 'print <STDIN> x $ARGV[0]' "$@"
+}
+
 ### distri fixes ###############################################################
 
 if [[ $DISTRIBUTION = "suse" ]] ; then
