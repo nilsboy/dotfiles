@@ -1069,7 +1069,7 @@ function bashrc_setup_multiuser_environment() {
 
         done
 
-    done<<<$(ssh-add -L 2>/dev/null)
+    done < <(ssh-add -L 2>/dev/null)
 
     [[ $REMOTE_USER ]] || return
 
