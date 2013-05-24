@@ -192,6 +192,8 @@ export LINES COLUMNS
 
 export _bashrc_tty=$(tty)
 
+export FTP_PASSIVE=1
+
 ### input config ###############################################################
 
 export INPUTRC=$REMOTE_HOME/.inputrc
