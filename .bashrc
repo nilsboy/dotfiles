@@ -1487,7 +1487,7 @@ EOF
     CMD="bash -c '(while true ; do ssh -N reverse-tunnel-server 2>&1 ; sleep 300 ; done 0<&- | logger -i) &' # reverse tunnel dont edit"
 
     INFO "Adding crontab entry..."
-    (crontab -l | grep -v "# reverse tunnel dont edit" ; echo "@reboot $CMD") | crontab -
+    ((crontab -l || echo) | grep -v "# reverse tunnel dont edit" ; echo "@reboot $CMD") | crontab -
 
     INFO "Starting tunnel now..."
     echo $CMD | bash
