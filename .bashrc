@@ -20,7 +20,7 @@ if [[ ! $JAVA_HOME ]] ; then
     export JAVA_HOME=/usr/lib/jvm/java-6-sun
 fi
 
-## helper functions ############################################################
+### helper functions ###########################################################
 
 function _LOG() {
 
@@ -556,7 +556,7 @@ function SHOW()  {
     echo "$GREEN$var$NO_COLOR: $@"
 }
 
-## system functions ############################################################
+### system functions ###########################################################
 
 # display infos about the system
 function env-show() {
@@ -594,7 +594,7 @@ function env-grep {
 
 function switch_to_iso() { export LANG=de_DE@euro ; }
 
-## misc functions ##############################################################
+### misc functions #############################################################
 
 alias filter_remove_comments="perl -ne 'print if ! /^#/ && ! /^$/'"
 alias filter_quote="fmt -s | perl -pe 's/^/> /g'"
@@ -626,14 +626,14 @@ function timestamp2date() {
     'print strftime("%F %T", localtime(substr("'$timestamp'", 0, 10))) . "\n"'
 }
 
-## shell helper functions ######################################################
+### shell helper functions #####################################################
 
 # get parent process id
 function parent() {
     echo $(ps -p $PPID -o comm=)
 }
 
-## file handling functions #####################################################
+### file handling functions ####################################################
 
 # absolute path
 function abs() {
@@ -762,7 +762,7 @@ function unix2dos() {
     perl -i -pe 's/\n/\r\n/' "$@"
 }
 
-## process management ##########################################################
+### process management #########################################################
 
 # display or search pstree, exclude current process
 function p() {
