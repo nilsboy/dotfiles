@@ -1,19 +1,19 @@
 ### for all shells #############################################################
 
+PERL5LIB=~/perldev/lib
+
+if [[ -e ~/perl5/perlbrew/etc/bashrc ]] ; then
+    source ~/perl5/perlbrew/etc/bashrc
+fi
+
+if [[ ! $PERLBREW_PERL ]] ; then
+    PERL5LIB=$PERL5LIB:~/perl5/lib/perl5
+fi
+
+export PERL5LIB
+
 if [[ ! $_is_reload ]] ; then
-
-    PATH=~/bin:~/opt/bin:$PATH
-    PERL5LIB=~/perldev/lib
-
-    if [[ -e ~/perl5/perlbrew/etc/bashrc ]] ; then
-        source ~/perl5/perlbrew/etc/bashrc
-    else
-        PATH=$PATH:~/perl5/bin
-        PERL5LIB=$PERL5LIB:~/perl5/lib/perl5
-    fi
-
-    export PERL5LIB
-    export PATH
+    export PATH=~/bin:~/opt/bin:$PATH
 fi
 
 if [[ ! $JAVA_HOME ]] ; then
@@ -305,6 +305,7 @@ alias  la='ls -1d \.*'
 alias lla='ls -lhd \.*'
 
 alias cdt='cd $REMOTE_HOME/tmp'
+alias type='type -a'
 
 alias lsop='netstat -tapnu | less -S'
 
@@ -595,6 +596,36 @@ function env-grep {
 function switch_to_iso() { export LANG=de_DE@euro ; }
 
 ### misc functions #############################################################
+
+# install a proxyserver software from the cpan an run it
+function proxyserver() {(
+    set -e
+
+    perl-install-module-if-new HTTP::Proxy
+
+    local port=${1:-8080}
+    local name=proxyserver_$port
+
+    if pidof $name >/dev/null ; then
+        INFO "Proxy server already running on port $port"
+        exit 0
+    fi
+
+    port=$port \
+    exec -a $name \
+        perl -MHTTP::Proxy -e 'HTTP::Proxy->new(port => $ENV{port})->start' &
+    disown -har
+    INFO "Proxy server is now running on port $port"
+)}
+
+# set proxy environment variables
+function proxy-setup-environment() {
+    local port=${1:-8080}
+
+    for proto in http https ftp ; do
+        export ${proto}_proxy=$proto://localhost:$port/
+    done
+}
 
 alias filter_remove_comments="perl -ne 'print if ! /^#/ && ! /^$/'"
 alias filter_quote="fmt -s | perl -pe 's/^/> /g'"
@@ -1297,6 +1328,67 @@ if [[ -e $REMOTE_HOME/.ssh/config ]] ; then
     complete -fdW "$(_ssh_completion)" scp
 fi
 
+# proxy traffic of a remote host through localhost
+# i.e. if the remote host has no access to the cpan or
+# other parts of the internet
+function ssh-with-reverse-proxy() {(
+    set -e
+    local host=${1?specify host}
+    local port=${2:-59347}
+    proxyserver $port
+    ssh -t $host -R $port:localhost:$port \
+        http_proxy=http://localhost:$port \
+        https_proxy=https://localhost:$port \
+        ftp_proxy=ftp://localhost:$port \
+        bash -i
+)}
+
+function ssh-reverse-tunnel-setup() {(
+
+    set -e
+
+    local ssh_key_file=~/.ssh/reverse-tunnel
+
+    if [[ -e $ssh_key_file ]] ; then
+        DIE "$ssh_key_file already exists"
+    fi
+
+    local server=${1?Server?}
+    local port=${2?Port?}
+
+    ssh-keygen -q -t rsa -b 2048 -P "" -f $ssh_key_file
+
+    INFO "Add this new public key to tunnel@$server"
+    cat $ssh_key_file.pub
+
+    INFO "Adding ~/.ssh/config entry..."
+
+cat << EOF >> ~/.ssh/config
+
+Host reverse-tunnel-server
+    Hostname $server
+    Port $port
+    User tunnel
+    IdentityFile $ssh_key_file
+    RemoteForward 0 localhost:22
+    CheckHostIP no
+    UserKnownHostsFile /dev/null
+    StrictHostKeyChecking no
+    ServerAliveInterval 60
+    Compression yes
+EOF
+
+    CMD="bash -c '(while true ; do ssh -N reverse-tunnel-server 2>&1 ; sleep 300 ; done 0<&- | logger -i) &' # reverse tunnel dont edit"
+
+    INFO "Adding crontab entry..."
+    ((crontab -l || echo) | grep -v "# reverse tunnel dont edit" ; echo "@reboot $CMD") | crontab -
+
+    INFO "Starting tunnel now..."
+    echo $CMD | bash
+
+    INFO "done."
+)}
+
 ### SCREEN #####################################################################
 
 alias screen="xtitle screen@$HOSTNAME ; screen -c $REMOTE_HOME/.screenrc"
@@ -1359,160 +1451,7 @@ function mysql() {
             --show-warnings --pager="less -FX" "$@"
 }
 
-### perl #######################################################################
-
-# NOTES ON perl
-# * profiling: perl -d:NYTProf <SCRIPTNAME> && nytprofhtml
-# * debugging: perl -d:ptkdb <SCRIPTNAME>
-# * call graph: perl -d:DProf <SCRIPTNAME> && dprofpp -T tmon.out (or B::Xref)
-# * Print out each line before it is executed: perl -d:Trace <SCRIPTNAME>
-# * if header files missing: see note compiling
-# * check module version: perl -MCGI -e 'print "$CGI::VERSION\n"'
-# * Devel::Cover for test coverage
-# * One liners
-#     http://blog.ksplice.com/2010/05/top-10-perl-one-liner-tricks/
-# * DBI->trace(2 => "/tmp/dbi.trace");
-# * ignore broken system locales in perl programs
-#    PERL_BADLANG=0
-# * corelist - perl core modules
-
-# for cpan
-export FTP_PASSIVE=1
-
-if [[ ! $PERLBREW_VERSION ]] ; then
-    export MODULEBUILDRC=~/perl5/.modulebuildrc
-    export PERL_MM_OPT=INSTALL_BASE=~/perl5
-
-    # less questions from cpan
-    export PERL_MM_USE_DEFAULT=1
-fi
-
-# testing
-alias prove="prove -lv --merge"
-
-function perl-module-version() {(
-    set -e
-    perl-is-module-installed
-    perl -M"$@" -e 'print $ARGV[0]->VERSION' "$@"
-)}
-
-function perl-is-module-installed() {
-    perl -M"$@" -e "1;" 2>/dev/null
-}
-
-# install a proxyserver software from the cpan an run it
-function proxyserver() {(
-    set -e
-    local mod="HTTP::Proxy"
-
-    if ! perl-is-module-installed $mod ; then
-        INFO "Installing $mod..."
-        cpanm $mod
-    fi
-
-    local port=${1:-8080}
-    local name=proxyserver_$port
-
-    if pidof $name >/dev/null ; then
-        INFO "Proxy server already running on port $port"
-        exit 0
-    fi
-
-    port=$port \
-    exec -a $name \
-        perl -MHTTP::Proxy -e 'HTTP::Proxy->new(port => $ENV{port})->start' &
-    disown -har
-    INFO "Proxy server is now running on port $port"
-)}
-
-# set proxy environment variables
-function proxy-setup-environment() {
-    local port=${1:-8080}
-
-    for proto in http https ftp ; do
-        export ${proto}_proxy=$proto://localhost:$port/
-    done
-}
-
-# proxy traffic of a remote host through localhost
-# i.e. if the remote host has no access to the cpan or
-# other parts of the internet
-function ssh-with-reverse-proxy() {(
-    set -e
-    local host=${1?specify host}
-    local port=${2:-59347}
-    proxyserver $port
-    ssh -t $host -R $port:localhost:$port \
-        http_proxy=http://localhost:$port \
-        https_proxy=https://localhost:$port \
-        ftp_proxy=ftp://localhost:$port \
-        bash -i
-)}
-
-function ssh-reverse-tunnel-setup() {(
-
-    set -e
-
-    local ssh_key_file=~/.ssh/reverse-tunnel
-
-    if [[ -e $ssh_key_file ]] ; then
-        DIE "$ssh_key_file already exists"
-    fi
-
-    local server=${1?Server?}
-    local port=${2?Port?}
-
-    ssh-keygen -q -t rsa -b 2048 -P "" -f $ssh_key_file
-
-    INFO "Add this new public key to tunnel@$server"
-    cat $ssh_key_file.pub
-
-    INFO "Adding ~/.ssh/config entry..."
-
-cat << EOF >> ~/.ssh/config
-
-Host reverse-tunnel-server
-    Hostname $server
-    Port $port
-    User tunnel
-    IdentityFile $ssh_key_file
-    RemoteForward 0 localhost:22
-    CheckHostIP no
-    UserKnownHostsFile /dev/null
-    StrictHostKeyChecking no
-    ServerAliveInterval 60
-    Compression yes
-EOF
-
-    CMD="bash -c '(while true ; do ssh -N reverse-tunnel-server 2>&1 ; sleep 300 ; done 0<&- | logger -i) &' # reverse tunnel dont edit"
-
-    INFO "Adding crontab entry..."
-    ((crontab -l || echo) | grep -v "# reverse tunnel dont edit" ; echo "@reboot $CMD") | crontab -
-
-    INFO "Starting tunnel now..."
-    echo $CMD | bash
-
-    INFO "done."
-)}
-
-function cpanm-reinstall-local-modules() {(
-    set -e
-    cpanm App::cpanoutdated
-    cpan-outdated | cpanm --reinstall
-)}
-
-function cpan-list-changes() {(
-    set -e
-    type -f cpan-listchanges 2>&1>/dev/null || (
-        cpanm cpan-listchanges
-    )
-
-    command cpan-listchanges "$@"
-)}
-
-function perl-one-liners() {
-    wcat http://www.catonmat.net/download/perl1line.txt | less +/"$@"
-}
+### vim and editing ############################################################
 
 # edit a file from a list on STDIN
 function v() {
@@ -1531,22 +1470,28 @@ function v() {
     vi $file
 }
 
-# setup local::lib and cpanm
-function setupcpanm() { (
+### perl #######################################################################
 
+# NOTES ON perl
+# * profiling: perl -d:NYTProf <SCRIPTNAME> && nytprofhtml
+# * call graph: perl -d:DProf <SCRIPTNAME> && dprofpp -T tmon.out (or B::Xref)
+# * Print out each line before it is executed: perl -d:Trace <SCRIPTNAME>
+# * DBI->trace(2 => "/tmp/dbi.trace");
+# * ignore broken system locales in perl programs: PERL_BADLANG=0
+# * corelist - perl core modules
+
+function perl-install-perlbrew() {(
     set -e
+    wcat http://install.perlbrew.pl | bash > /dev/null
+    source ~/perl5/perlbrew/etc/bashrc
+    perlbrew init > /dev/null
+    perlbrew install-cpanm > /dev/null
+    INFO "You have to re-login now"
+)}
 
-    if [ -e ~/.cpan ] ; then
-        mv -v ~/.cpan ~/.cpan.$(date +%Y%m%d_%H%M%S)
-    fi
-
-    cd ~/bin
-    wcat http://xrl.us/cpanm -fr
-    chmod +x cpanm
-
-    INFO "Now set your lib path like: PERL5LIB=$HOME/perl5/lib/perl5:$HOME/perldev/lib"
-    INFO "You may now install modules with: cpanm -nq [module name]"
-) }
+function perl-install-latest-stable() {
+    perlbrew install stable --notest --switch
+}
 
 # allow cpanm to install modules specified via Path/File.pm
 function cpanm() {
@@ -1554,10 +1499,41 @@ function cpanm() {
          -- "$@"
 }
 
+# testing
+alias prove="prove -lv --merge"
+
+function perl-module-version() {
+    perl -M"$@" -e 'print $ARGV[0]->VERSION . "\n"' "$@"
+}
+
+function perl-is-module-installed() {
+    perl -M"$@" -e "1;" 2>/dev/null
+}
+
+function perl-install-module-if-new() {
+    perl-is-module-installed $1 && return
+    cpanm $1
+}
+
+function perl-upgrade-outdated-modules() {
+    perlbrew list-modules | cpanm
+}
+
+function perl-install-modules-into-perl-version() {(
+    local version=$1
+
+    if [[ ! $version ]] ; then
+        perlbrew list
+        DIE "Specify perl version."
+    fi
+
+    perlbrew list-modules | perlbrew exec --with $version cpanm
+)}
+
 ### java #######################################################################
 
 # recursively decompile a jar including contained jars
-function unjar() { (
+function java-unjar() { (
 
     set -e
 
