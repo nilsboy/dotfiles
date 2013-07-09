@@ -1702,6 +1702,8 @@ function java-unjar() { (
 #     11.10       Oneiric Ocelot    2011-10-13   2013-04
 #     12.04       Precise Pangolin  2012-04-26   2017-04
 #     12.10       Quantal Quetzal   2012-10-18   2014-04
+#     13.04       Raring Ringtail   2013-04-25   2014-01
+#     13.10       Saucy Salamander  2013-10-17   2014-07
 
 # NOTES ON vim
 # * :help quickref
