@@ -1499,6 +1499,12 @@ function cpanm() {
          -- "$@"
 }
 
+# install all dependencies for a module
+function cpanm-install-deps-for() {
+    perl-install-module-if-new lib::xi
+    perl -c -Mlib::xi=-nq "$@"
+}
+
 # testing
 alias prove="prove -lv --merge"
 
