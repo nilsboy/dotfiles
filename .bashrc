@@ -1536,6 +1536,11 @@ function perl-install-modules-into-perl-version() {(
     perlbrew list-modules | perlbrew exec --with $version cpanm
 )}
 
+function webserver-serve-current-directory() {
+    perl-install-module-if-new App::HTTPThis
+    http_this
+}
+
 ### java #######################################################################
 
 # recursively decompile a jar including contained jars
