@@ -1284,11 +1284,11 @@ function ssl-create-self-signed-certificate() {(
     ls server-key.pem server-cert.pem
 )}
 
-function sdiff() {(
+function scpdiff() {(
     _pscp 1 $1 $2
 )}
 
-function pscp() {(
+function scpp() {(
     _pscp 0 $1 $2
 )}
 
