@@ -430,6 +430,7 @@ alias aptw="apt-cache show"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
+alias aptl="dpkg -l | g "
 
 # keep a package from beeing upgraded
 function apt-hold-package() {(
