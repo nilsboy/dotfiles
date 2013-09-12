@@ -1474,7 +1474,6 @@ function v() {
 ### perl #######################################################################
 
 # NOTES ON perl
-# * profiling: perl -d:NYTProf <SCRIPTNAME> && nytprofhtml
 # * call graph: perl -d:DProf <SCRIPTNAME> && dprofpp -T tmon.out (or B::Xref)
 # * Print out each line before it is executed: perl -d:Trace <SCRIPTNAME>
 # * DBI->trace(2 => "/tmp/dbi.trace");
@@ -1541,6 +1540,30 @@ function webserver-serve-current-directory() {
     perl-install-module-if-new App::HTTPThis
     http_this
 }
+
+function perl-profile() {(
+
+    set -e
+
+    perl-install-module-if-new Devel::NYTProf
+
+    set -x
+
+    local script=$(basename $1)
+    local dir=/tmp/nytprof.$script.$(date +%F_%H%M%S)
+    mkdir $dir
+    local file=$dir/nytprof.out
+
+    NYTPROF=file=$file perl -d:NYTProf "$@"
+
+    nytprofhtml --file $file --out $dir
+
+    if [ -e nytprof.out ] ; then
+        rm nytprof.out
+    fi
+
+    see $dir/index.html
+)}
 
 ### java #######################################################################
 
