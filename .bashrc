@@ -1390,6 +1390,41 @@ EOF
     INFO "done."
 )}
 
+# TODO
+function shell-open-on-freeport() {
+
+    set -x
+    local fifo
+
+   # (
+        set -e
+
+        local port=$(freeport)
+        fifo=$(tempfile)
+
+        echo "using port: $port"
+        echo "using fifo: $fifo"
+
+        if [ -e $fifo ] ; then
+            rm -f $fifo
+        fi
+
+        mkfifo $fifo
+
+        # nc -k respawns
+
+        cat $fifo \
+            | /bin/sh -i 2>&1 \
+            | nc -l 127.0.0.1 $port
+        > $fifo
+   # )
+
+    if [ -e $fifo ] ; then
+        echo "removing fifo: $fifo"
+    #    rm -f $fifo
+    fi
+}
+
 ### SCREEN #####################################################################
 
 alias screen="xtitle screen@$HOSTNAME ; screen -c $REMOTE_HOME/.screenrc"
