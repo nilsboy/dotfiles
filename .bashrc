@@ -289,7 +289,7 @@ export VISUAL=vi
 
 alias cp="cp -i"
 alias mv="mv -i"
-export LESS="-j.5 -inRgS"
+export LESS="-j0.5 -inRgS"
 alias crontab="crontab -i"
 
 # https://github.com/seebi/dircolors-solarized
