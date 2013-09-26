@@ -1,5 +1,7 @@
 ### for all shells #############################################################
 
+USE_CURRENT_DIR_AS_HOME=$1
+
 PERL5LIB=~/perldev/lib
 
 if [[ -e ~/perl5/perlbrew/etc/bashrc ]] ; then
@@ -105,8 +107,17 @@ function nousefatal() {
 ### for interactive shells only ################################################
 ################################################################################
 
-[[ $REMOTE_USER   ]] || export REMOTE_USER=$USER
-[[ $REMOTE_HOME   ]] || export REMOTE_HOME=$HOME
+if [[ $USE_CURRENT_DIR_AS_HOME ]] ; then
+
+    [[ $REMOTE_USER   ]] || export REMOTE_USER=$(basename $PWD)
+    [[ $REMOTE_HOME   ]] || export REMOTE_HOME=$PWD
+
+else
+
+    [[ $REMOTE_USER   ]] || export REMOTE_USER=$USER
+    [[ $REMOTE_HOME   ]] || export REMOTE_HOME=$HOME
+fi
+
 [[ $REMOTE_BASHRC ]] || export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 [[ $REMOTE_HOST   ]] || export REMOTE_HOST=${SSH_CLIENT%% *}
 
