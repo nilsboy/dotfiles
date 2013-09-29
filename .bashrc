@@ -461,9 +461,8 @@ function apt-unhold-package() {(
     dpkg --get-selections $package_name
 )}
 
-function  t() { simpletree "$@" | less ; }
-function td() { simpletree -d "$@" | less ; }
-function ts() { simpletree -sc "$@" | less ; }
+function  t() { tree --summary "$@" | less ; }
+function td() { tree -d "$@" | less ; }
 
 function diffdir() {
 
@@ -2569,280 +2568,6 @@ foreach my $jid ( sort keys %cmds ) {
         $jid, $cmd, $last_arg, $gray . $args . $black );
 }
 
-### function simpletree() ######################################################
-# tree substitute which groups similar named files
-
-use strict;
-use warnings;
-no warnings 'uninitialized';
-
-binmode STDOUT, ":utf8";
-use File::Basename;
-use Cwd;
-
-use Getopt::Long;
-Getopt::Long::Configure("bundling");
-my $opts = {
-    "d|directories-only" => \my $dirs_only,
-    "s|summary"          => \my $summary_only,
-    "c|sort-by-count"    => \my $sort_by_count,
-    "l|list-counts"      => \my $list_counts,
-    "a|show-dot-files"   => \my $show_dot_files,
-    "no-colors"          => \my $no_colors,
-    "ascii"              => \my $ascii,
-    "skip-dir=s"         => \my $skip_dir,
-    "e|eval=s"           => \my $eval,
-};
-GetOptions(%$opts) or die "Usage:\n" . join("\n", sort keys %$opts) . "\n";
-
-my ($blue, $green, $red, $gray, $no_color);
-
-if(!$no_colors) {
-    $blue     = "\x1b[34;5;250m";
-    $green    = "\x1b[32;5;250m";
-    $red      = "\x1b[31;5;250m";
-    $gray     = "\x1b[38;5;243m";
-    $no_color = "\x1b[33;0m";
-}
-my $graph_vertical = "\x{2502}";
-my $graph_t = "\x{251c}";
-my $graph_l = "\x{2514}";
-my $graph_line = "\x{2500}";
-
-if($ascii) {
-    $graph_vertical = "|";
-    $graph_t = "+";
-    $graph_l = "+";
-    $graph_line = "-";
-}
-
-my $depth      = -1;
-my $max        = $ENV{COLUMNS};
-my ($root_dev) = stat ".";
-my $mounted    = 0;
-my $dirlinks   = 0;
-my $dot_files  = 0;
-my $root_dir   = $ARGV[0] || getcwd;
-my $prefix;
-my $o;
-
-listdir($root_dir);
-
-print $o . stats();
-
-sub stats {
-    my $o;
-    $o .= $red . "==> Skipped $mounted mounted directories.\n" . $no_color
-        if $mounted;
-    $o .= $red . "==> Skipped $dirlinks linked directories.\n" . $no_color
-        if $dirlinks;
-    $o .= $red . "==> Dot files found: $dot_files\n" . $no_color
-        if $dot_files;
-    return $o
-}
-
-sub inc_prefix {
-    my ($has_next) = @_;
-
-    return if $depth == -1;
-
-    if ($has_next) {
-        $prefix .= $graph_vertical;
-    }
-    else {
-        $prefix .= " ";
-    }
-
-    $prefix .= "  ";
-}
-
-sub prefix {
-    my ( $is_dir, $has_next ) = @_;
-    return if $depth == -1;
-    my $add_prefix .= $has_next ? $graph_t : $graph_l;
-    return $prefix . $add_prefix . "$graph_line";
-}
-
-sub dec_prefix {
-    $prefix = substr( $prefix, 0, length($prefix) - 3 );
-}
-
-sub listdir {
-    my ( $dir, $has_next ) = @_;
-
-    return if $skip_dir && $dir =~ /$skip_dir/i;
-
-    my $normal_dir = 0;
-    my ($dev)      = stat $dir;
-    my $label      = $depth == -1 && ! $ARGV[0] ? "." : basename($dir);
-
-    if ( -l $dir ) {
-        $label .= $red . " -> " . readlink($dir);
-        $dirlinks++;
-    }
-    elsif ( $dev != $root_dev ) {
-        $label .= $red . " MOUNTED" . $no_color;
-        $mounted++;
-    }
-    else {
-        $normal_dir = 1;
-    }
-
-    if ( !$normal_dir ) {
-        $o .= prefix(1, $has_next) . $blue . $label . $no_color . "\n";
-        return;
-    }
-
-    my @dirs       = ();
-    my %files      = ();
-    my $file_count = 0;
-
-    my @entries;
-    opendir(DIR, "$dir") || die $!;
-    while(my $entry = readdir(DIR) ) {
-
-        next if $entry =~ /^\.{1,2}$/;
-
-        if($entry =~ /^\./) {
-            $dot_files++;
-            next if ! $show_dot_files;
-        } 
-
-        $_ = $entry;
-        if ($eval) {
-            eval $eval;
-            die $@ if $@;
-        }
-
-        next if $_ eq "";
-        $entry = "$dir/$_";
-        push(@entries, $entry);
-    }
-    closedir(DIR) || die $!;
-
-    foreach my $entry (sort @entries) {
-
-        if ( -d $entry ) {
-            push( @dirs, $entry );
-            next;
-        }
-
-        $file_count++;
-
-        next if $dirs_only;
-
-        my $file    = basename($entry);
-        my $cleaned = $file;
-        my $link;
-
-        if ( -l $entry ) {
-            $link = readlink($entry);
-            $cleaned .= $red . " -> $link";
-        }
-        else {
-            $cleaned =~ s/[\d\W_\s]+//g;
-        }
-
-        $files{$cleaned}{count}++;
-        if ( exists $files{$cleaned}{name} ) {
-            if ( length $entry > length $files{$cleaned}{name} ) {
-                next;
-            }
-        }
-        $files{$cleaned}{name} = $file;
-        $files{$cleaned}{link} = $link if $link;
-    }
-
-    if ($list_counts) {
-        $label .= " $gray" . @dirs . "/" . $file_count . $no_color
-            if $file_count || @dirs;
-    }
-    $o .= prefix( 1, $has_next ) . $blue . $label . $no_color . "\n";
-
-    inc_prefix($has_next);
-
-    $depth++;
-    {
-        my $dir_entry_number = 0;
-        my $dir_entry_count  = @dirs;
-        foreach my $lower_dir (@dirs) {
-
-            $dir_entry_number++;
-
-            my $has_next = $dir_entry_number != $dir_entry_count;
-            listdir( $lower_dir, %files || $has_next );
-        }
-    }
-
-    if ($dirs_only) {
-        dec_prefix();
-        $depth--;
-        return;
-    }
-
-    my %file_counts = ();
-    foreach my $file ( sort keys %files ) {
-        my $count = $files{$file}{count};
-        $count = 1 if !$sort_by_count;
-        my $example_file = $files{$file}{name};
-        $file_counts{$count}{$file} = $example_file;
-    }
-
-    my $shown_files = 0;
-
-DIR: foreach my $count_order ( sort { $b <=> $a } keys %file_counts ) {
-
-        my $entry_number = 0;
-        my $entry_count  = keys %{ $file_counts{$count_order} };
-        foreach my $cleaned ( sort keys %{ $file_counts{$count_order} } ) {
-
-            $entry_number++;
-
-            my $count = $count_order;
-            $count = $files{$cleaned}{count} if !$sort_by_count;
-
-            my $count_label;
-            if ( $count > 1 ) {
-                $count_label = $gray . "$count*" . $no_color if $count > 1;
-            }
-
-            my $file = $files{$cleaned}{name};
-            my $link = $files{$cleaned}{link};
-
-            if($count > 1) {
-                $file =~ s/[\d\W_\s]+/$red*$green/g;
-            }
-
-            $file = $green . $file . $no_color;
-
-            $file = $red . "{" . $file . $red . "}" . $no_color
-                if $count > 1;
-            $file .= $red . " -> $link" . $no_color if $link;
-
-            $o .= prefix( 0, $entry_number != $entry_count ) 
-                . $count_label
-                . $file
-                . " \n";
-
-            $shown_files++;
-
-            if ( $shown_files == 3 && $summary_only ) {
-
-                next if keys %files == 4;
-
-                if ( keys %files > 3 ) {
-                    $o .= prefix . "...\n";
-                }
-
-                last DIR;
-            }
-        }
-    }
-
-    dec_prefix();
-    $depth--;
-}
-
 ### function xmv() #############################################################
 # Rename files by perl expression protect against duplicate resulting file names
 
@@ -3379,4 +3104,543 @@ foreach my $rank ( sort { $a <=> $b } keys %ranks ) {
     print "$header\n\n$desc\n\n";
 }
 
+### function tree() ############################################################
+
+use strict;
+use warnings;
+no warnings 'uninitialized';
+use Data::Dumper;
+use File::stat;
+$Data::Dumper::Sortkeys = 1;
+
+binmode STDOUT, ":utf8";
+use File::Basename;
+use Cwd;
+
+use Getopt::Long;
+Getopt::Long::Configure("bundling");
+my %o                  = ();
+my @option_definitions = (
+    "directories-only|d", "summary",   "all|a",            "colors!",
+    "ascii",              "eval|e=s",  "exec|execute|x=s", "include=s",
+    "grep|g=s",           "exclude=s", "empty!",           "v|verbose",
+    "info|i",             "warnings!", "mounted!",         "stats|s",
+    "age",                "size",      "entry-count",
+);
+
+GetOptions( \%o, @option_definitions )
+    or die "Usage:\n" . join( "\n", sort @option_definitions ) . "\n";
+
+$o{empty}    = 1 if !defined $o{empty};
+$o{warnings} = 1 if !defined $o{warnings};
+$o{mounted}  = 0 if !defined $o{mounted};
+$o{colors}   = 1 if !defined $o{colors};
+
+if ( $ENV{LANG} !~ /utf/i ) {
+    $o{ascii} = 1;
+}
+
+if ( $o{info} ) {
+    $o{age}           = 1;
+    $o{size}          = 1;
+    $o{'entry-count'} = 1;
+}
+
+if ( $o{grep} ) {
+    $o{include} = ".*" . $o{grep} . ".*";
+    $o{empty}   = 0;
+}
+if ( $o{include} ) {
+    $o{all} = 1;
+}
+
+my $root_dir = $ARGV[0] || getcwd;
+my $root_dev = stat($root_dir)->dev;
+
+my $root_name = $ARGV[0] || ".";
+$root_name =~ s/\/$//g;
+
+if ( $o{v} ) {
+    print STDERR "Using options: \n", Dumper \%o;
+}
+
+my $root = Path->new( name => $root_name, is_root => 1 );
+$root->add_children;
+$root->print;
+$root->print_warnings;
+$root->print_stats;
+
+package Path;
+
+use Data::Dumper;
+use File::stat;
+
+my ( $blue, $green, $red, $gray, $no_color );
+my ( $graph_vertical, $graph_t, $graph_l, $graph_line );
+my %warnings;
+my %stats;
+
+sub init {
+    if ( $o{colors} ) {
+        $blue     = "\x1b[34;5;250m";
+        $green    = "\x1b[32;5;250m";
+        $red      = "\x1b[31;5;250m";
+        $gray     = "\x1b[38;5;243m";
+        $no_color = "\x1b[33;0m";
+    }
+
+    $graph_vertical = "\x{2502}";
+    $graph_t        = "\x{251c}";
+    $graph_l        = "\x{2514}";
+    $graph_line     = "\x{2500}";
+
+    if ( $o{ascii} ) {
+        $graph_vertical = "|";
+        $graph_t        = "+";
+        $graph_l        = "+";
+        $graph_line     = "-";
+    }
+}
+
+sub print {
+    my ( $self, $parent, $is_parent_last_entry, $prefix ) = @_;
+
+    $self->prefix($prefix);
+
+    print $self->prefix
+        . $self->dir_prefix($is_parent_last_entry)
+        . $self->color
+        . $self->name
+        . $self->link_info
+        . $no_color
+        . $self->warnings
+        . $self->info . "\n";
+
+    my $next_prefix = $is_parent_last_entry ? "  " : $graph_vertical . " ";
+    $next_prefix = $self->prefix . $next_prefix;
+    $next_prefix = "" if $self->is_root;
+
+    my $entry_count         = keys $self->entries;
+    my $current_entry_count = 0;
+    foreach my $path_name ( sort keys $self->entries ) {
+
+        $current_entry_count++;
+        my $is_last_entry = $current_entry_count == $entry_count;
+
+        my $path = $self->entries->{$path_name};
+
+        if ( $path->is_dir ) {
+            $path->print( $self, $is_last_entry, $next_prefix );
+            next;
+        }
+
+        my $name = $path->name;
+        if ( $path->count > 1 ) {
+            $name
+                = $red
+                . $path->count . "x "
+                . $green
+                . $path->normalized_marking
+
+                # . $gray . " ("
+                # . $path->name . ")"
+                . $no_color;
+        }
+
+        print $self->prefix
+            . $self->file_prefix( $is_parent_last_entry, $is_last_entry )
+            . $path->color
+            . $name
+            . $path->link_info
+            . $path->warnings
+            . $no_color
+            . $path->info . "\n";
+    }
+}
+
+sub link_info {
+    my ($self) = @_;
+    return if !$self->is_link;
+    return "$red -> " . readlink( $self->abs ) . $no_color;
+}
+
+sub print_warnings {
+
+    return if !%warnings;
+    return if !$o{warnings};
+
+    print "\n${red}Warnings:\n", dumps( \%warnings, $red ), "\n";
+}
+
+sub print_stats {
+
+    return if !%stats;
+    return if !$o{stats};
+
+    print "\nStats:\n", dumps( \%stats ), "\n";
+}
+
+sub dumps {
+    my ( $ref, $color ) = @_;
+
+    $Data::Dumper::Sortkeys = 1;
+    $Data::Dumper::Terse    = 1;
+    $Data::Dumper::Indent   = 1;
+    $Data::Dumper::Pair     = ": ";
+
+    my $s = Dumper $ref;
+    $s =~ s/['{}]*//g;
+    $s =~ s/,$//gm;
+    $s =~ s/\s+$//gms;
+    $s =~ s/\n\n//gm;
+    $s =~ s/^\n//gm;
+    $s = $color . $s . $no_color;
+    $s .= "\n";
+    return $s;
+}
+
+sub humanize_secs {
+    my ($secs) = @_;
+
+    my $human;
+
+    if ( $secs >= 359999 ) {    # 99 h
+        $human = sprintf( "%0dd", $secs / 60 / 60 / 24 );
+    }
+    elsif ( $secs >= 5999 ) {    # 99 m
+        $human = sprintf( "%0dh", $secs / 60 / 60 );
+    }
+    elsif ( $secs >= 60 ) {
+        $human = sprintf( "%0dm", $secs / 60 );
+    }
+    else {
+        $human = $secs . "s";
+    }
+
+    return $human;
+}
+
+sub humanize_bytes {
+    my ($bytes) = @_;
+
+    my $k = 1024;
+    my $m = $k * 1024;
+    my $g = $m * 1024;
+    my $t = $g * 1024;
+
+    my $human;
+
+    if ( $bytes >= $t ) {
+        $human = sprintf( "%.1fT", $bytes / $t );
+    }
+    elsif ( $bytes >= $g ) {
+        $human = sprintf( "%.1fG", $bytes / $g );
+    }
+    elsif ( $bytes >= $m ) {
+        $human = sprintf( "%.1fM", $bytes / $m );
+    }
+    elsif ( $bytes >= $k ) {
+        $human = sprintf( "%.1fK", $bytes / $k );
+    }
+    elsif ( $bytes == 0 ) {
+        $human = $bytes;
+    }
+    else {
+        $human = $bytes . "B";
+    }
+
+    return $human;
+}
+
+BEGIN {
+    for my $accessor (qw( color prefix name parent_name is_root count)) {
+        no strict 'refs';
+        *{$accessor} = sub {
+            my $self = shift;
+            return $self->{$accessor} if !@_;
+            $self->{$accessor} = shift;
+        };
+    }
+}
+
+sub warnings {
+    my ($self) = @_;
+    return if !$self->{warnings};
+    return
+          " " 
+        . $red
+        . join( "$no_color, $red", @{ $self->{warnings} } )
+        . $no_color;
+}
+
+sub info {
+    my ($self) = @_;
+
+    my @info;
+
+    if ( $o{'entry-count'} ) {
+        push( @info, "Entries: " . ( keys $self->entries || 0 ) )
+            if $self->is_dir;
+    }
+
+    if ( $o{age} ) {
+        push( @info, "Changed: " . $self->age );
+    }
+
+    if ( $o{size} ) {
+        push( @info, $self->size );
+    }
+
+    if ( $o{eval} ) {
+        $_ = $self->abs;
+        my $eval = eval $o{eval};
+        die $@ if $@;
+        push( @info, $eval );
+    }
+
+    if ( $o{exec} ) {
+        my $exec = $o{exec};
+        my $abs  = $self->abs;
+        $exec =~ s/\{\}/'$abs'/g;
+        print STDERR "Executing in the shell: $exec\n" if $o{v};
+        $exec = `$exec`;
+        $exec =~ s/\n+$//g;
+        $exec =~ s/\n/ | /g;
+        $exec =~ s/^ +//g;
+        push( @info, $exec );
+    }
+
+    return if !@info;
+    return " " . $gray . join( ", ", @info ) . $no_color;
+}
+
+sub file_prefix {
+    my ( $self, $is_last_dir_entry, $is_last_entry ) = @_;
+
+    my $fork     = $is_last_entry     ? $graph_l : $graph_t;
+    my $dir_fork = $is_last_dir_entry ? " "      : $graph_vertical;
+    if ( $self->is_root ) {
+        $dir_fork = "";
+    }
+    else {
+        $dir_fork .= " ";
+    }
+
+    return $dir_fork . $fork . $graph_line;
+}
+
+sub dir_prefix {
+    my ( $self, $is_last_entry ) = @_;
+
+    return if $self->is_root;
+
+    my $fork = $is_last_entry ? $graph_l : $graph_t;
+
+    return $fork . $graph_line;
+}
+
+sub new {
+    init;
+    my $class = shift;
+    my %p     = @_;
+    return bless \%p, $class;
+}
+
+sub add_children {
+    my ($self) = @_;
+
+    my $dirh;
+    if ( !opendir( $dirh, $self->abs ) ) {
+        $self->add_warning($!);
+        $warnings{Errors}{$!} = $self->abs;
+        return;
+    }
+
+    while ( my $entry = readdir($dirh) ) {
+
+        next if $entry =~ /^\.{1,2}$/;
+
+        if ( !$o{all} ) {
+            if ( $entry =~ /^\./ ) {
+                $warnings{'Dot files'}++;
+                next;
+            }
+        }
+
+        my $path = Path->new( parent_name => $self->abs, name => $entry, );
+        $self->add($path);
+    }
+    closedir($dirh) || die $!;
+}
+
+sub has_entries {
+    my ($self) = @_;
+    keys %{ $self->{entries} } != 0;
+}
+
+sub entries {
+    my ($self) = @_;
+    $self->{entries} ||= {};
+    return $self->{entries};
+}
+
+sub is_mounted {
+    my ($self) = @_;
+
+    my $dev = stat( $self->abs )->dev;
+
+    if ( $dev != $root_dev ) {
+        return 1;
+    }
+
+    return 0;
+}
+
+sub add_warning {
+    my ( $self, $warning ) = @_;
+
+    push( @{ $self->{warnings} }, $warning );
+}
+
+sub add {
+    my ( $self, $path ) = @_;
+
+    $path->add_warning("DOTFILE")         if $path->name =~ /^\./;
+    $path->add_warning("PRECEDING SPACE") if $path->name =~ /^\ /;
+    $path->add_warning("TRAILING SPACE")  if $path->name =~ /\ $/;
+
+    if ( $o{include} ) {
+        return 0 if $path->abs !~ /$o{include}/i;
+    }
+
+    if ( $o{exclude} ) {
+        return 0 if $path->abs =~ /$o{exclude}/i;
+    }
+
+    if ( $path->is_link ) {
+        $warnings{Links}++;
+    }
+
+    if ( $path->is_dir ) {
+
+        $path->color($blue);
+        $stats{Directories}++;
+
+        if ( $path->is_mounted ) {
+            if ( !$o{mounted} ) {
+                $warnings{"Mounted"}++;
+            }
+            $path->add_warning("MOUNTED");
+        }
+        else {
+            if ( !$path->is_link ) {
+                $path->add_children;
+            }
+            if ( !$path->has_entries && !$o{empty} ) {
+                return;
+            }
+        }
+
+        $self->entries->{ $path->name } = $path;
+        return;
+    }
+
+    if ( $o{'directories-only'} ) {
+        return;
+    }
+
+    $path->color($green);
+
+    my ($extension) = $path->name =~ /\.([^\.]+)$/;
+    $extension = "" if $path->name !~ /\./;
+    $extension = "" if $extension =~ /^\d+$/;
+
+    $stats{Files}++;
+    $stats{'File extensions'}{$extension}++;
+
+    my $path_key = $path->name;
+
+    if ( $o{summary} ) {
+        $path_key = $path->normalized;
+        $path->count(1);
+    }
+
+    if ( exists $self->entries->{$path_key} ) {
+        $self->entries->{$path_key}{count}++;
+    }
+    else {
+        $self->entries->{$path_key} = $path;
+    }
+}
+
+sub is_dir {
+    my ($self) = @_;
+    return -d $self->abs;
+}
+
+sub is_link {
+    my ($self) = @_;
+    return -l $self->abs;
+}
+
+sub abs {
+    my ($self) = @_;
+
+    return $self->name if !$self->parent_name;
+    return $self->parent_name . "/" . $self->name;
+}
+
+sub normalized {
+    my ($self) = @_;
+
+    my $normalized = $self->name;
+    $normalized =~ s/[\W\d\s_]{2,}/${red}*$no_color/g;
+    return $normalized;
+}
+
+sub normalized_marking {
+    my ($self) = @_;
+
+    # return $self->normalized;
+
+    my $normalized = $self->name;
+    $normalized =~ s/([\W\d\s_]{2,})/${red}$^N$no_color/g;
+    return $normalized;
+}
+
+sub age {
+    my ($self) = @_;
+
+    my $sb = stat( $self->abs );
+
+    my $age   = time - $sb->mtime;
+    my $h_age = humanize_secs($age);
+    $h_age = $red . $h_age . $no_color if $h_age =~ /[sm]/;
+    return $h_age;
+}
+
+sub size {
+    my ($self) = @_;
+
+    return if $self->is_dir;
+
+    my $size       = stat( $self->abs )->size;
+    my $blocks     = stat( $self->abs )->blocks;
+    my $block_size = stat( $self->abs )->blksize;
+
+    my $alloc = $blocks * 512;
+    my $done  = 100;
+    $done = $alloc / ( $size / 100 ) if $size != 0;
+    $done = int($done);
+
+    my $info = $gray . "Size: " . humanize_bytes($size);
+
+    return $info if $done >= 100;
+
+    return
+          $info
+        . " done: ${red}$done\%${gray} "
+        . "/ allocated: "
+        . humanize_bytes($alloc);
+}
 ### END ########################################################################
