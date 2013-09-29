@@ -3455,7 +3455,6 @@ sub add_children {
     my $dirh;
     if ( !opendir( $dirh, $self->abs ) ) {
         $self->add_warning($!);
-        $warnings{Errors}{$!} = $self->abs;
         return;
     }
 
@@ -3463,14 +3462,13 @@ sub add_children {
 
         next if $entry =~ /^\.{1,2}$/;
 
-        if ( !$o{all} ) {
-            if ( $entry =~ /^\./ ) {
-                $warnings{'Dot files'}++;
-                next;
-            }
+        my $path = Path->new( parent_name => $self->abs, name => $entry, );
+
+        if ( $entry =~ /^\./ ) {
+            $path->add_warning('DOTFILE');
+            next if !$o{all};
         }
 
-        my $path = Path->new( parent_name => $self->abs, name => $entry, );
         $self->add($path);
     }
     closedir($dirh) || die $!;
@@ -3502,13 +3500,13 @@ sub is_mounted {
 sub add_warning {
     my ( $self, $warning ) = @_;
 
+    $warnings{$warning}++;
     push( @{ $self->{warnings} }, $warning );
 }
 
 sub add {
     my ( $self, $path ) = @_;
 
-    $path->add_warning("DOTFILE")         if $path->name =~ /^\./;
     $path->add_warning("PRECEDING SPACE") if $path->name =~ /^\ /;
     $path->add_warning("TRAILING SPACE")  if $path->name =~ /\ $/;
 
@@ -3521,7 +3519,7 @@ sub add {
     }
 
     if ( $path->is_link ) {
-        $warnings{Links}++;
+        $path->add_warning("Link");
     }
 
     if ( $path->is_dir ) {
@@ -3529,10 +3527,10 @@ sub add {
         $path->color($blue);
         $stats{Directories}++;
 
-        if ( $path->is_mounted ) {
-            if ( !$o{mounted} ) {
-                $warnings{"Mounted"}++;
-            }
+        if ( $path->name =~ /^\.(git|svn)/) {
+            $path->add_warning("SCM DIR");
+        }
+        elsif ( $path->is_mounted ) {
             $path->add_warning("MOUNTED");
         }
         else {
