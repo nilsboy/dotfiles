@@ -3156,15 +3156,18 @@ if ( $o{include} ) {
 
 my $root_dir = $ARGV[0] || getcwd;
 my $root_dev = stat($root_dir)->dev;
-
-my $root_name = $ARGV[0] || ".";
-$root_name =~ s/\/$//g;
+$root_dir =~ s/\/$//g;
 
 if ( $o{v} ) {
     print STDERR "Using options: \n", Dumper \%o;
 }
 
-my $root = Path->new( name => $root_name, is_root => 1 );
+my $root = Path->new(
+    name => basename($root_dir),
+    parent_name => dirname($root_dir),
+    is_root => 1
+);
+
 $root->add_children;
 $root->print;
 $root->print_warnings;
