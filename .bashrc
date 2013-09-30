@@ -3446,7 +3446,7 @@ sub new {
     init;
     my $class = shift;
     my %p     = @_;
-    return bless \%p, $class;
+    return bless {%p, color => $blue }, $class;
 }
 
 sub add_children {
