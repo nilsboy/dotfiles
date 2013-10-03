@@ -3595,7 +3595,7 @@ sub normalized {
     my ($self) = @_;
 
     my $normalized = $self->name;
-    $normalized =~ s/[\W\d\s_]{2,}/${red}*$no_color/g;
+    $normalized =~ s/[0-9a-f\W\d\s_]{2,}//gi;
     return $normalized;
 }
 
@@ -3605,7 +3605,7 @@ sub normalized_marking {
     # return $self->normalized;
 
     my $normalized = $self->name;
-    $normalized =~ s/([\W\d\s_]{2,})/${red}$^N$no_color/g;
+    $normalized =~ s/([0-9a-f\-]{2,}|[\W\d\s_]{2,})/${red}$^N$no_color/gi;
     return $normalized;
 }
 
