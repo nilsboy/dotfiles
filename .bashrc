@@ -3125,7 +3125,7 @@ my @option_definitions = (
     "ascii",              "eval|e=s",  "exec|execute|x=s", "include=s",
     "grep|g=s",           "exclude=s", "empty!",           "v|verbose",
     "info|i",             "warnings!", "mounted!",         "stats|s",
-    "age",                "size",      "entry-count",
+    "age",                "size",      "entry-count",      "html",
 );
 
 GetOptions( \%o, @option_definitions )
@@ -3190,6 +3190,14 @@ sub init {
         $red      = "\x1b[31;5;250m";
         $gray     = "\x1b[38;5;243m";
         $no_color = "\x1b[33;0m";
+    }
+
+    if( $o{html} ) {
+        $blue     = q{<font color="blue">};
+        $green    = q{<font color="green">};
+        $red      = q{<font color="red">};
+        $gray     = q{<font color="gray">};
+        $no_color = q{</font>};
     }
 
     $graph_vertical = "\x{2502}";
@@ -3643,6 +3651,6 @@ sub size {
     return $gray . "Size: " 
             . humanize_bytes($alloc) 
             . "/" . humanize_bytes($size)
-            . " - ${red}$done\%${gray}"
+            . " - ${red}$done\%" . $gray;
 }
 ### END ########################################################################
