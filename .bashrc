@@ -3454,7 +3454,7 @@ sub add_children {
 
     my $dirh;
     if ( !opendir( $dirh, $self->abs ) ) {
-        $self->add_warning($!);
+        $self->add_warning("ERROR: " . $!);
         return;
     }
 
@@ -3519,7 +3519,7 @@ sub add {
     }
 
     if ( $path->is_link ) {
-        $path->add_warning("Link");
+        $path->add_warning("LINK");
     }
 
     if ( $path->is_dir ) {
@@ -3638,10 +3638,11 @@ sub size {
 
     return $info if $done >= 100;
 
-    return
-          $info
-        . " done: ${red}$done\%${gray} "
-        . "/ allocated: "
-        . humanize_bytes($alloc);
+    $self->add_warning("INCOMPLETE");
+
+    return $gray . "Size: " 
+            . humanize_bytes($alloc) 
+            . "/" . humanize_bytes($size)
+            . " - ${red}$done\%${gray}"
 }
 ### END ########################################################################
