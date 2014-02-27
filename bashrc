@@ -15,14 +15,14 @@ fi
 export PERL5LIB
 
 if [[ ! $_is_reload ]] ; then
-    export PATH=~/bin:~/opt/bin:$PATH
+    export PATH=~/bin:~/.bin:~/opt/bin:$PATH
 fi
 
 if [[ ! $JAVA_HOME ]] ; then
     export JAVA_HOME=/usr/lib/jvm/java-6-sun
 fi
 
-[[ $PS1 ]] && return
+[[ $PS1 ]] || return
 
 ### for interactive shells only ################################################
 
@@ -41,7 +41,7 @@ fi
 [[ $REMOTE_HOST   ]] || export REMOTE_HOST=${SSH_CLIENT%% *}
 
 if [[ ! $_is_reload && $REMOTE_HOME != $HOME ]] ; then
-    export PATH=$REMOTE_HOME/bin:$PATH
+    export PATH=$REMOTE_HOME/bin:$REMOTE_HOME/.bin:$PATH
 fi
 
 ################################################################################
@@ -850,13 +850,60 @@ fi
 alias normalizefilenames="xmv -ndx"
 
 function csvview() {
-    _run_perl_app csvview "$@" | LESS= less -S
+    csvview "$@" | LESS= less -S
 }
 
-function j() {
-    export _bashrc_jobs=$(jobs)
-    export _bashrc_columns=$COLUMNS
-    _run_perl_app _display_jobs
+function j() { jobs=$(jobs) bash-jobs ; }
+
+### bashrc-unpack ##############################################################
+
+function bashrc-unpack() {
+
+    # unpack scripts fatpacked to this bashrc
+
+    perl - $@ <<'EOF'
+        use strict;
+        use warnings;
+
+        $/ = undef;
+        open(my $f, $ENV{REMOTE_BASHRC}) || die $!;
+        my $bashrc = <$f>;
+
+        my $home = $ENV{REMOTE_HOME} || die "REMOTE_HOME not set";
+        my $dst_dir = $ENV{REMOTE_HOME} . "/.bin";
+
+        system("mkdir -p $dst_dir") && die $!;
+
+        print "\n";
+        print STDERR "About to export to $dst_dir...\n";
+        print "\n";
+
+        my $x = <STDIN>;
+
+        my $export_count = 0;
+        while ($bashrc =~ /^### fatpacked app ([\w-]+) #*\n\n(.*?)### /igsm) {
+
+            my $app_name = $1;
+            my $app_data = $2;
+
+            my $app_file_name = "$dst_dir/$app_name";
+
+            # print STDERR "Exporting $app_name to $app_file_name...\n";
+
+            open(my $APP_FILE, ">", $app_file_name) || die $!;
+            print $APP_FILE $app_data;
+            print $APP_FILE
+                "\n# This app was created automatically and may be overridden"
+                . " - DONT TOUCH THIS!";
+
+            chmod(0755, $app_file_name) || die $!;
+
+            $export_count++;
+        }
+
+        print STDERR "Done - apps exported: $export_count.\n\n";
+EOF
+
 }
 
 # bashrc ends here
