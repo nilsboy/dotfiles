@@ -46,6 +46,10 @@ fi
 
 ################################################################################
 
+BASHRC_COLOR_NO_COLOR='\e[33;0;m'
+BASHRC_COLOR_GREEN='\e[33;0;m'
+BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
+
 export LANG="de_DE.UTF-8"
 # export LC_ALL="de_DE.UTF-8"
 # export LC_CTYPE="de_DE.UTF-8"
@@ -586,238 +590,62 @@ alias h="bash-history-search -e -s"
 
 ### PROMPT #####################################################################
 
-# some default colors
-function _set_colors() {
-    NO_COLOR=$(echo -e "\x1b[33;0;m")
-    GRAY=$(echo -e "\x1b[38;5;243m")
-    GREEN=$(echo -e "\x1b[38;5;2m")
-    ORANGE=$(echo -e "\x1b[38;5;3m")
-    RED=$(echo -e "\x1b[38;5;9m")
+function bashrc-prompt-command() {
+
+    local pipe_status="${PIPESTATUS[*]}"
+
+    [[ $BASHRC_TIMER_START ]] || BASHRC_TIMER_START=$SECONDS
+
+    echo -ne $BASHRC_COLOR_NO_COLOR
+
+    PS1=$(
+        elapsed=$(($SECONDS - $BASHRC_TIMER_START)) \
+        jobs=$(jobs) \
+        BASHRC_PROMPT_COLORS=1 \
+        $BASHRC_PROMPT_COMMAND \
+    )
+
+    pipe_status=$pipe_status bash-print-on-error
+
+    echo -ne $BASHRC_BG_COLOR
+    BASHRC_TIMER_START=$SECONDS
 }
 
-# shorten prompt dir to max 15 chars
-function _fix_pwd () {
-
-    _pwd=$PWD
-
-    local top_dir
-
-    if [[ $_pwd = $HOME ]] ;  then
-        _pwd="~"
-    elif [[ $_pwd = $HOME/ ]] ;  then
-        _pwd="~"
-    else
-        _pwd=${_pwd##/*/}
-    fi
-
-    local max_length=14
-    local length=${#_pwd}
-
-    if [ $length -gt $(($max_length + 1)) ] ; then
-
-        local left_split=$(($max_length-4))
-        local right_split=4
-
-        local right_start=$(($length-$right_split))
-
-        local left=${_pwd:0:$left_split}
-        local right=${_pwd:$right_start:$length}
-
-        _pwd="$left\[${RED}\]"*"\[${NO_COLOR}\]$right"
-        _xtitle_pwd=$left"..."$right
-
-    else
-        _xtitle_pwd=$_pwd
-    fi
-}
-
-# count seconds between prompt displays
-function _track_time() {
-    _track_now=$SECONDS
-
-    if [ "$_track_then" = "" ] ; then
-        _track_then=$_track_now
-    fi
-
-    echo $(($_track_now-$_track_then))
-    # _then=$now # useless here!?!
-}
-
-function humanize_secs() {
-
-    local secs=$1
-    local human
-
-    if  [ $secs -ge 359999 ] ; then # 99 h
-        human=$(($secs / 60 / 60 / 24))d
-    elif [ $secs -ge 5999 ] ; then # 99 m
-        human=$(($secs / 60 / 60))h
-    elif [ $secs -ge 60 ] ; then
-        human=$(($secs / 60))m
-    else
-        human=$secs"s"
-    fi
-
-    if [ ${#human} = 2 ] ; then
-        human=" "$human
-    fi
-
-    echo "$human"
-}
-
-# count background jobs running and stoped
-function _set_bg_jobs_count() {
-
-    local job
-    _bg_jobs_count=0
-    _bg_jobs_running_count=0
-
-    while read job state crap ; do
-
-        if [[ $job =~ ^\[[0-9]+\] ]] ; then
-
-            _bg_jobs_count=$(($_bg_jobs_count+1))
-
-            if [[ $state = Running ]] ; then
-                _bg_jobs_running_count=$(($_bg_jobs_running_count+1))
-            fi
-        fi
-
-    done<<EOF
-        $(jobs)
-EOF
-
-    if [[ $_bg_jobs_count == 0 ]] ; then
-        unset _bg_jobs_count
-    else
-        if [[ $_bg_jobs_running_count -gt 0 ]] ; then
-            _bg_jobs_count="\[${RED}\]$_bg_jobs_count\[${NO_COLOR}\]"
-        fi
-
-        _bg_jobs_count=" "$_bg_jobs_count
-    fi
-}
-
-function _color_user() {
-
-    if [[ $USER == "root" ]] ; then
-        echo "\[${RED}\]$USER\[${NO_COLOR}\]"
-    else
-        echo $USER
-    fi
-}
-
-# print error code of last command on failure
-function _print_on_error() {
-
-    for item in ${bashrc_last_return_values[*]} ; do
-
-        if [ $item != 0 ] ; then
-            echo "${RED}exit: $bashrc_last_return_values$NO_COLOR" >&2
-            break
-        fi
-
-    done
-}
-
-function _prompt_command_default() {
-
-    bashrc_last_return_values=${PIPESTATUS[*]}
-
-    _print_on_error
-    local secs=$(_track_time)
-    local time=$(humanize_secs $secs)
-    local hostname=$(_color_user)"@\[$GREEN\]$HOSTNAME\[$NO_COLOR\]"
-    _fix_pwd
-    _set_bg_jobs_count
-
-    PS1="\[$GRAY\]$time\[$NO_COLOR\] $hostname:$_pwd${_bg_jobs_count}>\[$BASHRC_BG_COLOR\] "
-    xtitle $USER@$HOSTNAME:$_xtitle_pwd
-
-    _add_to_history
-    $_PROMPT_WMCTRL
-
-    # has to be done here!?!
-    _track_then=$SECONDS
-}
-
-function _prompt_command_simple() {
-
-    bashrc_last_return_values=${PIPESTATUS[*]}
-
-    _print_on_error
-    local secs=$(_track_time)
-    local time=$(humanize_secs $secs)
-    _fix_pwd
-    _set_bg_jobs_count
-
-    local if_root=""
-    if [[ $USER == "root" ]] ; then
-        if_root="\[$RED\]root\[$NO_COLOR\] "
-    fi
-
-    PS1="\[${GRAY}\]${time}\[$NO_COLOR\] ${if_root}${_pwd}${_bg_jobs_count}>\[$BASHRC_BG_COLOR\] "
-    xtitle $USER@$HOSTNAME:$_xtitle_pwd
-
-    _add_to_history
-    $_PROMPT_WMCTRL
-
-    # has to be done here!?!
-    _track_then=$SECONDS
-}
-
-function _prompt_command_spare() {
-
-    bashrc_last_return_values=${PIPESTATUS[*]}
-
-    _print_on_error
-    _fix_pwd
-    _set_bg_jobs_count
-
-    PS1="\[$NO_COLOR\]$_pwd${_bg_jobs_count}>\[$BASHRC_BG_COLOR\] "
-    xtitle  $USER@$HOSTNAME:$_xtitle_pwd
-
-    _add_to_history
-    $_PROMPT_WMCTRL
-}
-
-function prompt_default() {
-    PROMPT_COMMAND=_prompt_command_default
-}
-
-function prompt_simple() {
-    PROMPT_COMMAND=_prompt_command_simple
-}
-
-function prompt_spare() {
-    PROMPT_COMMAND=_prompt_command_spare
-}
 
 # turn of history for testing passwords etc
 function godark() {
     BASHRC_NO_HISTORY=1
     unset HISTFILE
-    BASHRC_BG_COLOR=$GREEN
+    BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
 }
 
 ### STARTUP ####################################################################
 
-_set_colors
-unset _set_colors
-
 # set the appropriate prompt
-case $(parent) in
-    screen|screen.real|tmux)
-        prompt_simple
-    ;;
-    *)
-        if [[ $REMOTE_HOST ]] ; then
-            prompt_default
-        else
+function prompt-set() {
+
+    local prompt=$1
+
+    if [[ $prompt ]] ; then
+        BASHRC_PROMPT_COMMAND=prompt-$prompt
+        return
+    fi
+
+    case $(parent) in
+        screen|screen.real|tmux)
             prompt_simple
-        fi
-    ;;
-esac
+        ;;
+        *)
+            if [[ $REMOTE_HOST ]] ; then
+                BASHRC_PROMPT_COMMAND=prompt-host
+            else
+                BASHRC_PROMPT_COMMAND=prompt-simple
+            fi
+        ;;
+    esac
+}
+
+return 0
 
 if [[ ! $_is_reload ]] ; then
 
