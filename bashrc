@@ -14,15 +14,11 @@ fi
 
 export PERL5LIB
 
-if [[ ! $_is_reload ]] ; then
+if [[ ! $BASHRC_IS_LOADED ]] ; then
     export PATH=~/bin:~/.bin:~/opt/bin:$PATH
 fi
 
-if [[ ! $JAVA_HOME ]] ; then
-    export JAVA_HOME=/usr/lib/jvm/java-6-sun
-fi
-
-[[ $PS1 ]] || return
+[ -z $PS1 ] && return
 
 ### for interactive shells only ################################################
 
@@ -40,15 +36,15 @@ fi
 [[ $REMOTE_BASHRC ]] || export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 [[ $REMOTE_HOST   ]] || export REMOTE_HOST=${SSH_CLIENT%% *}
 
-if [[ ! $_is_reload && $REMOTE_HOME != $HOME ]] ; then
+if [[ ! $BASHRC_IS_LOADED && $REMOTE_HOME != $HOME ]] ; then
     export PATH=$REMOTE_HOME/bin:$REMOTE_HOME/.bin:$PATH
 fi
 
 ################################################################################
 
-BASHRC_COLOR_NO_COLOR='\e[33;0;m'
-BASHRC_COLOR_GREEN='\e[33;0;m'
-BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
+BASHRC_COLOR_NO_COLOR=$(echo -e '\x1b[33;0;m')
+BASHRC_COLOR_GREEN=$(echo -e "\x1b[38;5;2m")
+BASHRC_BG_COLOR=$BASHRC_COLOR_NO_COLOR
 
 export LANG="de_DE.UTF-8"
 # export LC_ALL="de_DE.UTF-8"
@@ -195,6 +191,14 @@ alias shell-turn-on-line-wrapping="tput smam"
 alias pgrep="pgrep -fl"
 alias ps-attach="sudo strace -ewrite -s 1000 -p"
 
+alias normalizefilenames="xmv -ndx"
+
+function csvview() {
+    csvview "$@" | LESS= less -S
+}
+
+function j() { jobs=$(jobs) bash-jobs ; }
+
 function df() {
 
     if [[ $@ ]] ; then
@@ -205,8 +209,6 @@ function df() {
     command df -h | perl -0777 -pe 's/^(\S+)\n/$1/gm' | csvview
 }
 
-alias prove="prove -lv --merge"
-
 # search history for an existing directory containing string and go there
 function cdh() {
 
@@ -215,7 +217,9 @@ function cdh() {
         return
     fi
 
-    local dir=$(bash-history-search -d --skip-current-dir --existing-only -c 1 "$@")
+    local dir=$(bash-eternal-history-search -d --skip-current-dir \
+        --existing-only -c 1 "$@" \
+    )
 
     if [[ ! "$dir" ]] ; then
         return 1
@@ -227,7 +231,7 @@ function cdh() {
 # search history for an existing file an open it in vi
 function vih() {(
     set -e
-    local file=$(bash-history-search --file -c 1 "$@")
+    local file=$(bash-eternal-history-search --file -c 1 "$@")
     command vi "$file"
 )}
 
@@ -459,7 +463,7 @@ function bashrc-update() {
 
 function bashrc-reload() {
     bashrc-clean-env
-    source ~/.bashrc
+    source $REMOTE_BASHRC
 }
 
 ### xorg #######################################################################
@@ -542,8 +546,6 @@ shopt -s histappend
 # prevent history truncation
 unset HISTFILESIZE
 
-### eternal history
-
 # echo $REMOTE_HOME
 export HISTFILE_ETERNAL=$REMOTE_HOME/.bash_eternal_history
 
@@ -552,18 +554,35 @@ if [ ! -e $HISTFILE_ETERNAL ] ; then
     chmod 0600 $HISTFILE_ETERNAL
 fi
 
-function _add_to_history() {
+history -a
+
+alias h="bash-eternal-history-search -e -s"
+
+function bashrc-eternal-history-add() {
 
     if [[ $BASHRC_NO_HISTORY ]] ; then
         return
     fi
 
-    # remove history position (by splitting)
-    local history=$(history 1)
+    local history1
+    local history2
 
-    [[ $_last_history = $history ]] && return;
+    while read -r pos cmd ; do
 
-    read -r pos cmd <<< $history
+        if [[ ! $history2 ]] ; then
+            history2="$cmd"
+            continue
+        fi
+
+        [[ $history1 ]] || history1="$cmd"
+
+    done<<-EOF
+        $(history 2)
+EOF
+
+    [[ $history1 = $history2 ]] && return
+
+    cmd=$history1
 
     if [[ $cmd == "rm "* ]] ; then
         cmd="# $cmd"
@@ -577,40 +596,59 @@ function _add_to_history() {
     line="$line $(date +'%F %T')"
     line="$line $BASHPID"
     line="$line \"$quoted_pwd\""
-    line="$line \"$bashrc_last_return_values\""
+    line="$line \"$BASHRC_PIPE_STATUS\""
     line="$line $cmd"
     echo "$line" >> $HISTFILE_ETERNAL
-
-    _last_history=$history
-
-    history -a
 }
-
-alias h="bash-history-search -e -s"
 
 ### PROMPT #####################################################################
 
+# This is the default prompt command which is always set.
+# It sets some variables to be used by the specialized command prompts.
 function bashrc-prompt-command() {
 
-    local pipe_status="${PIPESTATUS[*]}"
+    BASHRC_PIPE_STATUS="${PIPESTATUS[*]}"
+
+    bashrc-eternal-history-add
 
     [[ $BASHRC_TIMER_START ]] || BASHRC_TIMER_START=$SECONDS
-
-    echo -ne $BASHRC_COLOR_NO_COLOR
 
     PS1=$(
         elapsed=$(($SECONDS - $BASHRC_TIMER_START)) \
         jobs=$(jobs) \
         BASHRC_PROMPT_COLORS=1 \
         $BASHRC_PROMPT_COMMAND \
-    )
+    )"$BASHRC_BG_COLOR"
 
-    pipe_status=$pipe_status bash-print-on-error
+    pipe_status=$BASHRC_PIPE_STATUS bash-print-on-error
 
-    echo -ne $BASHRC_BG_COLOR
     BASHRC_TIMER_START=$SECONDS
 }
 
+# Set the specified prompt or guess which one to set
+function prompt-set() {
+
+    local prompt=$1
+
+    PROMPT_COMMAND=bashrc-prompt-command
+
+    if [[ $prompt ]] ; then
+        BASHRC_PROMPT_COMMAND=prompt-$prompt
+        return
+    fi
+
+    if [[ $(parent) =~ (screen|screen.real|tmux) ]] ; then
+        BASHRC_PROMPT_COMMAND=prompt-local
+        return
+    fi
+
+    if [[ $REMOTE_HOST ]] ; then
+        BASHRC_PROMPT_COMMAND=prompt-host
+        return
+    fi
+
+    BASHRC_PROMPT_COMMAND=prompt-local
+}
 
 # turn of history for testing passwords etc
 function godark() {
@@ -619,53 +657,29 @@ function godark() {
     BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
 }
 
-### STARTUP ####################################################################
+# cd to dir used last before logout
+function bashrc-set-last-session-pwd() {
 
-# set the appropriate prompt
-function prompt-set() {
-
-    local prompt=$1
-
-    if [[ $prompt ]] ; then
-        BASHRC_PROMPT_COMMAND=prompt-$prompt
+    if [[ $BASHRC_IS_LOADED ]] ; then
         return
     fi
 
-    case $(parent) in
-        screen|screen.real|tmux)
-            prompt_simple
-        ;;
-        *)
-            if [[ $REMOTE_HOST ]] ; then
-                BASHRC_PROMPT_COMMAND=prompt-host
-            else
-                BASHRC_PROMPT_COMMAND=prompt-simple
-            fi
-        ;;
-    esac
-}
+    local LAST_PWD=$(bash-eternal-history-search -d -c 1 --existing-only | tail -1)
+            OLDPWD=$(bash-eternal-history-search -d -c 2 --existing-only)
 
-return 0
-
-if [[ ! $_is_reload ]] ; then
-
-    _OLDPWD=$(bash-history-search -d -c 2 --existing-only | head -1)
-    LAST_SESSION_PWD=$(bash-history-search -d -c 1 --existing-only)
-
-    # cd to dir used last before logout
-    if [[ $LAST_SESSION_PWD ]] ; then
-
-        if [[ -d "$LAST_SESSION_PWD" ]] ; then
-            cd "$LAST_SESSION_PWD"
-        fi
-
+    if [[ $LAST_PWD ]] ; then
+        cd "$LAST_PWD"
     elif [[ -d "$REMOTE_HOME" ]] ; then
         cdh
     fi
+}
 
-    OLDPWD=$_OLDPWD
-fi
-_is_reload=1
+### STARTUP ####################################################################
+
+prompt-set
+bashrc-set-last-session-pwd
+
+BASHRC_IS_LOADED=1
 
 if [ -d $REMOTE_HOME/.bashrc.d ] ; then
     for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
@@ -673,21 +687,10 @@ if [ -d $REMOTE_HOME/.bashrc.d ] ; then
     done
 fi
 
-### perl functions #############################################################
-
-alias normalizefilenames="xmv -ndx"
-
-function csvview() {
-    csvview "$@" | LESS= less -S
-}
-
-function j() { jobs=$(jobs) bash-jobs ; }
-
 ### bashrc-unpack ##############################################################
 
+# unpack scripts fatpacked to this bashrc
 function bashrc-unpack() {
-
-    # unpack scripts fatpacked to this bashrc
 
     perl - $@ <<'EOF'
         use strict;
@@ -706,13 +709,13 @@ function bashrc-unpack() {
         print STDERR "About to export to $dst_dir...\n";
         print "\n";
 
-        my $x = <STDIN>;
-
         my $export_count = 0;
-        while ($bashrc =~ /^### fatpacked app ([\w-]+) #*\n\n(.*?)### /igsm) {
+        while ($bashrc =~ /^### fatpacked app ([\w-]+) #*$(.+?)(?=###)/igsm) {
 
             my $app_name = $1;
             my $app_data = $2;
+
+            $app_data =~ s/^\s+//g;
 
             my $app_file_name = "$dst_dir/$app_name";
 
