@@ -42,7 +42,7 @@ fi
 
 ################################################################################
 
-BASHRC_COLOR_NO_COLOR=$(echo -e '\x1b[33;0;m')
+BASHRC_COLOR_NO_COLOR='\[\e[33;0;m\]'
 BASHRC_COLOR_GREEN=$(echo -e "\x1b[38;5;2m")
 BASHRC_BG_COLOR=$BASHRC_COLOR_NO_COLOR
 
@@ -60,20 +60,9 @@ HOSTNAME=${HOSTNAME%%.*}
 
 # set distribution info
 
-if [[ -e /etc/lsb-release ]] ; then
-    . /etc/lsb-release
-    DISTRIBUTION=${DISTRIB_ID,,}
-elif [[ -e /etc/debian_version ]] ; then
-    DISTRIBUTION=debian
-else
-    DISTRIBUTION=$(cat /etc/*{version,release} 2>/dev/null \
-        | perl -0777 -ne 'print lc $1 if /(debian|suse|redhat)/igm')
-fi
-
-export DISTRIBUTION
 export LINES COLUMNS
 
-export _bashrc_tty=$(tty)
+export BASHRC_TTY=$(tty)
 
 export FTP_PASSIVE=1
 
@@ -163,6 +152,9 @@ export EDITOR
 alias vi=$EDITOR
 export VISUAL=vi
 
+alias v=vi-choose-file-from-list
+alias vih=vi-from-history
+
 alias cp="cp -i"
 alias mv="mv -i"
 export LESS="-j0.5 -inRgS"
@@ -228,12 +220,6 @@ function cdh() {
     cd "$dir"
 }
 
-# search history for an existing file an open it in vi
-function vih() {(
-    set -e
-    local file=$(bash-eternal-history-search --file -c 1 "$@")
-    command vi "$file"
-)}
 
 # search for file or dir in cur dir and go there
 function cdf() {
@@ -251,31 +237,12 @@ function cdf() {
     cd "$entry"
 }
 
-# recursively find a file and open it in vim
-function vif() {
-
-    local search=$(perl -e '$_ = "'"$@"'" ; s#\:\:#/#g; print')
-
-    local entry=$(f "$search" | head -1)
-
-    if [[ ! "$entry" ]] ; then
-        return 1
-    fi
-
-    command vi "$entry"
-}
 
 function cdm() {
     mkdir "$@" || return 1
     cd "$@"
 }
 
-# edit perl modul that is located within perls module path
-function vip() {
-    pm "$@" | v 1
-}
-
-alias grep-path="compgen -c | grep -i"
 alias xargs='xargs -I {} -d \\n'
 alias pm=perl-module-find
 
@@ -286,147 +253,32 @@ alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
 alias aptl="dpkg -l | g "
 
-function  t() { tree --summary "$@" | less ; }
-function td() { tree -d "$@" | less ; }
-
-# make less more friendly for non-text input files, see lesspipe(1)
-if [[ $(type -p lesspipe ) ]] ; then
-    eval "$(lesspipe)"
-fi
-
-function vnc-vino-preferences {
-    vino-preferences
-}
-
-function vnc-start-vino {
-    /usr/lib/vino/vino-server --display :0 &
-}
-
-### distri fixes ###############################################################
-
-if [[ $DISTRIBUTION = "suse" ]] ; then
-    unalias crontab
-fi
-
-function env-grep {
-    env | grep -i "$@"
-}
-
-function switch_to_iso() { export LANG=de_DE@euro ; }
-
-### misc functions #############################################################
-
-alias text-remove-comments="perl -ne 'print if ! /^#/ && ! /^$/'"
-alias text-quote="fmt -s | perl -pe 's/^/> /g'"
-
-### shell helper functions #####################################################
-
-# get parent process id
-function parent() {
-    echo $(ps -p $PPID -o comm=)
-}
-
-### file handling functions ####################################################
-
-function find-older-than-days() {
-    find . -type f -ctime +$@ | less
-}
-
-function find-newest() {
-    find -type f -printf "%CF %CH:%CM %h/%f\n" | sort | tac | less
-}
-
-function ls-from-date() {
-    find -maxdepth 1 -type f -printf "%CF %CH:%CM %h/%f\n" \
-        | perl -ne 'print substr($_, 17) if m#^\Q'$@'\E#'
-}
-
-function find-largest-files() {
-    find . -mount -type f -printf "%k %p\n" \
-        | sort -rg \
-        | cut -d \  -f 2- \
-        | xargs -I {} du -sh {} \
-        | less
-}
-
-export GREP_OPTIONS="--color=auto"
-alias listgrep="grep -xFf"
-
-# a simple grep without the need for quoting or excluding dot files
-function g() {
-(
-    trap "exit 1" SIGINT
-    set -f
-
-    if [[ -t 0 ]] ; then
-        ff | while read i; do _andgrep -pf "$i" "$@" ; done
-    else
-        _andgrep $@
-    fi
-)
-
-    local exit_code=$?
-    set +f
-    return $exit_code
-}
-
-# quick find a file or dir matching pattern
-function fa() { (
-
-    local search="$@"
-
-    if [[ ! $search ]] ; then
-        search=.
-    fi
-
-    find . -mount \
-        | perl -MFile::Basename -ne 'print if m#'$search'(?!.*\/.*)#i' \
-        | grep -i "$search"
-) }
-
-# quick find a file or dir matching pattern exclude hidden
-function f() { (
-
-    local search="$@"
-
-    if [[ ! $search ]] ; then
-        search=.
-    fi
-
-    fa "$search" \
-        | perl -MFile::Basename -ne 'print if ! m#/\.#' \
-        | grep -i "$search"
-) }
-
-function ff() {
-
-    local search="$@"
-
-    if [[ ! $search ]] ; then
-        search=.
-    fi
-
-    f "$search" \
-        | perl -MFile::Basename -nle 'print if ! m#/\.# && ! -d $_' \
-        | grep -i "$search"
-    true;
-}
-
-### process management #########################################################
-
-# display or search pstree, exclude current process
-function p() {
-    local search=${@:-,$PPID}
-    pstree -apl \
-        | perl -ne '$x = "xxSKIPme"; print if $_ !~ /[\|`]\-\{[\w-_]+},\d+$|less.+\+\/'$1'|$x/' \
-        | less "+/$search"
-}
-
+alias p=pstree-search
 if [[ ! $(type -t pstree) ]] ; then
     alias p="ps axjf"
 fi
 
-function pswatch() { watch -n1 "ps -A | grep -i $@ | grep -v grep"; }
+function  t() { tree --summary "$@" | less ; }
+function td() { tree -d "$@" | less ; }
+
+# Make less more friendly for non-text input files, see lesspipe(1)
+if [[ $(type -p lesspipe ) ]] ; then
+    eval "$(lesspipe)"
+fi
+
+export GREP_OPTIONS="--color=auto"
+alias grep-list="grep -xFf"
+alias f=find-and
+alias g=find-or-grep
+
+################################################################################
+
+function switch_to_iso() { export LANG=de_DE@euro ; }
+
+# Get parent process id
+function parent() {
+    echo $(ps -p $PPID -o comm=)
+}
 
 ### bashrc handling ############################################################
 
@@ -471,20 +323,11 @@ function bashrc-reload() {
 if [[ $DISPLAY ]] ; then
 
     # swap caps lock with escape
-    xmodmap -e 'clear Lock' -e 'keycode 0x42 = Escape'
+    xmodmap -e 'keycode 0x42 = Escape'
 
     # make windows blink if prompt appears
     if [[ $(type -p wmctrl) ]] ; then
-        _PROMPT_WMCTRL="wmctrl -i -r $WINDOWID -b add,DEMANDS_ATTENTION"
-    fi
-
-    # Make Control-v paste, xclip available - Josh Triplett
-    if [[ $(type -p xclip) ]] ; then
-        # Work around a bash bug: \C-@ does not work in a key binding
-        bind '"\C-x\C-m": set-mark'
-        # The '#' characters ensure that kill commands have text to work on; if
-        # not, this binding would malfunction at the start or end of a line.
-        bind 'Control-v: "#\C-b\C-k#\C-x\C-?\"$(xclip -o -selection c)\"\e\C-e\C-x\C-m\C-a\C-y\C-?\C-e\C-y\ey\C-x\C-x\C-d"'
+        export BASHRC_PROMPT_WMCTRL="wmctrl -i -r $WINDOWID -b add,DEMANDS_ATTENTION"
     fi
 
     export BROWSER=firefox
@@ -512,25 +355,6 @@ alias srd=tmux-reattach
 
 function tmux-reload-environment() {
     eval $(tmux show-env | grep -v '^-')
-}
-
-### vim and editing ############################################################
-
-# edit a file from a list on STDIN
-function v() {
-    local line=$1
-
-    if [[ ! $line ]] ; then
-        cat | nl
-        return
-    fi
-
-    local file=$(cat | perl -ne 'print if $. == '$line)
-
-    # close STDIN by connecting it back to the terminal
-    exec < $_bashrc_tty
-
-    vi $file
 }
 
 ### history ####################################################################
@@ -617,8 +441,10 @@ function bashrc-prompt-command() {
         elapsed=$(($SECONDS - $BASHRC_TIMER_START)) \
         jobs=$(jobs) \
         BASHRC_PROMPT_COLORS=1 \
-        $BASHRC_PROMPT_COMMAND \
+        $BASHRC_PROMPT_COMMAND
     )"$BASHRC_BG_COLOR"
+
+    $BASHRC_PROMPT_WMCTRL
 
     pipe_status=$BASHRC_PIPE_STATUS bash-print-on-error
 
@@ -650,13 +476,6 @@ function prompt-set() {
     BASHRC_PROMPT_COMMAND=prompt-local
 }
 
-# turn of history for testing passwords etc
-function godark() {
-    BASHRC_NO_HISTORY=1
-    unset HISTFILE
-    BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
-}
-
 # cd to dir used last before logout
 function bashrc-set-last-session-pwd() {
 
@@ -672,6 +491,13 @@ function bashrc-set-last-session-pwd() {
     elif [[ -d "$REMOTE_HOME" ]] ; then
         cdh
     fi
+}
+
+# Turn of history for testing passwords etc
+function godark() {
+    BASHRC_NO_HISTORY=1
+    unset HISTFILE
+    BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
 }
 
 ### STARTUP ####################################################################
