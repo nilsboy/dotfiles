@@ -1,4 +1,4 @@
-### for all shells #############################################################
+### START ######################################################################
 
 USE_CURRENT_DIR_AS_HOME=$1
 
@@ -15,12 +15,13 @@ fi
 export PERL5LIB
 
 if [[ ! $BASHRC_IS_LOADED ]] ; then
-    export PATH=~/bin:~/.bin:~/opt/bin:$PATH
+    export PATH=~/.bin:~/bin:~/opt/bin:$PATH
 fi
 
+# Return if not an interactive shell
 [ -z $PS1 ] && return
 
-### for interactive shells only ################################################
+### Set remote user stuff ######################################################
 
 if [[ $USE_CURRENT_DIR_AS_HOME ]] ; then
 
@@ -37,10 +38,10 @@ fi
 [[ $REMOTE_HOST   ]] || export REMOTE_HOST=${SSH_CLIENT%% *}
 
 if [[ ! $BASHRC_IS_LOADED && $REMOTE_HOME != $HOME ]] ; then
-    export PATH=$REMOTE_HOME/bin:$REMOTE_HOME/.bin:$PATH
+    export PATH=$REMOTE_HOME/.bin:$REMOTE_HOME/bin:$PATH
 fi
 
-################################################################################
+### Env ########################################################################
 
 BASHRC_COLOR_NO_COLOR='\[\e[33;0;m\]'
 BASHRC_COLOR_GREEN=$(echo -e "\x1b[38;5;2m")
@@ -66,7 +67,7 @@ export BASHRC_TTY=$(tty)
 
 export FTP_PASSIVE=1
 
-### input config ###############################################################
+### Input config ###############################################################
 
 export INPUTRC=$REMOTE_HOME/.inputrc
 
@@ -133,7 +134,62 @@ stty start ^-
 # ctrl-l clear screen but stay in current row
 bind -x '"\C-l":printf "\33[2J"'
 
-### aliases ####################################################################
+### Aliases ####################################################################
+
+alias  ls='ls --color=auto --time-style=+"%a %F %H:%M" -v '
+alias  ll='ls -lh'
+alias   l='ls -1'
+alias  lr='ls -rt1'
+alias llr='ls -rtlh'
+alias  lc='ls -rtlhc'
+alias  la='ls -1d \.*'
+alias lla='ls -lhd \.*'
+
+# https://github.com/seebi/dircolors-solarized
+export LS_COLORS='no=00:fi=00:di=36:ln=35:pi=30;44:so=35;44:do=35;44:bd=33;44:cd=37;44:or=05;37;41:mi=05;37;41:ex=01;31:*.cmd=01;31:*.exe=01;31:*.com=01;31:*.bat=01;31:*.reg=01;31:*.app=01;31:*.txt=32:*.org=32:*.md=32:*.mkd=32:*.h=32:*.c=32:*.C=32:*.cc=32:*.cxx=32:*.objc=32:*.sh=32:*.csh=32:*.zsh=32:*.el=32:*.vim=32:*.java=32:*.pl=32:*.pm=32:*.py=32:*.rb=32:*.hs=32:*.php=32:*.htm=32:*.html=32:*.shtml=32:*.xml=32:*.json=32:*.yaml=32:*.rdf=32:*.css=32:*.js=32:*.man=32:*.0=32:*.1=32:*.2=32:*.3=32:*.4=32:*.5=32:*.6=32:*.7=32:*.8=32:*.9=32:*.l=32:*.n=32:*.p=32:*.pod=32:*.tex=32:*.bmp=33:*.cgm=33:*.dl=33:*.dvi=33:*.emf=33:*.eps=33:*.gif=33:*.jpeg=33:*.jpg=33:*.JPG=33:*.mng=33:*.pbm=33:*.pcx=33:*.pdf=33:*.pgm=33:*.png=33:*.ppm=33:*.pps=33:*.ppsx=33:*.ps=33:*.svg=33:*.svgz=33:*.tga=33:*.tif=33:*.tiff=33:*.xbm=33:*.xcf=33:*.xpm=33:*.xwd=33:*.xwd=33:*.yuv=33:*.aac=33:*.au=33:*.flac=33:*.mid=33:*.midi=33:*.mka=33:*.mp3=33:*.mpa=33:*.mpeg=33:*.mpg=33:*.ogg=33:*.ra=33:*.wav=33:*.anx=33:*.asf=33:*.avi=33:*.axv=33:*.flc=33:*.fli=33:*.flv=33:*.gl=33:*.m2v=33:*.m4v=33:*.mkv=33:*.mov=33:*.mp4=33:*.mp4v=33:*.mpeg=33:*.mpg=33:*.nuv=33:*.ogm=33:*.ogv=33:*.ogx=33:*.qt=33:*.rm=33:*.rmvb=33:*.swf=33:*.vob=33:*.wmv=33:*.doc=31:*.docx=31:*.rtf=31:*.dot=31:*.dotx=31:*.xls=31:*.xlsx=31:*.ppt=31:*.pptx=31:*.fla=31:*.psd=31:*.7z=1;35:*.apk=1;35:*.arj=1;35:*.bin=1;35:*.bz=1;35:*.bz2=1;35:*.cab=1;35:*.deb=1;35:*.dmg=1;35:*.gem=1;35:*.gz=1;35:*.iso=1;35:*.jar=1;35:*.msi=1;35:*.rar=1;35:*.rpm=1;35:*.tar=1;35:*.tbz=1;35:*.tbz2=1;35:*.tgz=1;35:*.tx=1;35:*.war=1;35:*.xpi=1;35:*.xz=1;35:*.z=1;35:*.Z=1;35:*.zip=1;35:*.ANSI-30-black=30:*.ANSI-01;30-brblack=01;30:*.ANSI-31-red=31:*.ANSI-01;31-brred=01;31:*.ANSI-32-green=32:*.ANSI-01;32-brgreen=01;32:*.ANSI-33-yellow=33:*.ANSI-01;33-bryellow=01;33:*.ANSI-34-blue=34:*.ANSI-01;34-brblue=01;34:*.ANSI-35-magenta=35:*.ANSI-01;35-brmagenta=01;35:*.ANSI-36-cyan=36:*.ANSI-01;36-brcyan=01;36:*.ANSI-37-white=37:*.ANSI-01;37-brwhite=01;37:*.log=01;32:*~=01;32:*#=01;32:*.bak=01;36:*.BAK=01;36:*.old=01;36:*.OLD=01;36:*.org_archive=01;36:*.off=01;36:*.OFF=01;36:*.dist=01;36:*.DIST=01;36:*.orig=01;36:*.ORIG=01;36:*.swp=01;36:*.swo=01;36:*,v=01;36:*.gpg=34:*.gpg=34:*.pgp=34:*.asc=34:*.3des=34:*.aes=34:*.enc=34:';
+
+export GREP_OPTIONS="--color=auto"
+
+alias f=find-and
+alias g=find-or-grep
+
+alias cdt='cd $REMOTE_HOME/tmp'
+alias type='type -a'
+
+alias shell-turn-off-line-wrapping="tput rmam"
+alias shell-turn-on-line-wrapping="tput smam"
+
+alias cp="cp -i"
+alias mv="mv -i"
+alias crontab="crontab -i"
+alias xargs='xargs -I {} -d \\n'
+
+alias apts="apt-cache search"
+alias aptw="apt-cache show"
+alias apti="sudo apt-get install"
+alias aptp="sudo dpkg -P"
+alias aptc="sudo apt-get autoremove"
+alias aptl="dpkg -l | g "
+
+alias normalizefilenames="xmv -ndx"
+alias m=man-multi-lookup
+alias pm=perl-module-find
+alias srd=tmux-reattach
+
+alias ps-grep="pgrep -fl"
+alias ps-attach="sudo strace -ewrite -s 1000 -p"
+
+alias p=pstree-search
+if [[ ! $(type -t pstree) ]] ; then
+    alias p="ps axjf"
+fi
+
+function  j() { jobs=$(jobs) bash-jobs ; }
+function  t() { tree --summary "$@" | less ; }
+function td() { tree -d "$@" | less ; }
+function csvview() { csvview "$@" | LESS= less -S ; }
+
+### Vim and less ###############################################################
 
 export VIM_HOME=$REMOTE_HOME/.vim
 
@@ -155,53 +211,20 @@ export VISUAL=vi
 alias v=vi-choose-file-from-list
 alias vih=vi-from-history
 
-alias cp="cp -i"
-alias mv="mv -i"
 export LESS="-j0.5 -inRgS"
-alias crontab="crontab -i"
+# Make less more friendly for non-text input files, see lesspipe(1)
+if [[ $(type -p lesspipe ) ]] ; then
+    eval "$(lesspipe)"
+fi
 
-# https://github.com/seebi/dircolors-solarized
-export LS_COLORS='no=00:fi=00:di=36:ln=35:pi=30;44:so=35;44:do=35;44:bd=33;44:cd=37;44:or=05;37;41:mi=05;37;41:ex=01;31:*.cmd=01;31:*.exe=01;31:*.com=01;31:*.bat=01;31:*.reg=01;31:*.app=01;31:*.txt=32:*.org=32:*.md=32:*.mkd=32:*.h=32:*.c=32:*.C=32:*.cc=32:*.cxx=32:*.objc=32:*.sh=32:*.csh=32:*.zsh=32:*.el=32:*.vim=32:*.java=32:*.pl=32:*.pm=32:*.py=32:*.rb=32:*.hs=32:*.php=32:*.htm=32:*.html=32:*.shtml=32:*.xml=32:*.json=32:*.yaml=32:*.rdf=32:*.css=32:*.js=32:*.man=32:*.0=32:*.1=32:*.2=32:*.3=32:*.4=32:*.5=32:*.6=32:*.7=32:*.8=32:*.9=32:*.l=32:*.n=32:*.p=32:*.pod=32:*.tex=32:*.bmp=33:*.cgm=33:*.dl=33:*.dvi=33:*.emf=33:*.eps=33:*.gif=33:*.jpeg=33:*.jpg=33:*.JPG=33:*.mng=33:*.pbm=33:*.pcx=33:*.pdf=33:*.pgm=33:*.png=33:*.ppm=33:*.pps=33:*.ppsx=33:*.ps=33:*.svg=33:*.svgz=33:*.tga=33:*.tif=33:*.tiff=33:*.xbm=33:*.xcf=33:*.xpm=33:*.xwd=33:*.xwd=33:*.yuv=33:*.aac=33:*.au=33:*.flac=33:*.mid=33:*.midi=33:*.mka=33:*.mp3=33:*.mpa=33:*.mpeg=33:*.mpg=33:*.ogg=33:*.ra=33:*.wav=33:*.anx=33:*.asf=33:*.avi=33:*.axv=33:*.flc=33:*.fli=33:*.flv=33:*.gl=33:*.m2v=33:*.m4v=33:*.mkv=33:*.mov=33:*.mp4=33:*.mp4v=33:*.mpeg=33:*.mpg=33:*.nuv=33:*.ogm=33:*.ogv=33:*.ogx=33:*.qt=33:*.rm=33:*.rmvb=33:*.swf=33:*.vob=33:*.wmv=33:*.doc=31:*.docx=31:*.rtf=31:*.dot=31:*.dotx=31:*.xls=31:*.xlsx=31:*.ppt=31:*.pptx=31:*.fla=31:*.psd=31:*.7z=1;35:*.apk=1;35:*.arj=1;35:*.bin=1;35:*.bz=1;35:*.bz2=1;35:*.cab=1;35:*.deb=1;35:*.dmg=1;35:*.gem=1;35:*.gz=1;35:*.iso=1;35:*.jar=1;35:*.msi=1;35:*.rar=1;35:*.rpm=1;35:*.tar=1;35:*.tbz=1;35:*.tbz2=1;35:*.tgz=1;35:*.tx=1;35:*.war=1;35:*.xpi=1;35:*.xz=1;35:*.z=1;35:*.Z=1;35:*.zip=1;35:*.ANSI-30-black=30:*.ANSI-01;30-brblack=01;30:*.ANSI-31-red=31:*.ANSI-01;31-brred=01;31:*.ANSI-32-green=32:*.ANSI-01;32-brgreen=01;32:*.ANSI-33-yellow=33:*.ANSI-01;33-bryellow=01;33:*.ANSI-34-blue=34:*.ANSI-01;34-brblue=01;34:*.ANSI-35-magenta=35:*.ANSI-01;35-brmagenta=01;35:*.ANSI-36-cyan=36:*.ANSI-01;36-brcyan=01;36:*.ANSI-37-white=37:*.ANSI-01;37-brwhite=01;37:*.log=01;32:*~=01;32:*#=01;32:*.bak=01;36:*.BAK=01;36:*.old=01;36:*.OLD=01;36:*.org_archive=01;36:*.off=01;36:*.OFF=01;36:*.dist=01;36:*.DIST=01;36:*.orig=01;36:*.ORIG=01;36:*.swp=01;36:*.swo=01;36:*,v=01;36:*.gpg=34:*.gpg=34:*.pgp=34:*.asc=34:*.3des=34:*.aes=34:*.enc=34:';
+### Misc #######################################################################
 
-alias  ls='ls --color=auto --time-style=+"%a %F %H:%M" -v '
-alias  ll='ls -lh'
-alias   l='ls -1'
-alias  lr='ls -rt1'
-alias llr='ls -rtlh'
-alias  lc='ls -rtlhc'
-alias  la='ls -1d \.*'
-alias lla='ls -lhd \.*'
-
-alias cdt='cd $REMOTE_HOME/tmp'
-alias type='type -a'
-
-alias lsop='netstat -tapnu | less -S'
-
-alias shell-turn-off-line-wrapping="tput rmam"
-alias shell-turn-on-line-wrapping="tput smam"
-
-alias pgrep="pgrep -fl"
-alias ps-attach="sudo strace -ewrite -s 1000 -p"
-
-alias normalizefilenames="xmv -ndx"
-
-function csvview() {
-    csvview "$@" | LESS= less -S
+# Get parent process id
+function parent() {
+    echo $(ps -p $PPID -o comm=)
 }
 
-function j() { jobs=$(jobs) bash-jobs ; }
-
-function df() {
-
-    if [[ $@ ]] ; then
-        command df "$@"
-        return
-    fi
-
-    command df -h | perl -0777 -pe 's/^(\S+)\n/$1/gm' | csvview
-}
-
-# search history for an existing directory containing string and go there
+# Search history for an existing directory containing string and go there
 function cdh() {
 
     if ! [[ $@ ]] ; then
@@ -220,8 +243,7 @@ function cdh() {
     cd "$dir"
 }
 
-
-# search for file or dir in cur dir and go there
+# Search for file or dir in cur dir and go there
 function cdf() {
 
     local entry=$(f "$@" | head -1)
@@ -238,87 +260,13 @@ function cdf() {
 }
 
 
+# Create dir and cd into it
 function cdm() {
     mkdir "$@" || return 1
     cd "$@"
 }
 
-alias xargs='xargs -I {} -d \\n'
-alias pm=perl-module-find
-
-alias apts="apt-cache search"
-alias aptw="apt-cache show"
-alias apti="sudo apt-get install"
-alias aptp="sudo dpkg -P"
-alias aptc="sudo apt-get autoremove"
-alias aptl="dpkg -l | g "
-
-alias p=pstree-search
-if [[ ! $(type -t pstree) ]] ; then
-    alias p="ps axjf"
-fi
-
-function  t() { tree --summary "$@" | less ; }
-function td() { tree -d "$@" | less ; }
-
-# Make less more friendly for non-text input files, see lesspipe(1)
-if [[ $(type -p lesspipe ) ]] ; then
-    eval "$(lesspipe)"
-fi
-
-export GREP_OPTIONS="--color=auto"
-alias grep-list="grep -xFf"
-alias f=find-and
-alias g=find-or-grep
-
-################################################################################
-
-function switch_to_iso() { export LANG=de_DE@euro ; }
-
-# Get parent process id
-function parent() {
-    echo $(ps -p $PPID -o comm=)
-}
-
-### bashrc handling ############################################################
-
-# cp dotfile from github
-function bashrc-fetch-file() {(
-    local tmp="/tmp/cphub.$$"
-    set -e
-    wcat http://github.com/evenless/dotfiles/raw/master/$1 -fr
-)}
-
-function bashrc-clean-env() {
-
-    unset PROMPT_COMMAND
-
-    # remove aliases
-    unalias -a
-
-    # remove functions
-    while read funct ; do
-        unset -f $funct
-    done<<EOF
-        $(perl -ne 'foreach (/^function (.+?)\(/) {print "$_\n" }' $REMOTE_BASHRC)
-EOF
-}
-
-function bashrc-update() {
-    (
-        set -e
-        cd $REMOTE_HOME
-        wcat tinyurl.com/phatbashrc2 -o .bashrc
-    )
-    bashrc-reload
-}
-
-function bashrc-reload() {
-    bashrc-clean-env
-    source $REMOTE_BASHRC
-}
-
-### xorg #######################################################################
+### Xorg #######################################################################
 
 if [[ $DISPLAY ]] ; then
 
@@ -347,17 +295,7 @@ if [[ -e $REMOTE_HOME/.ssh/config ]] ; then
     complete -fdW "$(_ssh_completion)" scp
 fi
 
-### SCREEN #####################################################################
-
-alias screen="xtitle screen@$HOSTNAME ; screen -c $REMOTE_HOME/.screenrc"
-alias   tmux="xtitle   tmux@$HOSTNAME ; tmux"
-alias srd=tmux-reattach
-
-function tmux-reload-environment() {
-    eval $(tmux show-env | grep -v '^-')
-}
-
-### history ####################################################################
+### History ####################################################################
 
 # ignore commands  for history that start  with a space
 HISTCONTROL=ignorespace:ignoredups
@@ -500,22 +438,45 @@ function godark() {
     BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
 }
 
-### STARTUP ####################################################################
+### bashrc handling ############################################################
 
-prompt-set
-bashrc-set-last-session-pwd
+# cp dotfile from github
+function bashrc-fetch-file() {(
+    local tmp="/tmp/cphub.$$"
+    set -e
+    wcat http://github.com/evenless/dotfiles/raw/master/$1 -fr
+)}
 
-BASHRC_IS_LOADED=1
+function bashrc-clean-env() {
 
-if [ -d $REMOTE_HOME/.bashrc.d ] ; then
-    for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
-        source $rc
-    done
-fi
+    unset PROMPT_COMMAND
 
-### bashrc-unpack ##############################################################
+    # remove aliases
+    unalias -a
 
-# unpack scripts fatpacked to this bashrc
+    # remove functions
+    while read funct ; do
+        unset -f $funct
+    done<<EOF
+        $(perl -ne 'foreach (/^function (.+?)\(/) {print "$_\n" }' $REMOTE_BASHRC)
+EOF
+}
+
+function bashrc-update() {
+    (
+        set -e
+        cd $REMOTE_HOME
+        wcat tinyurl.com/phatbashrc2 -o .bashrc
+    )
+    bashrc-reload
+}
+
+function bashrc-reload() {
+    bashrc-clean-env
+    source $REMOTE_BASHRC
+}
+
+# Unpack scripts fatpacked to this bashrc
 function bashrc-unpack() {
 
     perl - $@ <<'EOF'
@@ -563,7 +524,20 @@ EOF
 
 }
 
-# bashrc ends here
+### STARTUP ####################################################################
+
+prompt-set
+bashrc-set-last-session-pwd
+
+BASHRC_IS_LOADED=1
+
+if [ -d $REMOTE_HOME/.bashrc.d ] ; then
+    for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
+        source $rc
+    done
+fi
+
+### END ########################################################################
 return 0
 
 ### fatpacked apps start here ##################################################
