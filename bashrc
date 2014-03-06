@@ -18,6 +18,12 @@ if [[ ! $BASHRC_IS_LOADED ]] ; then
     export PATH=~/.bin:~/bin:~/opt/bin:$PATH
 fi
 
+if [ -d $REMOTE_HOME/.bashrc.d ] ; then
+    for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
+        source $rc
+    done
+fi
+
 # Return if not an interactive shell
 [ -z $PS1 ] && return
 
@@ -530,12 +536,6 @@ prompt-set
 bashrc-set-last-session-pwd
 
 BASHRC_IS_LOADED=1
-
-if [ -d $REMOTE_HOME/.bashrc.d ] ; then
-    for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
-        source $rc
-    done
-fi
 
 ### END ########################################################################
 return 0
