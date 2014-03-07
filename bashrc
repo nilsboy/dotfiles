@@ -18,14 +18,7 @@ if [[ ! $BASHRC_IS_LOADED ]] ; then
     export PATH=~/.bin:~/bin:~/opt/bin:$PATH
 fi
 
-if [ -d $REMOTE_HOME/.bashrc.d ] ; then
-    for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
-        source $rc
-    done
-fi
 
-# Return if not an interactive shell
-[ -z $PS1 ] && return
 
 ### Set remote user stuff ######################################################
 
@@ -46,6 +39,18 @@ fi
 if [[ ! $BASHRC_IS_LOADED && $REMOTE_HOME != $HOME ]] ; then
     export PATH=$REMOTE_HOME/.bin:$REMOTE_HOME/bin:$PATH
 fi
+
+### Run local rc scripts #######################################################
+
+if [ -d $REMOTE_HOME/.bashrc.d ] ; then
+    for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
+        source $rc
+    done
+fi
+
+### Return if not an interactive shell #########################################
+
+[ -z $PS1 ] && return
 
 ### Env ########################################################################
 
