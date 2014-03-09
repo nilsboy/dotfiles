@@ -204,7 +204,7 @@ function csvview() { csvview "$@" | LESS= less -S ; }
 
 export VIM_HOME=$REMOTE_HOME/.vim
 
-EDITOR="vi"
+EDITOR=vi
 if [[ $REMOTE_HOST ]] ; then
     EDITOR="DISPLAY= $EDITOR"
 fi
@@ -216,10 +216,11 @@ else
 fi
 
 export EDITOR
-alias vi=$EDITOR
-export VISUAL=vi
+export VISUAL="$EDITOR"
+alias vi="$EDITOR"
 
 alias v=vi-choose-file-from-list
+alias vip=vi-from-path
 alias vih=vi-from-history
 
 export LESS="-j0.5 -inRgS"
@@ -227,6 +228,9 @@ export LESS="-j0.5 -inRgS"
 if [[ $(type -p lesspipe ) ]] ; then
     eval "$(lesspipe)"
 fi
+export PAGER=less
+
+export MANWIDTH=80
 
 ### Misc #######################################################################
 
