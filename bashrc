@@ -283,10 +283,7 @@ function cdm() {
 
 if [[ $DISPLAY ]] ; then
 
-    # swap caps lock with escape
-    if [[ $(xmodmap -pke | grep -i caps) ]] ; then
-        xmodmap -e "remove lock = Caps_Lock" -e "keysym Caps_Lock = Escape"
-    fi
+    keyboard-disable-caps-lock-xwindows
 
     # make windows blink if prompt appears
     if [[ $(type -p wmctrl) ]] ; then
