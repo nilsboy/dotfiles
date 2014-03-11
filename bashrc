@@ -499,9 +499,7 @@ function bashrc-unpack() {
 
         system("mkdir -p $dst_dir") && die $!;
 
-        print "\n";
-        print STDERR "About to export to $dst_dir...\n";
-        print "\n";
+        print STDERR "Exporting apps to $dst_dir...\n";
 
         my $export_count = 0;
         while ($bashrc =~ /^### fatpacked app ([\w-]+) #*$(.+?)(?=###)/igsm) {
@@ -526,12 +524,14 @@ function bashrc-unpack() {
             $export_count++;
         }
 
-        print STDERR "Done - apps exported: $export_count.\n\n";
+        print STDERR "Done - $export_count apps exported.\n";
 EOF
 
 }
 
 ### STARTUP ####################################################################
+
+[ -e "$REMOTE_HOME/.bin" ] || bashrc-unpack
 
 prompt-set
 bashrc-set-last-session-pwd
