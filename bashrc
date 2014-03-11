@@ -18,8 +18,6 @@ if [[ ! $BASHRC_IS_LOADED ]] ; then
     export PATH=~/.bin:~/bin:~/opt/bin:$PATH
 fi
 
-
-
 ### Set remote user stuff ######################################################
 
 if [[ $USE_CURRENT_DIR_AS_HOME ]] ; then
@@ -50,7 +48,7 @@ fi
 
 ### Return if not an interactive shell #########################################
 
-[ -z $PS1 ] && return
+[[ $PS1 ]] || return
 
 ### Env ########################################################################
 
@@ -455,13 +453,6 @@ function godark() {
 
 ### bashrc handling ############################################################
 
-# cp dotfile from github
-function bashrc-fetch-file() {(
-    local tmp="/tmp/cphub.$$"
-    set -e
-    wcat http://github.com/evenless/dotfiles/raw/master/$1 -fr
-)}
-
 function bashrc-clean-env() {
 
     unset PROMPT_COMMAND
@@ -484,6 +475,7 @@ function bashrc-update() {
         wcat tinyurl.com/phatbashrc2 -o .bashrc
     )
     bashrc-reload
+    bashrc-unpack
 }
 
 function bashrc-reload() {
