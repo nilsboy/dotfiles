@@ -284,7 +284,9 @@ function cdm() {
 if [[ $DISPLAY ]] ; then
 
     # swap caps lock with escape
-    xmodmap -e 'keycode 0x42 = Escape'
+    if [[ $(xmodmap -pke | grep -i caps) ]] ; then
+        xmodmap -e "remove lock = Caps_Lock" -e "keysym Caps_Lock = Escape"
+    fi
 
     # make windows blink if prompt appears
     if [[ $(type -p wmctrl) ]] ; then
