@@ -387,10 +387,12 @@ function bashrc-prompt-command() {
 
     [[ $BASHRC_TIMER_START ]] || BASHRC_TIMER_START=$SECONDS
 
+
     PS1=$(
         elapsed=$(($SECONDS - $BASHRC_TIMER_START)) \
         jobs=$(jobs) \
         BASHRC_PROMPT_COLORS=1 \
+        BASHRC_PROMPT_HELPERS=$BASHRC_PROMPT_HELPERS \
         $BASHRC_PROMPT_COMMAND
     )"$BASHRC_BG_COLOR"
 
@@ -409,8 +411,19 @@ function prompt-set() {
     PROMPT_COMMAND=bashrc-prompt-command
 
     if [[ $prompt ]] ; then
-        BASHRC_PROMPT_COMMAND=prompt-$prompt
-        return
+
+        if [[ $(type -p prompt-$prompt) ]] ; then
+            BASHRC_PROMPT_COMMAND=prompt-$prompt
+            return
+        fi
+
+        if [[ $(type -p prompt-helper-$prompt) ]] ; then
+            BASHRC_PROMPT_HELPERS=prompt-helper-$prompt
+            return
+        fi
+
+        echo "Prompt not found $prompt" >&2
+        return 1
     fi
 
     if [[ $(parent) =~ (screen|screen.real|tmux) ]] ; then
