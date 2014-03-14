@@ -498,6 +498,10 @@ function bashrc-reload() {
 # Unpack scripts fatpacked to this bashrc
 function bashrc-unpack() {
 
+    if [[ -d $REMOTE_HOME/.bin ]] ; then
+       rm $REMOTE_HOME/.bin -rf
+    fi
+
     perl - $@ <<'EOF'
         use strict;
         use warnings;
