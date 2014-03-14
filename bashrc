@@ -147,7 +147,7 @@ bind -x '"\C-l":printf "\33[2J"'
 
 alias  ls='ls --color=auto --time-style=+"%a %F %H:%M" -v '
 alias  ll='ls -lh'
-alias   l='ls -1 --color | grep-and -e'
+alias   l='ls -1'
 alias  lr='ls -rt1'
 alias llr='ls -rtlh'
 alias  lc='ls -rtlhc'
