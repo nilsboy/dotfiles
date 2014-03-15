@@ -218,8 +218,9 @@ export VISUAL="$EDITOR"
 alias vi="$EDITOR"
 
 alias v=vi-choose-file-from-list
-alias vip=vi-from-path
+alias vie=vi-from-path
 alias vih=vi-from-history
+alias vip="perldoc -lm"
 
 export LESS="-j0.5 -inRgS"
 # Make less more friendly for non-text input files, see lesspipe(1)
