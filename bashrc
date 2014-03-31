@@ -219,6 +219,7 @@ alias vi="$EDITOR"
 
 alias v=vi-choose-file-from-list
 alias vie=vi-from-path
+alias vif=vi-from-find
 alias vih=vi-from-history
 alias vip="perldoc -lm"
 
