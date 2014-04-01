@@ -554,7 +554,7 @@ EOF
 prompt-set
 bashrc-set-last-session-pwd
 
-BASHRC_IS_LOADED=1
+export BASHRC_IS_LOADED=1
 
 ### END ########################################################################
 return 0
