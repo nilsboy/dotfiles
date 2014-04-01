@@ -248,7 +248,7 @@ function cdh() {
     fi
 
     local dir=$(bash-eternal-history-search -d --skip-current-dir \
-        --existing-only -c 1 "$@" \
+        --existing-only -c 1 "\/[^\/]*$@[^\/]*$"
     )
 
     if [[ ! "$dir" ]] ; then
