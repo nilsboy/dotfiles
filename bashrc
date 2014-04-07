@@ -309,7 +309,7 @@ if [[ -e $REMOTE_HOME/.ssh/config ]] ; then
     complete -fdW "$(_ssh_completion)" scp
 fi
 
-function fixssh()
+function fixssh() {
     source ssh-agent-env-restore
 }
 
