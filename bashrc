@@ -310,7 +310,7 @@ if [[ -e $REMOTE_HOME/.ssh/config ]] ; then
 fi
 
 function fixssh() {
-    source ssh-agent-env-restore
+    eval $(ssh-agent-env-restore)
 }
 
 function nossh() {
