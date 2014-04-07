@@ -309,6 +309,14 @@ if [[ -e $REMOTE_HOME/.ssh/config ]] ; then
     complete -fdW "$(_ssh_completion)" scp
 fi
 
+function fixssh()
+    source ssh-agent-env-restore
+}
+
+function nossh() {
+    ssh-agent-env-clear
+}
+
 ### History ####################################################################
 
 # ignore commands  for history that start  with a space
