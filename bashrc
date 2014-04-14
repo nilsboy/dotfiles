@@ -413,6 +413,24 @@ function bashrc-prompt-command() {
     BASHRC_TIMER_START=$SECONDS
 }
 
+# Add a helper command to display in the prompt
+function prompt-helper-add() {
+
+    cmd=${1?Specify helper command}
+
+    if [[ $BASHRC_PROMPT_HELPERS ]] ; then
+        BASHRC_PROMPT_HELPERS=$BASHRC_PROMPT_HELPERS";"
+    fi
+
+    BASHRC_PROMPT_HELPERS="$BASHRC_PROMPT_HELPERS""prefixif \$($@)"
+}
+
+# Remove all helpers
+function prompt-helper-remove-all() {
+
+    unset BASHRC_PROMPT_HELPERS
+}
+
 # Set the specified prompt or guess which one to set
 function prompt-set() {
 
@@ -428,7 +446,7 @@ function prompt-set() {
         fi
 
         if [[ $(type -p prompt-helper-$prompt) ]] ; then
-            BASHRC_PROMPT_HELPERS=prompt-helper-$prompt
+            prompt-helper-add prompt-helper-$prompt
             return
         fi
 
