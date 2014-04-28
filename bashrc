@@ -546,7 +546,7 @@ function bashrc-unpack() {
         print STDERR "Exporting apps to $dst_dir...\n";
 
         my $export_count = 0;
-        while ($bashrc =~ /^### fatpacked app ([\w-]+) #*$(.+?)(?=###)/igsm) {
+        while ($bashrc =~ /^### fatpacked app ([\w-]+) #*$(.+?)(?=^###)/igsm) {
 
             my $app_name = $1;
             my $app_data = $2;
