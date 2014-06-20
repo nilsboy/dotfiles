@@ -513,7 +513,7 @@ function bashrc-update() {
     (
         set -e
         cd $REMOTE_HOME
-        wcat tinyurl.com/phatbashrc2 -o .bashrc
+        wcat tinyurl.com/phatbashrc3 -o .bashrc
     )
     bashrc-reload
     bashrc-unpack
