@@ -178,7 +178,8 @@ alias aptw="apt-cache show"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
-alias aptl="dpkg -l | g "
+alias aptl="dpkg -l | g"
+alias aptf="dpkg -L"
 
 alias normalizefilenames="xmv -ndx"
 alias m=man-multi-lookup
