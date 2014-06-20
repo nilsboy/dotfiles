@@ -173,7 +173,7 @@ alias mv="mv -i"
 alias crontab="crontab -i"
 alias xargs='xargs -I {} -d \\n'
 
-alias apts="apt-cache search"
+function apts() { apt-cache search --names-only "$@" | less ; }
 alias aptw="apt-cache show"
 alias apti="sudo apt-get install"
 alias aptp="sudo dpkg -P"
