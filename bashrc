@@ -222,7 +222,7 @@ alias v=vi-choose-file-from-list
 alias vie=vi-from-path
 alias vif=vi-from-find
 alias vih=vi-from-history
-alias vip="perldoc -lm"
+alias vip=vi-from-perl-inc
 
 export LESS="-j0.5 -inRgS"
 # Make less more friendly for non-text input files, see lesspipe(1)
