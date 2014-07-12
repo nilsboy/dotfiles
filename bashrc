@@ -197,7 +197,7 @@ fi
 function  j() { jobs=$(jobs) bash-jobs ; }
 function  t() { tree --summary "$@" | less ; }
 function td() { tree -d "$@" | less ; }
-function csvview() { csvview "$@" | LESS= less -S ; }
+function csvview() { command csvview "$@" | LESS= less -S ; }
 
 ### Vim and less ###############################################################
 
