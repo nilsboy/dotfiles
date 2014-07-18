@@ -2,6 +2,14 @@
 
 USE_CURRENT_DIR_AS_HOME=$1
 
+if [[ ! $BASHRC_PATH_ORG ]] ; then
+    BASHRC_PATH_ORG=$PATH
+else
+    PATH=$BASHRC_PATH_ORG
+fi
+
+### Perl libs and bin path #####################################################
+
 PERL5LIB=~/perldev/lib
 
 if [[ -e ~/perl5/perlbrew/etc/bashrc ]] ; then
@@ -14,9 +22,9 @@ fi
 
 export PERL5LIB
 
-if [[ ! $BASHRC_IS_LOADED ]] ; then
-    export PATH=~/.bin:~/bin:~/opt/bin:$PATH
-fi
+### PATH #######################################################################
+
+export PATH=~/.bin:~/bin:~/opt/bin:$PATH
 
 ### Set remote user stuff ######################################################
 
@@ -34,7 +42,7 @@ fi
 [[ $REMOTE_BASHRC ]] || export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 [[ $REMOTE_HOST   ]] || export REMOTE_HOST=${SSH_CLIENT%% *}
 
-if [[ ! $BASHRC_IS_LOADED && $REMOTE_HOME != $HOME ]] ; then
+if [[ $REMOTE_HOME != $HOME ]] ; then
     export PATH=$REMOTE_HOME/.bin:$REMOTE_HOME/bin:$PATH
 fi
 
