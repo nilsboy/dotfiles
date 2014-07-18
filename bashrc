@@ -153,9 +153,9 @@ bind -x '"\C-l":printf "\33[2J"'
 
 ### Aliases ####################################################################
 
-function  l() { ls --color --time-style=+"%a %F %H:%M" -v -1  "$@" | sort ; }
-function ll() { ls --color --time-style=+"%a %F %H:%M" -v -lh "$@" | sort -k 9 ; }
 alias    ls='ls --color=auto --time-style=+"%a %F %H:%M" -v '
+alias     l='ls -1'
+alias    ll='ls -lh'
 alias    lr='ls -rt1'
 alias   llr='ls -rtlh'
 alias    lc='ls -rtlhc'
