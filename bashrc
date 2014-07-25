@@ -307,7 +307,7 @@ fi
 
 ### SSH ########################################################################
 
-alias ssh="ssh -A"
+alias ssh="ssh -ACc arcfour,blowfish-cbc"
 
 function _ssh_completion() {
     perl -ne 'print "$1 " if /^Host (.+)$/' $REMOTE_HOME/.ssh/config
