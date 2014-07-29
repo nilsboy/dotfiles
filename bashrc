@@ -14,6 +14,7 @@ PERL5LIB=~/perldev/lib
 
 if [[ -e ~/perl5/perlbrew/etc/bashrc ]] ; then
     source ~/perl5/perlbrew/etc/bashrc
+    unset MANPATH
 fi
 
 if [[ ! $PERLBREW_PERL ]] ; then
@@ -243,6 +244,7 @@ export PAGER=less
 export MANWIDTH=80
 
 ### Misc #######################################################################
+
 
 # Get parent process id
 function parent() {
