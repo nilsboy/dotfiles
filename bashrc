@@ -13,8 +13,8 @@ fi
 PERL5LIB=~/perldev/lib
 
 if [[ -e ~/perl5/perlbrew/etc/bashrc ]] ; then
-    source ~/perl5/perlbrew/etc/bashrc
     unset MANPATH
+    source ~/perl5/perlbrew/etc/bashrc
 fi
 
 if [[ ! $PERLBREW_PERL ]] ; then
