@@ -211,17 +211,9 @@ function csvview() { command csvview "$@" | LESS= less -S ; }
 
 ### Vim and less ###############################################################
 
-export VIM_HOME=$REMOTE_HOME/.vim
-
 EDITOR=vi
 if [[ $REMOTE_HOST ]] ; then
     EDITOR="DISPLAY= $EDITOR"
-fi
-
-if [[ -e $VIM_HOME/etc/vimrc ]] ; then
-    EDITOR="$EDITOR -u $VIM_HOME/etc/vimrc"
-else
-    EDITOR="$EDITOR -i $REMOTE_HOME/._viminfo"
 fi
 
 export EDITOR
