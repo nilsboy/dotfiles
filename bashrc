@@ -218,7 +218,6 @@ fi
 
 export EDITOR
 export VISUAL="$EDITOR"
-alias vi="$EDITOR"
 
 alias v=vi-choose-file-from-list
 alias vie=vi-from-path
