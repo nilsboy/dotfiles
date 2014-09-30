@@ -62,7 +62,7 @@ fi
 ### Env ########################################################################
 
 BASHRC_COLOR_NO_COLOR='\[\e[33;0;m\]'
-BASHRC_COLOR_GREEN=$(echo -e "\x1b[38;5;2m")
+BASHRC_COLOR_GREEN='\[\e[38;5;2m\]'
 BASHRC_BG_COLOR=$BASHRC_COLOR_NO_COLOR
 
 export LANG="de_DE.UTF-8"
