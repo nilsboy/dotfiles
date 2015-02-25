@@ -204,6 +204,8 @@ if [[ ! $(type -t pstree) ]] ; then
     alias p="ps axjf"
 fi
 
+alias top="top -c"
+
 function  j() { jobs=$(jobs) bash-jobs ; }
 function  t() { tree --summary "$@" | less ; }
 function td() { tree -d "$@" | less ; }
