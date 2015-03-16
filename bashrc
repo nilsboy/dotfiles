@@ -598,7 +598,7 @@ bashrc-set-last-session-pwd
 
 export BASHRC_IS_LOADED=1
 
-test -n "$REMOTE_HOST" && srd
+# test -n "$REMOTE_HOST" && srd
 
 true
 
