@@ -65,9 +65,20 @@ BASHRC_COLOR_NO_COLOR='\[\e[33;0;m\]'
 BASHRC_COLOR_GREEN='\[\e[38;5;2m\]'
 BASHRC_BG_COLOR=$BASHRC_COLOR_NO_COLOR
 
-export LANG="de_DE.UTF-8"
-# export LC_ALL="de_DE.UTF-8"
-# export LC_CTYPE="de_DE.UTF-8"
+if [[ "$LANG" =~ utf || "$LANG" =~ UTF ]] ; then
+    # all good
+    true
+else
+    _available_locales=$(locale -a 2>/dev/null)
+    if [[ "$_available_locales" =~ "en_US.utf8" ]] ; then
+        LANG="en_US.utf8"
+    fi
+    unset _available_locales
+fi
+
+if [[ ! "$LANG" ]] ; then
+    LANG=C
+fi
 
 # use english messages on the command line
 export LC_MESSAGES=C
