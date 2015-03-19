@@ -576,9 +576,6 @@ function bashrc-unpack() {
 
             open(my $APP_FILE, ">", $app_file_name) || die $!;
             print $APP_FILE $app_data;
-            print $APP_FILE
-                "\n# This app was created automatically and may be overridden"
-                . " - DONT TOUCH THIS!\n";
 
             chmod(0755, $app_file_name) || die $!;
 
