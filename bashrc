@@ -124,9 +124,7 @@ function bashrc-linux-distribution-run-fixes() {
     fi
 
     local fix_file=bashrc-linux-distribution-fix-$DISTRIB_ID
-        echo using fix file: $fix_file
     if [[ $(type -t $fix_file) ]] ; then
-        echo running fix file: $fix_file
         . $fix_file
     fi
 }
