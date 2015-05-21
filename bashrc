@@ -89,13 +89,47 @@ export BROWSER=links
 # remove domain from hostname if necessary
 HOSTNAME=${HOSTNAME%%.*}
 
-# set distribution info
-
 export LINES COLUMNS
 
 export BASHRC_TTY=$(tty)
 
 export FTP_PASSIVE=1
+
+### Set linux distribution #####################################################
+
+function bashrc-linux-distribution-set() {
+
+    if [[ $DISTRIB_ID != "" ]] ; then
+        return
+    fi
+
+    if [[ -e /etc/debian_version ]] ; then
+        DISTRIB_ID=debian
+    elif [[ -e /etc/lsb-release ]] ; then
+        . /etc/lsb-release
+    else
+        DISTRIB_ID=$(cat /etc/*{version,release} 2>/dev/null \
+            | perl -0777 -ne 'print lc $1 if /(debian|suse|redhat)/igm')
+    fi
+
+    export DISTRIB_ID
+}
+
+bashrc-linux-distribution-set
+
+function bashrc-linux-distribution-run-fixes() {
+
+    if [[ $DISTRIB_ID = "" ]] ; then
+        return
+    fi
+
+    local fix_file=bashrc-linux-distribution-fix-$DISTRIB_ID
+        echo using fix file: $fix_file
+    if [[ $(type -t $fix_file) ]] ; then
+        echo running fix file: $fix_file
+        . $fix_file
+    fi
+}
 
 ### Input config ###############################################################
 
@@ -590,6 +624,8 @@ EOF
 ### STARTUP ####################################################################
 
 [ -e "$REMOTE_HOME/.bin" ] || bashrc-unpack
+
+bashrc-linux-distribution-run-fixes
 
 prompt-set
 bashrc-set-last-session-pwd
