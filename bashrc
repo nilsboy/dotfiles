@@ -251,7 +251,7 @@ fi
 alias top="top -c"
 
 function  j() { jobs=$(jobs) bash-jobs ; }
-function  t() { tree --summary "$@" | less ; }
+function  t() { tree -C --summary "$@" | less ; }
 function td() { tree -d "$@" | less ; }
 function csvview() { command csvview "$@" | LESS= less -S ; }
 
