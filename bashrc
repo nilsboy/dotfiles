@@ -8,21 +8,6 @@ else
     PATH=$BASHRC_PATH_ORG
 fi
 
-### Perl libs and bin path #####################################################
-
-PERL5LIB=~/perldev/lib
-
-if [[ -e ~/perl5/perlbrew/etc/bashrc ]] ; then
-    unset MANPATH
-    source ~/perl5/perlbrew/etc/bashrc
-fi
-
-if [[ ! $PERLBREW_PERL ]] ; then
-    PERL5LIB=$PERL5LIB:~/perl5/lib/perl5
-fi
-
-export PERL5LIB
-
 ### PATH #######################################################################
 
 export PATH=~/.bin:~/bin:~/opt/bin:~/node_modules/bin:$PATH
@@ -561,6 +546,7 @@ function bashrc-update() {
     (
         set -e
         cd $REMOTE_HOME
+	mkdir -p $REMOTE_HOME/.bashrc.d
         wcat tinyurl.com/phatbashrc3 -o .bashrc
     )
     bashrc-reload
