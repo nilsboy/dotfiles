@@ -234,6 +234,7 @@ if [[ ! $(type -t pstree) ]] ; then
 fi
 
 alias top="top -c"
+alias rsync="rsync -h"
 
 function  j() { jobs=$(jobs) bash-jobs ; }
 function  t() { tree -C --summary "$@" | less ; }
