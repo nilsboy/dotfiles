@@ -522,8 +522,8 @@ function bashrc-set-last-session-pwd() {
 }
 
 # Turn of history for testing passwords etc
-function godark() {
-    BASHRC_NO_HISTORY=1
+function shell-private() {
+    export PRIVATE_SHELL=1
     unset HISTFILE
     BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
 }
