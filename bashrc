@@ -334,7 +334,10 @@ fi
 
 ### SSH ########################################################################
 
-alias ssh="ssh -ACc arcfour,blowfish-cbc"
+# ServerAliveInterval=5 make sure there is ssh traffic so no firewall closes
+#     the connection
+# GSSAPIAuthentication=no - usually not uesed - speeds up connection time
+alias ssh="ssh -AC -o GSSAPIAuthentication=no -o ServerAliveInterval=5"
 
 function _ssh_completion() {
     perl -ne 'print "$1 " if /^Host (.+)$/' $REMOTE_HOME/.ssh/config
