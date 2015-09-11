@@ -88,10 +88,10 @@ function bashrc-linux-distribution-set() {
         return
     fi
 
-    if [[ -e /etc/debian_version ]] ; then
-        DISTRIB_ID=debian
-    elif [[ -e /etc/lsb-release ]] ; then
+    if [[ -e /etc/lsb-release ]] ; then
         . /etc/lsb-release
+    elif [[ -e /etc/debian_version ]] ; then
+        DISTRIB_ID=debian
     else
         DISTRIB_ID=$(cat /etc/*{version,release} 2>/dev/null \
             | perl -0777 -ne 'print lc $1 if /(debian|suse|redhat)/igm')
