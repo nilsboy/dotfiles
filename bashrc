@@ -273,6 +273,10 @@ export MANWIDTH=80
 
 # Get parent process id
 function parent() {
+    # ps can not deal with PID 0 which might be set when running inside docker
+    if [[ $PPID = 0 ]] ; then
+        return
+    fi
     echo $(ps -p $PPID -o comm=)
 }
 
