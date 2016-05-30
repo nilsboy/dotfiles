@@ -41,6 +41,10 @@ if [ -d $REMOTE_HOME/.bashrc.d ] ; then
     done
 fi
 
+### Checking if running inside docker ##########################################
+
+grep docker /proc/1/cgroup &>/dev/null && BASHRC_INSIDE_DOCKER=1
+
 ### Return if not an interactive shell #########################################
 
 [[ $PS1 ]] || return
