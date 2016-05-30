@@ -506,7 +506,7 @@ function prompt-set() {
         return
     fi
 
-    if [[ $REMOTE_HOST ]] ; then
+    if [[ $REMOTE_HOST || $BASHRC_INSIDE_DOCKER ]] ; then
         BASHRC_PROMPT_COMMAND=prompt-host
         return
     fi
