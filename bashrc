@@ -43,7 +43,7 @@ fi
 
 ### Checking if running inside docker ##########################################
 
-grep docker /proc/1/cgroup &>/dev/null && BASHRC_INSIDE_DOCKER=1
+grep docker /proc/1/cgroup &>/dev/null && export BASHRC_INSIDE_DOCKER=1
 
 ### Return if not an interactive shell #########################################
 
@@ -273,7 +273,6 @@ export PAGER=less
 export MANWIDTH=80
 
 ### Misc #######################################################################
-
 
 # Get parent process id
 function parent() {
