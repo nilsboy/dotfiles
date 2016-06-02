@@ -33,6 +33,18 @@ if [[ $REMOTE_HOME != $HOME ]] ; then
     export PATH=$REMOTE_HOME/.bin:$REMOTE_HOME/bin:$PATH
 fi
 
+# Replace proxy env when using a tunneled ssh proxy
+if [[ $ssh_remote_proxy ]] ; then
+
+    http_proxy=http://$ssh_remote_proxy
+    https_proxy=https://$ssh_remote_proxy
+    ftp_proxy=ftp://$ssh_remote_proxy
+
+    HTTP_PROXY=http://$ssh_remote_proxy
+    HTTPS_PROXY=https://$ssh_remote_proxy
+    FTP_PROXY=ftp://$ssh_remote_proxy
+fi
+
 ### Run local rc scripts #######################################################
 
 if [ -d $REMOTE_HOME/.bashrc.d ] ; then
