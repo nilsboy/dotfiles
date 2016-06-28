@@ -341,7 +341,7 @@ function cdm() {
 
 if [[ $DISPLAY ]] ; then
 
-    keyboard-disable-caps-lock-xwindows
+    # keyboard-disable-caps-lock-xwindows
 
     # make windows blink if prompt appears
     if [[ $(type -p wmctrl) ]] ; then
