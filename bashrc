@@ -258,6 +258,7 @@ function td() { tree -d "$@" | less ; }
 function csvview() { command csvview "$@" | LESS= less -S ; }
 
 alias pgrep="pgrep -af"
+alias du="du -sch"
 
 ### Vim and less ###############################################################
 
