@@ -313,6 +313,7 @@ function cdh() {
     fi
 
     cd "$dir"
+    pwd
 }
 
 # Search for file or dir in cur dir and go there
