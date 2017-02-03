@@ -10,7 +10,7 @@ fi
 
 ### PATH #######################################################################
 
-export PATH=~/.bin:~/bin:~/opt/bin:~/node_modules/bin:$PATH
+export PATH=~/.bin:~/bin:~/opt/bin:~/node_modules/.bin:$PATH
 export NODE_PATH=~/node_modules/lib/node_modules
 
 ### Set remote user stuff ######################################################
