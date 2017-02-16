@@ -2,26 +2,12 @@
 
 USE_CURRENT_DIR_AS_HOME=$1
 
-if [[ ! $BASHRC_PATH_ORG ]] ; then
-    BASHRC_PATH_ORG=$PATH
-else
-    PATH=$BASHRC_PATH_ORG
-fi
-
-### PATH #######################################################################
-
-export PATH=~/.bin:~/bin:~/opt/bin:~/node_modules/.bin:$PATH
-export NODE_PATH=~/node_modules/lib/node_modules
-
 ### Set remote user stuff ######################################################
 
 if [[ $USE_CURRENT_DIR_AS_HOME ]] ; then
-
     [[ $REMOTE_USER   ]] || export REMOTE_USER=$(basename $PWD)
     [[ $REMOTE_HOME   ]] || export REMOTE_HOME=$PWD
-
 else
-
     [[ $REMOTE_USER   ]] || export REMOTE_USER=$USER
     [[ $REMOTE_HOME   ]] || export REMOTE_HOME=$HOME
 fi
@@ -29,9 +15,21 @@ fi
 [[ $REMOTE_BASHRC ]] || export REMOTE_BASHRC="$REMOTE_HOME/.bashrc"
 [[ $REMOTE_HOST   ]] || export REMOTE_HOST=${SSH_CLIENT%% *}
 
-if [[ $REMOTE_HOME != $HOME ]] ; then
-    export PATH=$REMOTE_HOME/.bin:$REMOTE_HOME/bin:$PATH
+### Path
+
+if [[ ! $BASHRC_IS_LOADED ]] ; then
+    unset BASHRC_PATH_ORG
+    if [[ $REMOTE_HOME != $HOME ]] ; then
+        BASHRC_PATH_ORG+=:$REMOTE_HOME/.bin:$REMOTE_HOME/bin
+    fi
+    BASHRC_PATH_ORG+=:~/.bin:~/bin:~/opt/bin
+    BASHRC_PATH_ORG+=:./node_modules/bin
+    BASHRC_PATH_ORG+=:~/node_modules/bin
+    BASHRC_PATH_ORG+=:$PATH
+    PATH=$BASHRC_PATH_ORG
 fi
+
+export PATH
 
 # Replace proxy env when using a tunneled ssh proxy
 if [[ $ssh_remote_proxy ]] ; then
