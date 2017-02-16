@@ -569,8 +569,9 @@ function bashrc-update() {
     (
         set -e
         cd $REMOTE_HOME
-	mkdir -p $REMOTE_HOME/.bashrc.d
-        wcat tinyurl.com/phatbashrc3 -o .bashrc
+        mkdir -p $REMOTE_HOME/.bashrc.d
+        wcat https://raw.githubusercontent.com/nilsboy/bashrc/master/bashrc \
+          -o .bashrc
     )
     bashrc-reload
     bashrc-unpack
