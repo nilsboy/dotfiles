@@ -343,11 +343,9 @@ function cdm() {
 
 if [[ $DISPLAY ]] ; then
 
-    # keyboard-disable-caps-lock-xwindows
-
-    # make windows blink if prompt appears
+    # make windows blink when prompt reappears
     if [[ $(type -p wmctrl) ]] ; then
-        export BASHRC_PROMPT_WMCTRL="wmctrl -i -r $WINDOWID -b add,DEMANDS_ATTENTION"
+      export BASHRC_PROMPT_WMCTRL=window-blink
     fi
 
     export BROWSER=firefox
