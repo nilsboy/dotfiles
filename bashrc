@@ -319,13 +319,14 @@ if [ ! -e $HISTFILE_ETERNAL ] ; then
     chmod 0600 $HISTFILE_ETERNAL
 fi
 
+# TODO: do at logout?
 history -a
 
 alias h="bash-eternal-history-search -e -s"
 
 function bashrc-eternal-history-add() {
 
-    if [[ $BASHRC_NO_HISTORY ]] ; then
+    if [[ "$PRIVATE_SHELL" ]] ; then
         return
     fi
 
