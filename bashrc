@@ -330,34 +330,21 @@ function bashrc-eternal-history-add() {
         return
     fi
 
-    local history1
-    local history2
+    local pos
+    local cmd
+    read -r pos cmd <<<$(history 1)
 
-    while read -r pos cmd ; do
+    [[ "$PREVIOUS_COMMAND" == "$cmd" ]] && return
+    [[ "$PREVIOUS_COMMAND" ]] || PREVIOUS_COMMAND="$cmd"
+    PREVIOUS_COMMAND="$cmd"
 
-        if [[ ! $history2 ]] ; then
-            history2="$cmd"
-            continue
-        fi
-
-        [[ $history1 ]] || history1="$cmd"
-
-    done<<-EOF
-        $(history 2)
-EOF
-
-    [[ $history1 = $history2 ]] && return
-
-    cmd=$history1
-
-    if [[ $cmd == "rm "* ]] ; then
+    if [[ "$cmd" == "rm "* ]] ; then
         cmd="# $cmd"
         history -s "$cmd"
     fi
 
     local quoted_pwd=${PWD//\"/\\\"}
 
-    # update cleanup_eternal_history if changed:
     local line="$USER"
     line="$line $(date +'%F %T')"
     line="$line $BASHPID"
@@ -378,7 +365,6 @@ function bashrc-prompt-command() {
     bashrc-eternal-history-add
 
     [[ $BASHRC_TIMER_START ]] || BASHRC_TIMER_START=$SECONDS
-
 
     PS1=$(
         elapsed=$(($SECONDS - $BASHRC_TIMER_START)) \
