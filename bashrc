@@ -1,8 +1,8 @@
-### START ######################################################################
+### START
 
 USE_CURRENT_DIR_AS_HOME=$1
 
-### Set remote user stuff ######################################################
+### Set remote user stuff
 
 if [[ $USE_CURRENT_DIR_AS_HOME ]] ; then
     [[ $REMOTE_USER   ]] || export REMOTE_USER=$(basename $PWD)
@@ -43,7 +43,7 @@ if [[ $ssh_remote_proxy ]] ; then
     FTP_PROXY=ftp://$ssh_remote_proxy
 fi
 
-### Run local rc scripts #######################################################
+### Run local rc scripts
 
 if [ -d $REMOTE_HOME/.bashrc.d ] ; then
     for rc in $(ls $REMOTE_HOME/.bashrc.d/* 2>/dev/null) ; do
@@ -51,15 +51,15 @@ if [ -d $REMOTE_HOME/.bashrc.d ] ; then
     done
 fi
 
-### Checking if running inside docker ##########################################
+### Checking if running inside docker
 
 grep docker /proc/1/cgroup &>/dev/null && export BASHRC_INSIDE_DOCKER=1
 
-### Return if not an interactive shell #########################################
+### Return if not an interactive shell
 
 [[ $PS1 ]] || return
 
-### Env ########################################################################
+### Env
 
 BASHRC_COLOR_NO_COLOR='\[\e[33;0;m\]'
 BASHRC_COLOR_GREEN='\[\e[38;5;2m\]'
@@ -94,7 +94,7 @@ export BASHRC_TTY=$(tty)
 
 export FTP_PASSIVE=1
 
-### Set linux distribution #####################################################
+### Set linux distribution
 
 function bashrc-linux-distribution-set() {
 
@@ -128,7 +128,7 @@ function bashrc-linux-distribution-run-fixes() {
     fi
 }
 
-### Input config ###############################################################
+### Input config
 
 export INPUTRC=$REMOTE_HOME/.inputrc
 
@@ -195,7 +195,7 @@ stty start ^-
 # ctrl-l clear screen but stay in current row
 bind -x '"\C-l":printf "\33[2J"'
 
-### Aliases ####################################################################
+### Aliases
 
 alias    ls='ls --color=auto --time-style=+"%a %F %H:%M" -v '
 alias     l='ls -1'
@@ -258,7 +258,7 @@ function csvview() { command csvview "$@" | LESS= less -S ; }
 alias pgrep="pgrep -af"
 alias du="du -sch"
 
-### Vim and less ###############################################################
+### Vim and less
 
 EDITOR=vi
 if [[ $REMOTE_HOST ]] ; then
@@ -283,7 +283,7 @@ export PAGER=less
 
 export MANWIDTH=80
 
-### Misc #######################################################################
+### Misc
 
 # Get parent process id
 function parent() {
@@ -337,7 +337,7 @@ function cdm() {
     cd "$@"
 }
 
-### Xorg #######################################################################
+### Xorg
 
 if [[ $DISPLAY ]] ; then
 
@@ -349,7 +349,7 @@ if [[ $DISPLAY ]] ; then
     export BROWSER=firefox
 fi
 
-### SSH ########################################################################
+### SSH
 
 # ServerAliveInterval=5 make sure there is ssh traffic so no firewall closes
 #     the connection
@@ -374,7 +374,7 @@ function nossh() {
     source ssh-agent-env-clear
 }
 
-### History ####################################################################
+### History
 
 # ignore commands  for history that start  with a space
 HISTCONTROL=ignorespace:ignoredups
@@ -442,7 +442,7 @@ EOF
     echo "$line" >> $HISTFILE_ETERNAL
 }
 
-### PROMPT #####################################################################
+### PROMPT
 
 # This is the default prompt command which is always set.
 # It sets some variables to be used by the specialized command prompts.
@@ -548,7 +548,7 @@ function shell-private() {
     BASHRC_BG_COLOR=$BASHRC_COLOR_GREEN
 }
 
-### bashrc handling ############################################################
+### bashrc handling
 
 function bashrc-clean-env() {
 
@@ -629,7 +629,7 @@ EOF
 
 }
 
-### STARTUP ####################################################################
+### STARTUP
 
 [ -e "$REMOTE_HOME/.bin" ] || bashrc-unpack
 
@@ -644,6 +644,6 @@ export BASHRC_IS_LOADED=1
 
 true
 
-### END ########################################################################
+### END
 return 0
-### fatpacked apps start here ##################################################
+### fatpacked apps start here
