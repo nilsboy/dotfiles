@@ -94,39 +94,6 @@ export BASHRC_TTY=$(tty)
 
 export FTP_PASSIVE=1
 
-### Set linux distribution
-
-function bashrc-linux-distribution-set() {
-
-    if [[ $DISTRIB_ID != "" ]] ; then
-        return
-    fi
-
-    if [[ -e /etc/lsb-release ]] ; then
-        . /etc/lsb-release
-    elif [[ -e /etc/debian_version ]] ; then
-        DISTRIB_ID=debian
-    else
-        DISTRIB_ID=$(cat /etc/*{version,release} 2>/dev/null \
-            | perl -0777 -ne 'print lc $1 if /(debian|suse|redhat)/igm')
-    fi
-
-    export DISTRIB_ID
-}
-
-bashrc-linux-distribution-set
-
-function bashrc-linux-distribution-run-fixes() {
-
-    if [[ $DISTRIB_ID = "" ]] ; then
-        return
-    fi
-
-    local fix_file=bashrc-linux-distribution-fix-$DISTRIB_ID
-    if [[ $(type -t $fix_file) ]] ; then
-        . $fix_file
-    fi
-}
 
 ### Input config
 
@@ -215,6 +182,9 @@ alias f=find-and
 alias g=find-or-grep
 
 alias cdt='cd $REMOTE_HOME/tmp'
+function cdh() { cd $(cd-history $@) ; } 
+function cdf() { cd $(cd-find $@) ; } 
+
 alias type='type -a'
 
 alias shell-turn-off-line-wrapping="tput rmam"
@@ -223,6 +193,7 @@ alias shell-turn-on-line-wrapping="tput smam"
 alias cp="cp -i"
 alias mv="mv -i"
 alias df="df -h"
+alias du="du -sch"
 alias crontab="crontab -i"
 alias xargs='xargs -I {} -d \\n'
 
@@ -236,11 +207,11 @@ alias aptf="dpkg -L"
 
 alias normalizefilenames="xmv -ndx"
 alias m=man-multi-lookup
-alias pm=perl-module-find
 alias srd=tmux-reattach
 
 alias ps-grep="pgrep -fl"
 alias ps-attach="sudo strace -ewrite -s 1000 -p"
+alias pgrep="pgrep -af"
 
 alias p=pstree-search
 if [[ ! $(type -t pstree) ]] ; then
@@ -254,9 +225,6 @@ function  j() { jobs=$(jobs) bash-jobs ; }
 function  t() { tree -C --summary "$@" | less ; }
 function td() { tree -d "$@" | less ; }
 function csvview() { command csvview "$@" | LESS= less -S ; }
-
-alias pgrep="pgrep -af"
-alias du="du -sch"
 
 ### Vim and less
 
@@ -272,7 +240,6 @@ alias v=vi-choose-file-from-list
 alias vie=vi-from-path
 alias vif=vi-from-find
 alias vih=vi-from-history
-alias vip=vi-from-perl-inc
 
 export LESS="-j0.5 -inRgS"
 # Make less more friendly for non-text input files, see lesspipe(1)
@@ -294,49 +261,6 @@ function parent() {
     echo $(ps -p $PPID -o comm=)
 }
 
-# Search history for an existing directory containing string and go there
-function cdh() {
-
-    if ! [[ $@ ]] ; then
-        cd $REMOTE_HOME
-        return
-    fi
-
-    local dir=$(bash-eternal-history-search -d --skip-current-dir \
-        --existing-only -c 1 "\/[^\/]*$@[^\/]*$"
-    )
-
-    if [[ ! "$dir" ]] ; then
-        return 1
-    fi
-
-    cd "$dir"
-    pwd
-}
-
-# Search for file or dir in cur dir and go there
-function cdf() {
-
-    local entry=$(f "$@" | head -1)
-
-    if [[ ! "$entry" ]] ; then
-        return 1
-    fi
-
-    if [[ -f "$entry" ]] ; then
-        entry=$(dirname "$entry")
-    fi
-
-    cd "$entry"
-}
-
-
-# Create dir and cd into it
-function cdm() {
-    mkdir "$@" || return 1
-    cd "$@"
-}
-
 ### Xorg
 
 if [[ $DISPLAY ]] ; then
@@ -353,7 +277,7 @@ fi
 
 # ServerAliveInterval=5 make sure there is ssh traffic so no firewall closes
 #     the connection
-# GSSAPIAuthentication=no - usually not uesed - speeds up connection time
+# GSSAPIAuthentication=no - usually not used - speeds up connection time
 alias ssh="ssh -AC -o GSSAPIAuthentication=no -o ServerAliveInterval=5"
 
 function _ssh_completion() {
@@ -633,7 +557,8 @@ EOF
 
 [ -e "$REMOTE_HOME/.bin" ] || bashrc-unpack
 
-bashrc-linux-distribution-run-fixes
+eval $(linux-distribution-info)
+eval $(bashrc-linux-distribution-run-fixes)
 
 prompt-set
 bashrc-set-last-session-pwd
