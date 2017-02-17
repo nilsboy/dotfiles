@@ -17,18 +17,18 @@ fi
 
 ### Path
 
-if [[ ! $BASHRC_IS_LOADED ]] ; then
-    unset BASHRC_PATH_ORG
-    if [[ $REMOTE_HOME != $HOME ]] ; then
-        BASHRC_PATH_ORG+=:$REMOTE_HOME/.bin:$REMOTE_HOME/bin
-    fi
-    BASHRC_PATH_ORG+=:~/.bin:~/bin:~/opt/bin
-    BASHRC_PATH_ORG+=:./node_modules/bin
-    BASHRC_PATH_ORG+=:~/node_modules/bin
-    BASHRC_PATH_ORG+=:$PATH
-    PATH=$BASHRC_PATH_ORG
+if [[ ! $BASHRC_PATH_ORG ]] ; then
+  BASHRC_PATH_ORG=$PATH
 fi
 
+unset PATH
+if [[ $REMOTE_HOME != $HOME ]] ; then
+    PATH+=:$REMOTE_HOME/.bin:$REMOTE_HOME/bin
+fi
+PATH+=:~/.bin:~/bin:~/opt/bin
+PATH+=:./node_modules/.bin
+PATH+=:~/node_modules/bin
+PATH+=:$BASHRC_PATH_ORG
 export PATH
 
 # Replace proxy env when using a tunneled ssh proxy
