@@ -201,13 +201,15 @@ alias du="du -sch"
 alias crontab="crontab -i"
 alias xargs='xargs -I {} -d \\n'
 
-function apts() { apt-cache search --names-only "$@" | less ; }
-alias aptw="apt-cache show"
-alias apti="sudo apt-get install"
+function apts() { apt-cache search --names-only "$1" | g "$@" | less ; }
+alias aptg="apt search"
+alias aptw="apt show"
+alias apti="sudo apt install"
 alias aptp="sudo dpkg -P"
 alias aptc="sudo apt-get autoremove"
-alias aptl="dpkg -l | g"
-alias aptf="dpkg -L"
+alias apt-list-package-contents="dpkg -L"
+alias apt-find-package-containing="dpkg -S"
+alias apt-list-installed="apt list --installed | g"
 
 alias normalizefilenames="xmv -ndx"
 alias m=man-multi-lookup
