@@ -27,7 +27,7 @@ if [[ $REMOTE_HOME != $HOME ]] ; then
 fi
 PATH+=~/.bin:~/bin:~/opt/bin
 PATH+=:./node_modules/.bin
-PATH+=:~/node_modules/bin
+# PATH+=:~/node_modules/bin
 PATH+=:$BASHRC_PATH_ORG
 export PATH
 
