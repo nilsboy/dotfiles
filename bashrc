@@ -550,8 +550,8 @@ EOF
 
 [ -e "$REMOTE_HOME/.bin" ] || bashrc-unpack
 
-export $(linux-distribution-info)
-eval $(bashrc-linux-distribution-run-fixes)
+eval $(linux-distribution-info | perl -pe 's/^/export /g')
+source bashrc-linux-distribution-run-fixes
 
 prompt-set
 bashrc-set-last-session-pwd
