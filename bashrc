@@ -550,7 +550,7 @@ EOF
 
 [ -e "$REMOTE_HOME/.bin" ] || bashrc-unpack
 
-eval $(linux-distribution-info)
+export $(linux-distribution-info)
 eval $(bashrc-linux-distribution-run-fixes)
 
 prompt-set
