@@ -174,7 +174,7 @@ alias    la='ls -1d \.*'
 alias   lla='ls -lhd \.*'
 
 function lls() {
-  ls -1d *$**
+  ls -1ld *$**
 }
 
 # https://github.com/seebi/dircolors-solarized
