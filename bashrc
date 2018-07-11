@@ -224,6 +224,7 @@ fi
 
 alias top="top -c"
 alias rsync="rsync -h"
+alias c=man-cheatsh
 
 function  j() { jobs=$(jobs) bash-jobs ; }
 function  t() { tree -C --summary "$@" | less ; }
