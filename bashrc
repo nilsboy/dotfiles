@@ -237,7 +237,8 @@ function csvview() { command csvview "$@" | LESS= less -S ; }
 
 ### Vim and less
 
-EDITOR=vi
+# git commit needs absolute path
+EDITOR=$REMOTE_HOME/.bin/vi
 if [[ $REMOTE_HOST ]] ; then
     EDITOR="DISPLAY= $EDITOR"
 fi
