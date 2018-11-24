@@ -285,10 +285,7 @@ fi
 
 ### SSH
 
-# ServerAliveInterval=5 make sure there is ssh traffic so no firewall closes
-#     the connection
-# GSSAPIAuthentication=no - usually not used - speeds up connection time
-alias ssh="ssh -AC -o GSSAPIAuthentication=no -o ServerAliveInterval=5"
+alias ssh=ssh-alias
 
 function _ssh_completion() {
     perl -ne 'print "$1 " if /^Host (.+)$/' $REMOTE_HOME/.ssh/config
