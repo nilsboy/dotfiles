@@ -559,6 +559,8 @@ if [[ $DISTRIB_ID ]] ; then
   fi
 fi
 
+eval $(env-set-vars-from-lc)
+
 prompt-set
 bashrc-set-last-session-pwd
 
