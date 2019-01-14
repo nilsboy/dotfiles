@@ -187,7 +187,7 @@ export LS_COLORS='no=00:fi=00:di=36:ln=35:pi=30;44:so=35;44:do=35;44:bd=33;44:cd
 alias f=find-and
 alias g=find-or-grep
 
-alias cdt='mkdir -p $REMOTE_HOME && cd $REMOTE_HOME/tmp'
+alias cdt='mkdir -p $REMOTE_HOME/tmp && cd $REMOTE_HOME/tmp'
 function cdm() { mkdir -p "$@" && cd "$@" ; }
 function cdh() { cd $(cd-history $@) ; } 
 function cdf() { cd $(cd-find $@) ; } 
