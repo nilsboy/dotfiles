@@ -1,5 +1,7 @@
 ### START
 
+[ -n "$_BASHRC_IS_LOADED" ] && return
+
 # for debugging
 # set -o history
 
@@ -501,6 +503,7 @@ function bashrc-update() {
 
 function bashrc-reload() {
     bashrc-clean-env
+    unset BASHRC_IS_LOADED
     source $REMOTE_BASHRC
 }
 
