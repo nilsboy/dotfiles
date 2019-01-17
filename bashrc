@@ -1,6 +1,10 @@
 ### START
 
-[ -n "$BASHRC_IS_LOADED" ] && return
+# prevent bashrc from loading twice
+if [[ $BASHRC_IS_LOADED == $$ ]] ; then
+  echo "bashrc already loaded - returning."
+  return
+fi
 
 # for debugging
 # set -o history
@@ -571,7 +575,7 @@ eval $(env-set-vars-from-lc)
 prompt-set
 bashrc-set-last-session-pwd
 
-export BASHRC_IS_LOADED=1
+export BASHRC_IS_LOADED=$$
 
 # test -n "$REMOTE_HOST" && srd
 
