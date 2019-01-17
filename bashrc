@@ -1,5 +1,8 @@
 ### START
 
+# for debugging
+# set -o history
+
 USE_CURRENT_DIR_AS_HOME=$1
 
 ### Set remote user stuff
