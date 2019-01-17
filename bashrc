@@ -1,6 +1,6 @@
 ### START
 
-[ -n "$_BASHRC_IS_LOADED" ] && return
+[ -n "$BASHRC_IS_LOADED" ] && return
 
 # for debugging
 # set -o history
