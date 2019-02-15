@@ -175,6 +175,10 @@ stty start ^-
 # ctrl-l clear screen but stay in current row
 bind -x '"\C-l":printf "\33[2J"'
 
+### conveniences
+
+export dotfiles='.!(|.)'
+
 ### Aliases
 
 alias    ls='ls --color=auto --time-style=+"%a %F %H:%M" -v '
@@ -183,8 +187,8 @@ alias    ll='ls -lh'
 alias    lr='ls -rt1'
 alias   llr='ls -rtlh'
 alias    lc='ls -rtlhc'
-alias    la='ls -1d \.*'
-alias   lla='ls -lhd \.*'
+alias    la='ls -d '$dotfiles
+alias   lla='ls -lhd '$dotfiles
 
 function lls() {
   ls -1ld *$**
