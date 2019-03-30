@@ -300,7 +300,7 @@ fi
 ### SSH
 
 alias ssh=ssh-alias
-alias scp='rsync --archive --xattrs --acls --progress --partial --partial-dir=rsync-partial --rsh="ssh"'
+alias scp='rsync --archive --xattrs --acls --partial --partial-dir=rsync-partial --info=progress2 --rsh="ssh"'
 
 function _ssh_completion() {
     perl -ne 'print "$1 " if /^Host (.+)$/' $REMOTE_HOME/.ssh/config
