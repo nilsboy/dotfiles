@@ -187,8 +187,8 @@ alias    ll='ls -lh'
 alias    lr='ls -rt1'
 alias   llr='ls -rtlh'
 alias    lc='ls -rtlhc'
-alias    la='ls -d '$dotfiles
-alias   lla='ls -lhd '$dotfiles
+alias    la='ls -Ah'
+alias   lla='ls -lAh'
 
 function lls() {
   ls -1ld *$**
