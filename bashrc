@@ -216,6 +216,9 @@ alias df="df -h"
 alias du="du -sch"
 alias crontab="crontab -i"
 alias xargs='xargs -I {} -d \\n'
+# aliases with a trailing blank allow for alias expansion of the
+# following command word
+alias sudo='sudo '
 
 function apts() { apt-cache search --names-only "$1" | g "$@" | less ; }
 alias aptg="apt search"
