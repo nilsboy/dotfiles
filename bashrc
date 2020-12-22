@@ -222,7 +222,7 @@ alias xargs='xargs -I {} -d \\n'
 # following command word
 alias sudo='sudo '
 
-function apts() { apt-cache search --names-only "$1" | g "$@" | less ; }
+function apts() { apt-cache search --names-only "$1" | grep -i "$@" | less ; }
 alias aptg="apt search"
 alias aptw="apt show"
 alias apti="sudo apt install"
