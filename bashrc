@@ -231,7 +231,7 @@ alias apt-list-package-contents="dpkg -L"
 alias apt-find-package-containing="dpkg -S"
 alias apt-list-installed="apt list --installed | g"
 
-alias normalizefilenames="xmv -ndx"
+alias normalizefilenames="xmv -nd"
 alias m=man-multi-lookup
 alias srd=tmux-reattach
 
@@ -264,10 +264,7 @@ fi
 export EDITOR
 export VISUAL="$EDITOR"
 
-alias v=vi-choose-file-from-list
-alias vie=vi-from-path
-alias vif=vi-from-find
-alias vih=vi-from-history
+alias vie=vi-executable
 
 export LESS="-j0.5 -inRgS"
 # Make less more friendly for non-text input files, see lesspipe(1)
