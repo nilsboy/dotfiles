@@ -199,6 +199,7 @@ export LS_COLORS='no=00:fi=00:di=36:ln=35:pi=30;44:so=35;44:do=35;44:bd=33;44:cd
 
 alias f=find.relevant.
 alias g='grep -i'
+alias ga='grep.and'
 alias s='sort'
 
 alias cdt='mkdir -p $REMOTE_HOME/tmp && cd $REMOTE_HOME/tmp'
