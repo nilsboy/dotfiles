@@ -106,7 +106,9 @@ export FTP_PASSIVE=1
 # snap workaround
 # https://bugs.launchpad.net/snapd/+bug/1575593
 export MANPATH=
-export MANPATH=$(manpath):$(ls -d /snap/*/current/{usr,}/share/man 2>/dev/null | perl -pe 's/\n/:/g')
+if type manpath &>/dev/null ; then
+  export MANPATH=$(manpath):$(ls -d /snap/*/current/{usr,}/share/man 2>/dev/null | perl -pe 's/\n/:/g')
+fi
 
 ### Input config
 
