@@ -256,6 +256,10 @@ function  t() { tree -C --summary "$@" | less ; }
 function td() { tree -d "$@" | less ; }
 function csvview() { command csvview "$@" | LESS= less -S ; }
 
+### Completions
+
+complete -c source
+
 ### Vim and less
 
 # git commit needs absolute path
