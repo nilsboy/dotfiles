@@ -259,6 +259,7 @@ function csvview() { command csvview "$@" | LESS= less -S ; }
 ### Completions
 
 complete -c source
+complete -c vie
 
 ### Vim and less
 
