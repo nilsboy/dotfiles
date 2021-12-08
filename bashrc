@@ -34,7 +34,7 @@ unset PATH
 if [[ $REMOTE_HOME != $HOME ]] ; then
     PATH=$REMOTE_HOME/.bin:$REMOTE_HOME/bin:
 fi
-PATH+=~/.bin:~/bin:~/opt/bin
+PATH+=~/.bin:~/bin:~/.bin-generated:~/opt/bin
 PATH+=:./node_modules/.bin
 # PATH+=:~/node_modules/bin
 PATH+=:$BASHRC_PATH_ORG
