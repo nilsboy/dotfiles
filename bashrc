@@ -62,7 +62,7 @@ fi
 
 ### Checking if running inside docker
 
-grep docker /proc/1/cgroup &>/dev/null && export BASHRC_INSIDE_DOCKER=1
+head -n 1 /proc/1/sched | cut -d \  -f 1 | grep bash >/dev/null && export BASHRC_INSIDE_DOCKER=1
 
 ### Return if not an interactive shell
 
