@@ -189,7 +189,7 @@ alias    ll='ls -lh'
 alias    lr='ls -rt1'
 alias   llr='ls -rtlh'
 alias    lc='ls -rtlhc'
-alias    la='ls -Ah'
+alias    la='ls -1Ah'
 alias   lla='ls -lAh'
 
 function lls() {
