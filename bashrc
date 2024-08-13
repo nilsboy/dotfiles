@@ -110,6 +110,10 @@ if type manpath &>/dev/null ; then
   export MANPATH=$(manpath):$(ls -d /snap/*/current/{usr,}/share/man 2>/dev/null | perl -pe 's/\n/:/g')
 fi
 
+function dotenv() {
+  eval $(dotenv-cat)
+}
+
 ### Input config
 
 export INPUTRC=$REMOTE_HOME/.inputrc
