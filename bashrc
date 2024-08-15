@@ -181,6 +181,27 @@ stty start ^-
 # ctrl-l clear screen but stay in current row
 bind -x '"\C-l":printf "\33[2J"'
 
+# extend vi-command/normal mode mappings
+bind -m vi-command '"gg":beginning-of-history'
+bind -m vi-command '"G":end-of-history'
+
+# create inputrc from bind env settings
+function inputrc-generate() {
+  > $INPUTRC
+  echo "## NOTE: File generated using bashrc function inputrc-generate." >> $INPUTRC
+  echo >> $INPUTRC
+  echo "## bind vars" >> $INPUTRC
+  bind -v >> $INPUTRC
+  for mode in  vi vi-move vi-command vi-insert ; do
+    echo >> $INPUTRC
+    echo "## keymappings for mode $mode" >> $INPUTRC
+    echo >> $INPUTRC
+    echo '$if mode='$mode >> $INPUTRC
+    bind -m $mode -p >> $INPUTRC
+  done
+  echo >> $INPUTRC
+  echo "## END" >> $INPUTRC
+}
 ### conveniences
 
 export dotfiles='.!(|.)'
